@@ -100,9 +100,7 @@ CREATE TRIGGER update_ticket_types_updated_at BEFORE UPDATE ON ticket_types
 CREATE TRIGGER update_reservations_updated_at BEFORE UPDATE ON reservations
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Insert sample admin user (password: admin123)
-INSERT INTO users (email, password_hash, name, phone, role) VALUES
-('admin@tiketi.gg', '$2b$10$XQq3YGz8ZJZ8mQ0X0Z8Z8.Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z', '관리자', '010-1234-5678', 'admin');
+-- Note: Admin account (admin@tiketi.gg / admin123) is automatically created by backend on startup
 
 -- Insert sample events
 INSERT INTO events (title, description, venue, address, event_date, sale_start_date, sale_end_date, poster_image_url, status) VALUES

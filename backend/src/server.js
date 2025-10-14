@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const { initializeAdmin } = require('./config/init-admin');
 
 dotenv.config();
 
@@ -35,8 +36,11 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📡 Health check: http://localhost:${PORT}/health`);
+  
+  // Initialize admin account
+  await initializeAdmin();
 });
 
