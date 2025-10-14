@@ -9,17 +9,18 @@ Docker Compose 기반의 간단하고 강력한 티켓 예매 플랫폼입니다
 git clone <repository-url>
 cd tiketi
 
-# 2. 실행 (Windows)
-start.bat
-
-# 또는 (Mac/Linux)
-./start.sh
+# 2. 실행
+start.bat     # Windows
+./start.sh    # Mac/Linux
 
 # 3. 브라우저에서 http://localhost:3000 접속!
 # 관리자: admin@tiketi.gg / admin123
 ```
 
-> 📖 **상세 가이드**: [`팀원용_시작가이드.md`](./팀원용_시작가이드.md) 참고
+> 📖 **상세 가이드**:
+> - Windows: [`팀원용_시작가이드.md`](./팀원용_시작가이드.md)
+> - macOS: [`macOS_시작가이드.md`](./macOS_시작가이드.md)
+> - 개발자: [`GETTING_STARTED.md`](./GETTING_STARTED.md)
 
 ## 📋 주요 기능
 
