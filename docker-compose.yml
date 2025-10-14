@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: tiketi-postgres
+    environment:
+      POSTGRES_DB: tiketi
+      POSTGRES_USER: tiketi_user
+      POSTGRES_PASSWORD: tiketi_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - tiketi-network
+
+  # DragonflyDB (Redis alternative)
+  dragonfly:
+    image: docker.dragonflydb.io/dragonflydb/dragonfly:latest
+    container_name: tiketi-dragonfly
+    ports:
+      - "6379:6379"
+    ulimits:
+      memlock: -1
+    volumes:
+      - dragonfly_data:/data
+    networks:
+      - tiketi-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: tiketi-backend
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: tiketi
+      DB_USER: tiketi_user
+      DB_PASSWORD: tiketi_pass
+      REDIS_HOST: dragonfly
+      REDIS_PORT: 6379
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+      - dragonfly
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - tiketi-network
+    command: npm run dev
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: tiketi-frontend
+    environment:
+      REACT_APP_API_URL: http://localhost:3001
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - tiketi-network
+    stdin_open: true
+    tty: true
+
+networks:
+  tiketi-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  dragonfly_data:
+

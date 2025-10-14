@@ -1,0 +1,127 @@
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  height: 80px;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 80px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.logo-icon {
+  font-size: 32px;
+  margin-right: 8px;
+}
+
+.logo-text {
+  letter-spacing: -1px;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: var(--dark-color);
+  font-weight: 600;
+  transition: var(--transition);
+  position: relative;
+}
+
+.nav-link:hover {
+  color: var(--primary-color);
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--primary-color);
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
+
+.admin-link {
+  color: var(--danger-color);
+}
+
+.admin-link:hover {
+  color: var(--danger-color);
+}
+
+.admin-link::after {
+  background-color: var(--danger-color);
+}
+
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-name {
+  font-weight: 600;
+  color: var(--dark-color);
+}
+
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .header {
+    height: 60px;
+  }
+
+  .header-content {
+    height: 60px;
+  }
+
+  .logo {
+    font-size: 20px;
+  }
+
+  .logo-icon {
+    font-size: 24px;
+  }
+
+  .nav {
+    gap: 12px;
+  }
+
+  .nav-link {
+    font-size: 14px;
+  }
+
+  .user-name {
+    display: none;
+  }
+}
+

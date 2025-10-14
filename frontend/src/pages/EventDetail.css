@@ -1,0 +1,292 @@
+.event-detail-page {
+  padding: 40px 0;
+  min-height: 100vh;
+}
+
+.event-detail-header {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.event-poster {
+  width: 100%;
+  height: 500px;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--box-shadow);
+}
+
+.event-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.poster-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 120px;
+}
+
+.event-info-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.event-detail-title {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: var(--dark-color);
+}
+
+.event-detail-info {
+  background: white;
+  border-radius: var(--border-radius);
+  padding: 24px;
+  box-shadow: var(--box-shadow);
+  margin-bottom: 24px;
+}
+
+.info-row {
+  display: flex;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--light-color);
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-weight: 600;
+  width: 120px;
+  color: var(--dark-color);
+}
+
+.info-value {
+  flex: 1;
+  color: #666;
+}
+
+.event-description {
+  background: white;
+  border-radius: var(--border-radius);
+  padding: 24px;
+  box-shadow: var(--box-shadow);
+}
+
+.event-description h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--dark-color);
+}
+
+.event-description p {
+  line-height: 1.6;
+  color: #666;
+  white-space: pre-wrap;
+}
+
+.ticket-selection-section {
+  margin-bottom: 100px;
+}
+
+.ticket-selection-section h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: var(--dark-color);
+}
+
+.ticket-types-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ticket-type-card {
+  background: white;
+  border-radius: var(--border-radius);
+  padding: 24px;
+  box-shadow: var(--box-shadow);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: var(--transition);
+}
+
+.ticket-type-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.ticket-type-info {
+  flex: 1;
+}
+
+.ticket-type-name {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--dark-color);
+}
+
+.ticket-type-description {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 12px;
+}
+
+.ticket-type-price {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: 8px;
+}
+
+.ticket-type-stock {
+  font-size: 14px;
+  color: #999;
+}
+
+.ticket-type-quantity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.qty-btn {
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--primary-color);
+  background: white;
+  color: var(--primary-color);
+  border-radius: 50%;
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qty-btn:hover:not(:disabled) {
+  background: var(--primary-color);
+  color: white;
+}
+
+.qty-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.qty-value {
+  font-size: 20px;
+  font-weight: 700;
+  min-width: 40px;
+  text-align: center;
+}
+
+.reservation-summary {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.1);
+  padding: 20px 0;
+  z-index: 100;
+}
+
+.summary-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summary-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.summary-label {
+  font-size: 14px;
+  color: #666;
+}
+
+.summary-total {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.btn-large {
+  padding: 16px 48px;
+  font-size: 18px;
+}
+
+@media (max-width: 768px) {
+  .event-detail-header {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .event-poster {
+    height: 400px;
+  }
+
+  .event-detail-title {
+    font-size: 24px;
+  }
+
+  .info-label {
+    width: 80px;
+    font-size: 14px;
+  }
+
+  .info-value {
+    font-size: 14px;
+  }
+
+  .ticket-type-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .ticket-type-quantity {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .summary-content {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .summary-info {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .btn-large {
+    width: 100%;
+    padding: 14px 24px;
+    font-size: 16px;
+  }
+}
+
