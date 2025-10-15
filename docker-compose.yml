@@ -6,9 +6,9 @@ services:
     image: postgres:15-alpine
     container_name: tiketi-postgres
     environment:
-      POSTGRES_DB: tiketi
-      POSTGRES_USER: tiketi_user
-      POSTGRES_PASSWORD: tiketi_pass
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -37,15 +37,18 @@ services:
       dockerfile: Dockerfile
     container_name: tiketi-backend
     environment:
-      NODE_ENV: development
-      PORT: 3001
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: tiketi
-      DB_USER: tiketi_user
-      DB_PASSWORD: tiketi_pass
-      REDIS_HOST: dragonfly
-      REDIS_PORT: 6379
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${PORT}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      JWT_SECRET: ${JWT_SECRET}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     ports:
       - "3001:3001"
     depends_on:
@@ -64,7 +67,7 @@ services:
       dockerfile: Dockerfile
     container_name: tiketi-frontend
     environment:
-      REACT_APP_API_URL: http://localhost:3001
+      REACT_APP_API_URL: ${REACT_APP_API_URL}
     ports:
       - "3000:3000"
     depends_on:
