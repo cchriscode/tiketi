@@ -74,52 +74,53 @@ function Events() {
             </Link>
           </div>
         ) : (
-          <div className="events-table">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>이벤트명</th>
-                  <th>장소</th>
-                  <th>공연일</th>
-                  <th>상태</th>
-                  <th>관리</th>
-                </tr>
-              </thead>
-              <tbody>
-                {events.map((event) => (
-                  <tr key={event.id}>
-                    <td className="event-title">{event.title}</td>
-                    <td>{event.venue}</td>
-                    <td>{formatDate(event.event_date)}</td>
-                    <td>
-                      <span className={`status-badge status-${event.status}`}>
-                        {event.status === 'upcoming' && '오픈 예정'}
-                        {event.status === 'on_sale' && '예매 중'}
-                        {event.status === 'sold_out' && '매진'}
-                        {event.status === 'ended' && '종료'}
-                        {event.status === 'cancelled' && '취소'}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="action-buttons">
-                        <Link
-                          to={`/admin/events/edit/${event.id}`}
-                          className="btn-action btn-edit"
-                        >
-                          수정
-                        </Link>
-                        <button
-                          className="btn-action btn-delete"
-                          onClick={() => handleDelete(event.id)}
-                        >
-                          삭제
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="events-grid">
+            {events.map((event) => (
+              <div key={event.id} className="event-card">
+                <div className="event-card-header">
+                  <h3 className="event-card-title">{event.title}</h3>
+                  <span className={`status-badge status-${event.status}`}>
+                    {event.status === 'upcoming' && '오픈 예정'}
+                    {event.status === 'on_sale' && '예매 중'}
+                    {event.status === 'sold_out' && '매진'}
+                    {event.status === 'ended' && '종료'}
+                    {event.status === 'cancelled' && '취소'}
+                  </span>
+                </div>
+
+                <div className="event-card-body">
+                  <div className="event-info-row">
+                    <span className="info-icon">📍</span>
+                    <span className="info-text">{event.venue}</span>
+                  </div>
+                  <div className="event-info-row">
+                    <span className="info-icon">📅</span>
+                    <span className="info-text">{formatDate(event.event_date)}</span>
+                  </div>
+                  {event.artist_name && (
+                    <div className="event-info-row">
+                      <span className="info-icon">🎤</span>
+                      <span className="info-text">{event.artist_name}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="event-card-footer">
+                  <Link
+                    to={`/admin/events/edit/${event.id}`}
+                    className="btn-action btn-edit"
+                  >
+                    수정
+                  </Link>
+                  <button
+                    className="btn-action btn-delete"
+                    onClick={() => handleDelete(event.id)}
+                  >
+                    삭제
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

@@ -1,0 +1,39 @@
+feat: 좌석 선택 시스템 구현 및 자동화 설정 완료
+
+🎯 주요 기능
+- 좌석 선택 시스템 (SeatSelection, Payment, PaymentSuccess)
+- 관리자 이벤트 관리 (좌석 레이아웃 설정)
+- 실시간 좌석 상태 관리 (available, locked, reserved)
+- Redis 분산 락을 통한 동시성 제어
+- 자동 예약 만료 처리 (5분)
+
+🔧 자동화
+- PostgreSQL 자동 마이그레이션 (init.sql)
+- 좌석 레이아웃 및 개별 좌석 자동 생성
+- 관리자 계정 자동 생성 (admin@tiketi.gg)
+- Docker Compose 한 번에 전체 시스템 실행
+
+📚 코드 개선
+- One Source of Truth (shared/constants.js)
+- 하드코딩 제거 (환경변수 + CONFIG)
+- 매직 넘버 제거
+- 에러 처리 강화
+- Single Responsibility 원칙 준수
+
+🐛 버그 수정
+- reservation-cleaner 'expired' 상태 오류 수정
+- JWT 토큰 중복 정의 제거
+- Auth middleware DB 검증 추가
+
+📖 문서화
+- 팀원용_시작가이드.md 업데이트
+- ENV_VARIABLES.md 추가
+- GIT_커밋_체크리스트.md 추가
+- 디자인 문서 추가 (SEAT_*, PREDICTIVE_*, etc.)
+
+✅ 테스트 완료
+- 좌석 선택 플로우 정상 작동
+- 결제 플로우 정상 작동
+- 관리자 기능 정상 작동
+- Docker Compose 자동화 정상 작동
+

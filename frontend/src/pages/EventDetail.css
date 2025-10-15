@@ -1,21 +1,51 @@
 .event-detail-page {
-  padding: 40px 0;
+  padding: 0;
   min-height: 100vh;
+  background: #f8f9fa;
+}
+
+/* 히어로 섹션 */
+.event-detail-hero {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 60px 0 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.event-detail-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(%23grid)"/></svg>');
+  opacity: 0.3;
 }
 
 .event-detail-header {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: 400px 1fr;
-  gap: 40px;
-  margin-bottom: 40px;
+  gap: 50px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 40px;
 }
 
 .event-poster {
   width: 100%;
-  height: 500px;
-  border-radius: var(--border-radius);
+  height: 550px;
+  border-radius: 20px;
   overflow: hidden;
-  box-shadow: var(--box-shadow);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  transform: rotate(-2deg);
+  transition: transform 0.3s ease;
+}
+
+.event-poster:hover {
+  transform: rotate(0deg) scale(1.02);
 }
 
 .event-poster img {
@@ -27,7 +57,7 @@
 .poster-placeholder {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -37,13 +67,85 @@
 .event-info-section {
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  color: white;
 }
 
 .event-detail-title {
-  font-size: 32px;
-  font-weight: 700;
+  font-size: 42px;
+  font-weight: 800;
   margin-bottom: 24px;
-  color: var(--dark-color);
+  color: white;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  line-height: 1.2;
+}
+
+/* 카운트다운 섹션 */
+.countdown-section {
+  margin-top: 30px;
+  padding: 30px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+}
+
+.countdown-section.upcoming-countdown {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  box-shadow: 0 10px 30px rgba(79, 172, 254, 0.3);
+}
+
+.countdown-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.countdown-icon {
+  font-size: 28px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.countdown-display {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.countdown-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 80px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.countdown-number {
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.countdown-text {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
 }
 
 .event-detail-info {
@@ -76,34 +178,55 @@
 }
 
 .event-description {
-  background: white;
-  border-radius: var(--border-radius);
-  padding: 24px;
-  box-shadow: var(--box-shadow);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .event-description h3 {
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 22px;
   margin-bottom: 16px;
-  color: var(--dark-color);
+  color: white;
+  font-weight: 700;
 }
 
 .event-description p {
-  line-height: 1.6;
-  color: #666;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 15px;
   white-space: pre-wrap;
 }
 
+/* 메인 콘텐츠 영역 */
+.event-detail-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px;
+}
+
 .ticket-selection-section {
-  margin-bottom: 100px;
+  background: white;
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
 }
 
 .ticket-selection-section h2 {
-  font-size: 24px;
-  font-weight: 700;
-  margin-bottom: 20px;
-  color: var(--dark-color);
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 30px;
+  color: #2d3748;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ticket-selection-section h2::before {
+  content: '🎫';
+  font-size: 32px;
 }
 
 .ticket-types-list {
@@ -288,5 +411,55 @@
     padding: 14px 24px;
     font-size: 16px;
   }
+}
+
+/* Booking Action Section - 좌석 선택이 있는 경우 */
+.booking-action-section {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 48px 40px;
+  border-radius: var(--border-radius);
+  text-align: center;
+  margin-top: 40px;
+}
+
+.booking-info {
+  margin-bottom: 32px;
+}
+
+.booking-description {
+  font-size: 20px;
+  font-weight: 600;
+  color: white;
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+}
+
+.booking-note {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.btn-booking {
+  padding: 18px 60px !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  background: white !important;
+  color: #667eea !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  transition: all 0.3s ease !important;
+}
+
+.btn-booking:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
+}
+
+.btn-booking:disabled {
+  background: rgba(255, 255, 255, 0.5) !important;
+  color: rgba(102, 126, 234, 0.5) !important;
+  cursor: not-allowed;
 }
 

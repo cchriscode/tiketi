@@ -3,6 +3,14 @@ const { v4: uuidv4 } = require('uuid');
 const db = require('../config/database');
 const { acquireLock, releaseLock, client: redisClient } = require('../config/redis');
 const { authenticateToken } = require('../middleware/auth');
+const {
+  RESERVATION_STATUS,
+  PAYMENT_STATUS,
+  SEAT_STATUS,
+  LOCK_KEYS,
+  LOCK_SETTINGS,
+  CACHE_KEYS,
+} = require('../shared/constants');
 
 const router = express.Router();
 
@@ -38,8 +46,8 @@ router.post('/', authenticateToken, async (req, res) => {
         }
 
         // Acquire distributed lock for this ticket type
-        const lockKey = `ticket:${ticketTypeId}`;
-        const locked = await acquireLock(lockKey, 10000); // 10 second lock
+        const lockKey = LOCK_KEYS.TICKET(ticketTypeId);
+        const locked = await acquireLock(lockKey, LOCK_SETTINGS.TICKET_LOCK_TTL);
 
         if (!locked) {
           throw new Error('현재 많은 사용자가 예매 중입니다. 잠시 후 다시 시도해주세요.');
@@ -75,9 +83,9 @@ router.post('/', authenticateToken, async (req, res) => {
       // Create reservation
       const reservationResult = await client.query(
         `INSERT INTO reservations (user_id, event_id, reservation_number, total_amount, status, payment_status)
-         VALUES ($1, $2, $3, $4, 'pending', 'pending')
+         VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING id`,
-        [userId, eventId, reservationNumber, totalAmount]
+        [userId, eventId, reservationNumber, totalAmount, RESERVATION_STATUS.PENDING, PAYMENT_STATUS.PENDING]
       );
 
       const reservationId = reservationResult.rows[0].id;
@@ -108,10 +116,12 @@ router.post('/', authenticateToken, async (req, res) => {
         await releaseLock(lockKey);
       }
 
-      // Invalidate cache
-      await redisClient.del(`event:${eventId}`);
-      await redisClient.del(`events:all:1:10`);
-      await redisClient.del(`events:on_sale:1:10`);
+      // Invalidate cache (이벤트 상세 캐시 삭제 - 재고 변동 반영)
+      try {
+        await redisClient.del(CACHE_KEYS.EVENT(eventId));
+      } catch (cacheError) {
+        console.error('⚠️  캐시 삭제 중 에러:', cacheError.message);
+      }
 
       res.status(201).json({
         message: '예매가 완료되었습니다.',
@@ -154,8 +164,8 @@ router.get('/my', authenticateToken, async (req, res) => {
         e.title as event_title, e.venue, e.event_date,
         json_agg(
           json_build_object(
-            'ticketTypeName', tt.name,
-            'quantity', ri.quantity,
+            'ticketTypeName', COALESCE(tt.name, s.seat_label),
+            'quantity', COALESCE(ri.quantity, 1),
             'unitPrice', ri.unit_price,
             'subtotal', ri.subtotal
           )
@@ -163,7 +173,8 @@ router.get('/my', authenticateToken, async (req, res) => {
       FROM reservations r
       JOIN events e ON r.event_id = e.id
       JOIN reservation_items ri ON r.id = ri.reservation_id
-      JOIN ticket_types tt ON ri.ticket_type_id = tt.id
+      LEFT JOIN ticket_types tt ON ri.ticket_type_id = tt.id
+      LEFT JOIN seats s ON ri.seat_id = s.id
       WHERE r.user_id = $1
       GROUP BY r.id, e.id
       ORDER BY r.created_at DESC`,
@@ -190,16 +201,19 @@ router.get('/:id', authenticateToken, async (req, res) => {
         e.id as event_id, e.title as event_title, e.venue, e.event_date, e.address,
         json_agg(
           json_build_object(
-            'ticketTypeName', tt.name,
-            'quantity', ri.quantity,
+            'ticketTypeName', COALESCE(tt.name, s.seat_label),
+            'quantity', COALESCE(ri.quantity, 1),
             'unitPrice', ri.unit_price,
-            'subtotal', ri.subtotal
+            'subtotal', ri.subtotal,
+            'seatLabel', s.seat_label,
+            'section', s.section
           )
         ) as items
       FROM reservations r
       JOIN events e ON r.event_id = e.id
       JOIN reservation_items ri ON r.id = ri.reservation_id
-      JOIN ticket_types tt ON ri.ticket_type_id = tt.id
+      LEFT JOIN ticket_types tt ON ri.ticket_type_id = tt.id
+      LEFT JOIN seats s ON ri.seat_id = s.id
       WHERE r.id = $1 AND r.user_id = $2
       GROUP BY r.id, e.id`,
       [id, userId]
@@ -238,36 +252,51 @@ router.post('/:id/cancel', authenticateToken, async (req, res) => {
 
     const reservation = reservationResult.rows[0];
 
-    if (reservation.status === 'cancelled') {
+    if (reservation.status === RESERVATION_STATUS.CANCELLED) {
       throw new Error('이미 취소된 예매입니다.');
     }
 
     // Get reservation items
     const itemsResult = await client.query(
-      'SELECT ticket_type_id, quantity FROM reservation_items WHERE reservation_id = $1',
+      'SELECT ticket_type_id, quantity, seat_id FROM reservation_items WHERE reservation_id = $1',
       [id]
     );
 
-    // Restore ticket quantities
+    // Restore ticket quantities and seats
     for (const item of itemsResult.rows) {
-      await client.query(
-        'UPDATE ticket_types SET available_quantity = available_quantity + $1 WHERE id = $2',
-        [item.quantity, item.ticket_type_id]
-      );
+      // Restore ticket quantity if ticket-based
+      if (item.ticket_type_id) {
+        await client.query(
+          'UPDATE ticket_types SET available_quantity = available_quantity + $1 WHERE id = $2',
+          [item.quantity, item.ticket_type_id]
+        );
+      }
+      
+      // Restore seat status if seat-based
+      if (item.seat_id) {
+        await client.query(
+          `UPDATE seats SET status = $1, updated_at = NOW() WHERE id = $2`,
+          [SEAT_STATUS.AVAILABLE, item.seat_id]
+        );
+      }
     }
 
     // Update reservation status
     await client.query(
       `UPDATE reservations 
-       SET status = 'cancelled', payment_status = 'refunded' 
-       WHERE id = $1`,
-      [id]
+       SET status = $1, payment_status = $2
+       WHERE id = $3`,
+      [RESERVATION_STATUS.CANCELLED, PAYMENT_STATUS.REFUNDED, id]
     );
 
     await client.query('COMMIT');
 
-    // Invalidate cache
-    await redisClient.del(`event:${reservation.event_id}`);
+    // Invalidate cache (재고 변동 반영)
+    try {
+      await redisClient.del(CACHE_KEYS.EVENT(reservation.event_id));
+    } catch (cacheError) {
+      console.error('⚠️  캐시 삭제 중 에러:', cacheError.message);
+    }
 
     res.json({ message: '예매가 취소되었습니다.' });
 

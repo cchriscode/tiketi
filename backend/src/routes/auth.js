@@ -3,9 +3,9 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const db = require('../config/database');
+const { CONFIG } = require('../shared/constants');
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
 // 회원가입
 router.post('/register',
@@ -34,7 +34,7 @@ router.post('/register',
       }
 
       // Hash password
-      const passwordHash = await bcrypt.hash(password, 10);
+      const passwordHash = await bcrypt.hash(password, CONFIG.BCRYPT_SALT_ROUNDS);
 
       // Insert user
       const result = await db.query(
@@ -47,8 +47,8 @@ router.post('/register',
       // Generate JWT
       const token = jwt.sign(
         { userId: user.id, email: user.email, role: user.role },
-        JWT_SECRET,
-        { expiresIn: '7d' }
+        CONFIG.JWT_SECRET,
+        { expiresIn: CONFIG.JWT_EXPIRES_IN }
       );
 
       res.status(201).json({
@@ -104,8 +104,8 @@ router.post('/login',
       // Generate JWT
       const token = jwt.sign(
         { userId: user.id, email: user.email, role: user.role },
-        JWT_SECRET,
-        { expiresIn: '7d' }
+        CONFIG.JWT_SECRET,
+        { expiresIn: CONFIG.JWT_EXPIRES_IN }
       );
 
       res.json({

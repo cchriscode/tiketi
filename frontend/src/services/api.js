@@ -28,8 +28,19 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      // Clear local storage
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      
+      // Show user-friendly message
+      const errorCode = error.response?.data?.code;
+      if (errorCode === 'USER_NOT_FOUND') {
+        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+      } else {
+        alert('인증이 필요합니다. 로그인해주세요.');
+      }
+      
+      // Redirect to login
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -62,6 +73,17 @@ export const reservationsAPI = {
   cancel: (id) => api.post(`/reservations/${id}/cancel`),
 };
 
+// Seats APIs
+export const seatsAPI = {
+  getByEvent: (eventId) => api.get(`/seats/events/${eventId}`),
+  reserve: (data) => api.post('/seats/reserve', data),
+};
+
+// Payments APIs
+export const paymentsAPI = {
+  process: (data) => api.post('/payments/process', data),
+};
+
 // Admin APIs
 export const adminAPI = {
   getDashboardStats: () => api.get('/admin/dashboard/stats'),
@@ -70,6 +92,7 @@ export const adminAPI = {
   createEvent: (data) => api.post('/admin/events', data),
   updateEvent: (id, data) => api.put(`/admin/events/${id}`, data),
   deleteEvent: (id) => api.delete(`/admin/events/${id}`),
+  cancelEvent: (id) => api.post(`/admin/events/${id}/cancel`),
   
   // Tickets
   createTicket: (eventId, data) => api.post(`/admin/events/${eventId}/tickets`, data),

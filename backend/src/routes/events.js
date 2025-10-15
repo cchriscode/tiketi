@@ -1,17 +1,26 @@
 const express = require('express');
 const db = require('../config/database');
 const { client: redisClient } = require('../config/redis');
+const {
+  CACHE_KEYS,
+  CACHE_SETTINGS,
+  PAGINATION_DEFAULTS,
+} = require('../shared/constants');
 
 const router = express.Router();
 
 // 이벤트 목록 조회 (캐싱 적용)
 router.get('/', async (req, res) => {
   try {
-    const { status, page = 1, limit = 10 } = req.query;
+    const { 
+      status, 
+      page = PAGINATION_DEFAULTS.PAGE, 
+      limit = PAGINATION_DEFAULTS.EVENTS_LIMIT 
+    } = req.query;
     const offset = (page - 1) * limit;
 
     // Try cache first
-    const cacheKey = `events:${status || 'all'}:${page}:${limit}`;
+    const cacheKey = CACHE_KEYS.EVENTS_LIST(status, page, limit);
     const cached = await redisClient.get(cacheKey);
     
     if (cached) {
@@ -36,7 +45,8 @@ router.get('/', async (req, res) => {
       params.push(status);
     }
     
-    query += ' GROUP BY e.id ORDER BY e.event_date DESC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
+    // 티켓팅 오픈 시간(sale_start_date) 가까운 순으로 정렬 (ASC)
+    query += ' GROUP BY e.id ORDER BY e.sale_start_date ASC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
     params.push(parseInt(limit), offset);
 
     const result = await db.query(query, params);
@@ -61,8 +71,8 @@ router.get('/', async (req, res) => {
       }
     };
 
-    // Cache for 5 minutes
-    await redisClient.setEx(cacheKey, 300, JSON.stringify(response));
+    // Cache with TTL from constants
+    await redisClient.setEx(cacheKey, CACHE_SETTINGS.EVENTS_LIST_TTL, JSON.stringify(response));
 
     res.json(response);
   } catch (error) {
@@ -77,7 +87,7 @@ router.get('/:id', async (req, res) => {
     const { id } = req.params;
 
     // Try cache first
-    const cacheKey = `event:${id}`;
+    const cacheKey = CACHE_KEYS.EVENT(id);
     const cached = await redisClient.get(cacheKey);
     
     if (cached) {
@@ -109,8 +119,8 @@ router.get('/:id', async (req, res) => {
       ticketTypes: ticketTypesResult.rows,
     };
 
-    // Cache for 2 minutes
-    await redisClient.setEx(cacheKey, 120, JSON.stringify(response));
+    // Cache with TTL from constants
+    await redisClient.setEx(cacheKey, CACHE_SETTINGS.EVENT_DETAIL_TTL, JSON.stringify(response));
 
     res.json(response);
   } catch (error) {

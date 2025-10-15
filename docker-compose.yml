@@ -56,7 +56,6 @@ services:
       - /app/node_modules
     networks:
       - tiketi-network
-    command: npm run dev
 
   # Frontend
   frontend:

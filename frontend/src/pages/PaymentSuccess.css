@@ -1,0 +1,263 @@
+.payment-success-container {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+.success-content {
+  background: white;
+  padding: 50px 40px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+/* Success Icon */
+.success-icon {
+  margin: 0 auto 30px;
+  animation: scaleIn 0.5s ease-out;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.success-title {
+  margin: 0 0 10px 0;
+  font-size: 28px;
+  color: #333;
+  font-weight: bold;
+}
+
+.success-subtitle {
+  margin: 0 0 40px 0;
+  font-size: 16px;
+  color: #666;
+}
+
+/* Reservation Details */
+.reservation-details {
+  text-align: left;
+  border-top: 2px solid #f0f0f0;
+  padding-top: 30px;
+}
+
+.detail-section {
+  margin-bottom: 30px;
+  padding-bottom: 30px;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.detail-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.detail-section h3 {
+  margin: 0 0 15px 0;
+  font-size: 14px;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.reservation-number {
+  font-size: 24px;
+  font-weight: bold;
+  color: #2196F3;
+  margin: 0;
+  letter-spacing: 2px;
+}
+
+/* Event Details */
+.event-details p {
+  margin: 8px 0;
+  font-size: 16px;
+}
+
+.event-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.event-venue {
+  color: #666;
+}
+
+.event-date {
+  color: #666;
+  font-weight: 500;
+}
+
+/* Seats Grid */
+.seats-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.seat-badge {
+  padding: 10px 16px;
+  background: #E3F2FD;
+  color: #2196F3;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Payment Details */
+.payment-details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.payment-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.payment-row.total {
+  border-bottom: none;
+  border-top: 2px solid #333;
+  padding-top: 15px;
+  margin-top: 10px;
+}
+
+.payment-row .label {
+  font-size: 15px;
+  color: #666;
+}
+
+.payment-row .value {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+
+.payment-row.total .label {
+  font-size: 18px;
+  color: #333;
+}
+
+.payment-row.total .value {
+  font-size: 24px;
+  color: #2196F3;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 40px;
+  padding-top: 30px;
+  border-top: 2px solid #f0f0f0;
+}
+
+.action-buttons button {
+  flex: 1;
+  padding: 15px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-primary {
+  background: #2196F3;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #1976D2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(33,150,243,0.3);
+}
+
+.btn-secondary {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.btn-secondary:hover {
+  background: #e0e0e0;
+}
+
+/* Notice Box */
+.notice-box {
+  margin-top: 30px;
+  padding: 20px;
+  background: #F9FBE7;
+  border-left: 4px solid #AFB42B;
+  border-radius: 4px;
+  text-align: left;
+}
+
+.notice-box h4 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.notice-box p {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.notice-sub {
+  font-size: 12px !important;
+  color: #999 !important;
+}
+
+/* Loading & Error */
+.loading,
+.error-container {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.error-container button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .success-content {
+    padding: 30px 20px;
+  }
+
+  .success-title {
+    font-size: 24px;
+  }
+
+  .reservation-number {
+    font-size: 20px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+}
+

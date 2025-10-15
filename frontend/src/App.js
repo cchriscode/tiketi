@@ -12,6 +12,9 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import MyReservations from './pages/MyReservations';
 import ReservationDetail from './pages/ReservationDetail';
+import SeatSelection from './pages/SeatSelection';
+import Payment from './pages/Payment';
+import PaymentSuccess from './pages/PaymentSuccess';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/Dashboard';
@@ -59,6 +62,30 @@ function App() {
               element={
                 <PrivateRoute>
                   <ReservationDetail />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/events/:eventId/seats"
+              element={
+                <PrivateRoute>
+                  <SeatSelection />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/payment/:reservationId"
+              element={
+                <PrivateRoute>
+                  <Payment />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/payment-success/:reservationId"
+              element={
+                <PrivateRoute>
+                  <PaymentSuccess />
                 </PrivateRoute>
               }
             />

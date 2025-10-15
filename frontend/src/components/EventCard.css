@@ -1,0 +1,244 @@
+/* Event Card Styles */
+.event-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.event-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.event-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px);
+}
+
+/* 이미지 영역 */
+.event-card-image {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%; /* 16:9 비율 */
+  overflow: hidden;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.event-card-image img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.event-card-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4rem;
+}
+
+/* 상태 배지 */
+.event-card-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.badge-success {
+  background: rgba(76, 175, 80, 0.9);
+  color: white;
+}
+
+.badge-info {
+  background: rgba(33, 150, 243, 0.9);
+  color: white;
+}
+
+.badge-danger {
+  background: rgba(244, 67, 54, 0.9);
+  color: white;
+}
+
+.badge-secondary {
+  background: rgba(158, 158, 158, 0.9);
+  color: white;
+}
+
+/* 카운트다운 영역 */
+.event-card-countdown {
+  padding: 16px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.countdown {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.countdown-icon {
+  font-size: 1.2rem;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.countdown-label {
+  font-size: 13px;
+  color: #666;
+  margin-right: 4px;
+}
+
+.countdown-time {
+  font-size: 15px;
+  color: #333;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+}
+
+/* 예매 중 카운트다운 */
+.countdown.on-sale {
+  color: #2e7d32;
+}
+
+.countdown.on-sale .countdown-time {
+  color: #1b5e20;
+}
+
+/* 오픈 예정 카운트다운 */
+.countdown.upcoming {
+  color: #1565c0;
+}
+
+.countdown.upcoming .countdown-time {
+  color: #0d47a1;
+}
+
+/* 만료 */
+.countdown.expired {
+  color: #d32f2f;
+  justify-content: center;
+  font-size: 14px;
+}
+
+/* 콘텐츠 영역 */
+.event-card-content {
+  padding: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.event-card-title {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.event-card-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.event-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+}
+
+.info-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.info-text {
+  line-height: 1.5;
+}
+
+/* 하단 버튼 */
+.event-card-footer {
+  margin-top: auto;
+}
+
+.event-card-btn {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.event-card-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.event-card-btn:active {
+  transform: translateY(0);
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .event-card-title {
+    font-size: 16px;
+  }
+
+  .event-info-item {
+    font-size: 13px;
+  }
+
+  .countdown-time {
+    font-size: 14px;
+  }
+}
+

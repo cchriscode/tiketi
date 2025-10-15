@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { eventsAPI } from '../services/api';
-import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import EventCard from '../components/EventCard';
 import './Home.css';
 
 function Home() {
@@ -13,6 +11,7 @@ function Home() {
 
   useEffect(() => {
     fetchEvents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
   const fetchEvents = async () => {
@@ -21,6 +20,7 @@ function Home() {
       const params = filter ? { status: filter } : {};
       const response = await eventsAPI.getAll(params);
       setEvents(response.data.events);
+      setError(null);
     } catch (err) {
       setError('이벤트를 불러오는데 실패했습니다.');
       console.error(err);
@@ -29,25 +29,18 @@ function Home() {
     }
   };
 
-  const formatDate = (dateString) => {
-    return format(new Date(dateString), 'yyyy년 M월 d일 (eee) HH:mm', { locale: ko });
+  // 자동 새로고침용 (로딩 스피너 없이 조용히 업데이트)
+  const fetchEventsQuietly = async () => {
+    try {
+      const params = filter ? { status: filter } : {};
+      const response = await eventsAPI.getAll(params);
+      setEvents(response.data.events);
+      console.log('🔄 이벤트 목록 자동 새로고침 완료');
+    } catch (err) {
+      console.error('자동 새로고침 실패:', err);
+    }
   };
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('ko-KR').format(price);
-  };
-
-  const getStatusBadge = (status) => {
-    const badges = {
-      upcoming: { text: '오픈 예정', class: 'badge-info' },
-      on_sale: { text: '예매 중', class: 'badge-success' },
-      sold_out: { text: '매진', class: 'badge-danger' },
-      ended: { text: '종료', class: 'badge-secondary' },
-      cancelled: { text: '취소', class: 'badge-danger' },
-    };
-    const badge = badges[status] || badges.upcoming;
-    return <span className={`badge ${badge.class}`}>{badge.text}</span>;
-  };
 
   return (
     <div className="home-page">
@@ -73,6 +66,18 @@ function Home() {
             오픈 예정
           </button>
           <button
+            className={`filter-btn ${filter === 'ended' ? 'active' : ''}`}
+            onClick={() => setFilter('ended')}
+          >
+            예매 종료
+          </button>
+          <button
+            className={`filter-btn ${filter === 'cancelled' ? 'active' : ''}`}
+            onClick={() => setFilter('cancelled')}
+          >
+            취소됨
+          </button>
+          <button
             className={`filter-btn ${filter === '' ? 'active' : ''}`}
             onClick={() => setFilter('')}
           >
@@ -91,47 +96,11 @@ function Home() {
         ) : (
           <div className="events-grid">
             {events.map((event) => (
-              <Link
-                to={`/events/${event.id}`}
-                key={event.id}
-                className="event-card"
-              >
-                <div className="event-image">
-                  {event.poster_image_url ? (
-                    <img src={event.poster_image_url} alt={event.title} />
-                  ) : (
-                    <div className="event-image-placeholder">
-                      <span>🎭</span>
-                    </div>
-                  )}
-                  <div className="event-status">
-                    {getStatusBadge(event.status)}
-                  </div>
-                </div>
-
-                <div className="event-content">
-                  <h3 className="event-title">{event.title}</h3>
-                  <div className="event-info">
-                    <div className="event-info-item">
-                      <span className="icon">📍</span>
-                      <span>{event.venue}</span>
-                    </div>
-                    <div className="event-info-item">
-                      <span className="icon">📅</span>
-                      <span>{formatDate(event.event_date)}</span>
-                    </div>
-                    {event.min_price && (
-                      <div className="event-price">
-                        {event.min_price === event.max_price ? (
-                          <span>₩{formatPrice(event.min_price)}</span>
-                        ) : (
-                          <span>₩{formatPrice(event.min_price)} ~ ₩{formatPrice(event.max_price)}</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </Link>
+              <EventCard 
+                key={event.id} 
+                event={event} 
+                onCountdownExpire={() => fetchEventsQuietly()}
+              />
             ))}
           </div>
         )}
