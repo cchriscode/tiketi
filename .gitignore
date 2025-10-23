@@ -49,3 +49,6 @@ backend/dist/
 .cache
 .temp
 
+# Credentials
+credentials.txt
+*.key
