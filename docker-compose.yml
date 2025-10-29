@@ -22,7 +22,7 @@ services:
     image: docker.dragonflydb.io/dragonflydb/dragonfly:latest
     container_name: tiketi-dragonfly
     ports:
-      - "6379:6379"
+      - "7379:6379"  # Windows 예약 포트 회피
     ulimits:
       memlock: -1
     volumes:

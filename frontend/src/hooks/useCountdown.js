@@ -3,7 +3,7 @@
  * 실시간 카운트다운을 위한 커스텀 훅
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 /**
  * 두 날짜 사이의 시간 차이를 계산
@@ -55,11 +55,26 @@ const calculateTimeLeft = (targetDate) => {
 export const useCountdown = (targetDate, onExpire) => {
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(targetDate));
   const [hasExpired, setHasExpired] = useState(false);
+  const onExpireRef = useRef(onExpire);
+
+  // onExpire 함수를 ref로 업데이트 (useEffect 재실행 방지)
+  useEffect(() => {
+    onExpireRef.current = onExpire;
+  }, [onExpire]);
 
   useEffect(() => {
     // 초기 계산
     const initial = calculateTimeLeft(targetDate);
     setTimeLeft(initial);
+
+    // 이미 만료된 상태면 타이머 설정 안함 (무한 루프 방지)
+    if (initial.isExpired) {
+      if (!hasExpired) {
+        setHasExpired(true);
+      }
+      return;
+    }
+
     setHasExpired(false);
 
     // 1초마다 업데이트
@@ -68,21 +83,21 @@ export const useCountdown = (targetDate, onExpire) => {
       setTimeLeft(newTimeLeft);
 
       // 시간이 만료되면 콜백 실행 (한 번만)
-      if (newTimeLeft.isExpired && !hasExpired) {
+      if (newTimeLeft.isExpired) {
         setHasExpired(true);
         clearInterval(timer);
-        
-        if (onExpire && typeof onExpire === 'function') {
+
+        if (onExpireRef.current && typeof onExpireRef.current === 'function') {
           // 즉시 콜백 실행 (백엔드 스마트 타이머가 동시에 업데이트)
           console.log('⏰ 카운트다운 종료 - 자동 새로고침');
-          onExpire();
+          onExpireRef.current();
         }
       }
     }, 1000);
 
     // Cleanup
     return () => clearInterval(timer);
-  }, [targetDate, onExpire, hasExpired]);
+  }, [targetDate, hasExpired]);
 
   return timeLeft;
 };

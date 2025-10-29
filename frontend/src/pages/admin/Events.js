@@ -17,8 +17,15 @@ function Events() {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const response = await eventsAPI.getAll({});
-      setEvents(response.data.events);
+      // 관리자 페이지: 모든 이벤트를 limit 없이 가져오기
+      const response = await eventsAPI.getAll({ limit: 1000 });
+
+      // 클라이언트에서 최신순 정렬 (예매 시작일 기준 내림차순)
+      const sortedEvents = response.data.events.sort((a, b) => {
+        return new Date(b.sale_start_date) - new Date(a.sale_start_date);
+      });
+
+      setEvents(sortedEvents);
     } catch (err) {
       setError('이벤트 목록을 불러오는데 실패했습니다.');
       console.error(err);

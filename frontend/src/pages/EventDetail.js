@@ -42,15 +42,22 @@ function EventDetail() {
     fetchEventDetail();
   }, [fetchEventDetail]);
 
+  // 현재 시간 체크 (이미 만료된 카운트다운에는 콜백을 설정하지 않음)
+  const now = new Date();
+  const isSaleStartExpired = event && new Date(event.sale_start_date) <= now;
+  const isSaleEndExpired = event && new Date(event.sale_end_date) <= now;
+
   // 카운트다운 훅 (event 로드 후에만 사용)
   const saleStartCountdown = useCountdown(
     event?.sale_start_date || new Date(),
-    event?.status === EVENT_STATUS.UPCOMING ? handleCountdownExpire : null
+    // 상태가 UPCOMING이고 아직 만료되지 않았을 때만 콜백 설정
+    (event?.status === EVENT_STATUS.UPCOMING && !isSaleStartExpired) ? handleCountdownExpire : null
   );
-  
+
   const saleEndCountdown = useCountdown(
     event?.sale_end_date || new Date(),
-    event?.status === EVENT_STATUS.ON_SALE ? handleCountdownExpire : null
+    // 상태가 ON_SALE이고 아직 만료되지 않았을 때만 콜백 설정
+    (event?.status === EVENT_STATUS.ON_SALE && !isSaleEndExpired) ? handleCountdownExpire : null
   );
 
   const handleQuantityChange = (ticketTypeId, quantity) => {

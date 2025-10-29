@@ -111,14 +111,33 @@ router.post('/events', async (req, res) => {
 
     await client.query('BEGIN');
 
+    // 현재 시간 기준으로 초기 상태 계산
+    const now = new Date();
+    const saleStart = new Date(saleStartDate);
+    const saleEnd = new Date(saleEndDate);
+
+    let initialStatus;
+    if (now < saleStart) {
+      initialStatus = EVENT_STATUS.UPCOMING;
+    } else if (now >= saleStart && now < saleEnd) {
+      initialStatus = EVENT_STATUS.ON_SALE;
+    } else {
+      initialStatus = EVENT_STATUS.ENDED;
+    }
+
+    console.log(`🆕 새 이벤트 생성 - 초기 상태: ${initialStatus}`);
+    console.log(`  현재 시간: ${now.toISOString()}`);
+    console.log(`  예매 시작: ${saleStart.toISOString()}`);
+    console.log(`  예매 종료: ${saleEnd.toISOString()}`);
+
     const result = await client.query(
-      `INSERT INTO events 
-       (title, description, venue, address, event_date, sale_start_date, sale_end_date, 
+      `INSERT INTO events
+       (title, description, venue, address, event_date, sale_start_date, sale_end_date,
         poster_image_url, artist_name, seat_layout_id, created_by, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING *`,
-      [title, description, venue, address, eventDate, saleStartDate, saleEndDate, 
-       posterImageUrl, artistName, seatLayoutId || null, req.user.userId, EVENT_STATUS.UPCOMING]
+      [title, description, venue, address, eventDate, saleStartDate, saleEndDate,
+       posterImageUrl, artistName, seatLayoutId || null, req.user.userId, initialStatus]
     );
 
     const event = result.rows[0];

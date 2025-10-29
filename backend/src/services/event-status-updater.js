@@ -110,9 +110,9 @@ class EventStatusUpdater {
 
       // 1. upcoming → on_sale (판매 시작 시간이 되면)
       const upcomingToOnSale = await db.query(
-        `UPDATE events 
+        `UPDATE events
          SET status = 'on_sale', updated_at = NOW()
-         WHERE status = 'upcoming' 
+         WHERE status = 'upcoming'
          AND sale_start_date <= $1
          AND sale_end_date > $1
          RETURNING id, title`,
@@ -127,22 +127,24 @@ class EventStatusUpdater {
         updatedCount += upcomingToOnSale.rows.length;
       }
 
-      // 2. on_sale → ended (판매 종료 시간이 지나면)
-      const onSaleToEnded = await db.query(
-        `UPDATE events 
+      // 2. upcoming/on_sale → ended (판매 종료 시간이 지나면)
+      // upcoming 상태에서도 바로 ended로 갈 수 있도록 수정
+      const toEnded = await db.query(
+        `UPDATE events
          SET status = 'ended', updated_at = NOW()
-         WHERE status = 'on_sale' 
+         WHERE status IN ('upcoming', 'on_sale')
          AND sale_end_date <= $1
+         AND status != 'cancelled'
          RETURNING id, title`,
         [now]
       );
 
-      if (onSaleToEnded.rows.length > 0) {
-        onSaleToEnded.rows.forEach(event => {
+      if (toEnded.rows.length > 0) {
+        toEnded.rows.forEach(event => {
           console.log(`  ⏰ 판매 종료: ${event.title}`);
           updatedEventIds.add(event.id);
         });
-        updatedCount += onSaleToEnded.rows.length;
+        updatedCount += toEnded.rows.length;
       }
 
       // 3. ended → ended (공연이 끝나면) - 이미 ended이지만 로그만 남김
