@@ -10,8 +10,17 @@ const { RESERVATION_STATUS, SEAT_STATUS, PAYMENT_STATUS, RESERVATION_SETTINGS } 
 class ReservationCleaner {
   constructor() {
     this.cleanupInterval = null;
+    this.io = null; // Socket.IO instance
   }
-  
+
+  /**
+   * Set Socket.IO instance for real-time updates
+   */
+  setIO(io) {
+    this.io = io;
+    console.log('🔌 Socket.IO connected to ReservationCleaner');
+  }
+
   /**
    * Start automatic cleanup process
    */
@@ -87,13 +96,29 @@ class ReservationCleaner {
         // Release seats back to available
         if (seatsResult.rows.length > 0) {
           const seatIds = seatsResult.rows.map(row => row.seat_id);
-          
+
           await client.query(
-            `UPDATE seats 
+            `UPDATE seats
              SET status = $1, updated_at = NOW()
              WHERE id = ANY($2) AND status = $3`,
             [SEAT_STATUS.AVAILABLE, seatIds, SEAT_STATUS.LOCKED]
           );
+
+          // 실시간 좌석 해제 알림 (WebSocket)
+          if (this.io) {
+            try {
+              for (const seatId of seatIds) {
+                this.io.to(`seats:${reservation.event_id}`).emit('seat-released', {
+                  seatId,
+                  status: SEAT_STATUS.AVAILABLE,
+                  timestamp: new Date(),
+                });
+              }
+              console.log(`🪑 Seats released: ${seatIds.join(', ')} (event: ${reservation.event_id})`);
+            } catch (socketError) {
+              console.error('⚠️  WebSocket broadcast error:', socketError.message);
+            }
+          }
         }
         
         // Update reservation status to cancelled (expired reservations are marked as cancelled)

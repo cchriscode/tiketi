@@ -1,14 +1,17 @@
 const express = require('express');
+const http = require('http');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const { initializeAdmin } = require('./config/init-admin');
 const initSeats = require('./config/init-seats');
 const reservationCleaner = require('./services/reservation-cleaner');
 const eventStatusUpdater = require('./services/event-status-updater');
+const { initializeSocketIO } = require('./config/socket');
 
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app);
 const PORT = process.env.PORT || 3001;
 
 // Middleware
@@ -24,6 +27,7 @@ app.use('/api/reservations', require('./routes/reservations'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/seats', require('./routes/seats'));
 app.use('/api/payments', require('./routes/payments'));
+app.use('/api/queue', require('./routes/queue'));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -41,27 +45,37 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, async () => {
+// Initialize Socket.IO with Redis Adapter (AWS multi-instance ready)
+const io = initializeSocketIO(server);
+
+// Make io available to routes via app.locals
+app.locals.io = io;
+
+server.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📡 Health check: http://localhost:${PORT}/health`);
-  
+  console.log(`🔌 WebSocket ready on port ${PORT}`);
+
   // Initialize admin account (with retry on database connection failure)
   try {
     await initializeAdmin();
   } catch (error) {
     console.error('⚠️  Admin initialization will retry on database connection');
   }
-  
+
   // Initialize seats for events with seat layouts (with retry on database connection failure)
   try {
     await initSeats();
   } catch (error) {
     console.error('⚠️  Seat initialization will retry on database connection');
   }
-  
+
+  // Set Socket.IO for reservation cleaner (real-time seat release)
+  reservationCleaner.setIO(io);
+
   // Start reservation cleaner
   reservationCleaner.start();
-  
+
   // Start event status updater
   eventStatusUpdater.start();
 });

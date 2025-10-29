@@ -4,6 +4,9 @@ import { eventsAPI, reservationsAPI } from '../services/api';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useCountdown } from '../hooks/useCountdown';
+import { useTicketUpdates } from '../hooks/useSocket';
+import WaitingRoomModal from '../components/WaitingRoomModal';
+import api from '../services/api';
 import { EVENT_STATUS, EVENT_STATUS_MESSAGES } from '../shared/constants';
 import './EventDetail.css';
 
@@ -17,6 +20,7 @@ function EventDetail() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [showQueueModal, setShowQueueModal] = useState(false);
 
   const fetchEventDetail = useCallback(async () => {
     try {
@@ -34,7 +38,60 @@ function EventDetail() {
 
   useEffect(() => {
     fetchEventDetail();
+    checkQueueStatus(); // 대기열 상태 확인
   }, [fetchEventDetail]);
+
+  // 대기열 상태 확인
+  const checkQueueStatus = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return; // 로그인 안 한 경우 체크하지 않음
+
+    try {
+      const response = await api.post(`/api/queue/check/${id}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const data = response.data;
+
+      // 대기열에 있으면 모달 표시
+      if (data.queued) {
+        setShowQueueModal(true);
+      }
+    } catch (err) {
+      console.error('Queue check error:', err);
+      // 에러 발생 시 대기열 없는 것으로 처리 (정상 진행)
+    }
+  };
+
+  // 대기열 입장 허용 시
+  const handleQueueEntryAllowed = () => {
+    setShowQueueModal(false);
+    fetchEventDetail(); // 최신 데이터 다시 로드
+  };
+
+  // 대기열 닫기
+  const handleQueueClose = () => {
+    setShowQueueModal(false);
+    navigate('/'); // 홈으로 이동
+  };
+
+  // 실시간 티켓 재고 업데이트
+  const handleTicketUpdate = useCallback((data) => {
+    const { ticketTypeId, availableQuantity } = data;
+
+    setTicketTypes((prevTickets) =>
+      prevTickets.map((ticket) =>
+        ticket.id === ticketTypeId
+          ? { ...ticket, available_quantity: availableQuantity }
+          : ticket
+      )
+    );
+
+    console.log(`✅ Ticket ${ticketTypeId} updated: ${availableQuantity} remaining`);
+  }, []);
+
+  // WebSocket 연결 및 실시간 업데이트 구독
+  const { isConnected } = useTicketUpdates(id, handleTicketUpdate);
 
   // 카운트다운이 종료되면 자동으로 이벤트 정보 새로고침
   const handleCountdownExpire = useCallback(() => {
@@ -385,6 +442,15 @@ function EventDetail() {
           </>
         )}
       </div>
+
+      {/* 대기열 모달 */}
+      {showQueueModal && (
+        <WaitingRoomModal
+          eventId={id}
+          onEntryAllowed={handleQueueEntryAllowed}
+          onClose={handleQueueClose}
+        />
+      )}
     </div>
   );
 }

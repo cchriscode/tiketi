@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const db = require('../config/database');
 const { acquireLock, releaseLock, client: redisClient } = require('../config/redis');
 const { authenticateToken } = require('../middleware/auth');
+const { emitToEvent } = require('../config/socket');
 const {
   RESERVATION_STATUS,
   PAYMENT_STATUS,
@@ -121,6 +122,34 @@ router.post('/', authenticateToken, async (req, res) => {
         await redisClient.del(CACHE_KEYS.EVENT(eventId));
       } catch (cacheError) {
         console.error('⚠️  캐시 삭제 중 에러:', cacheError.message);
+      }
+
+      // 실시간 티켓 재고 업데이트 브로드캐스트
+      try {
+        const io = req.app.locals.io;
+        if (io) {
+          // 변경된 티켓 타입들의 최신 재고 정보 조회
+          for (const item of items) {
+            const ticketResult = await db.query(
+              'SELECT id, available_quantity, total_quantity FROM ticket_types WHERE id = $1',
+              [item.ticketTypeId]
+            );
+
+            if (ticketResult.rows.length > 0) {
+              const ticket = ticketResult.rows[0];
+
+              // 해당 이벤트를 보고 있는 모든 사용자에게 실시간 알림
+              emitToEvent(io, eventId, 'ticket-updated', {
+                ticketTypeId: ticket.id,
+                availableQuantity: ticket.available_quantity,
+                totalQuantity: ticket.total_quantity,
+                timestamp: new Date(),
+              });
+            }
+          }
+        }
+      } catch (socketError) {
+        console.error('⚠️  WebSocket 브로드캐스트 에러:', socketError.message);
       }
 
       res.status(201).json({
@@ -296,6 +325,34 @@ router.post('/:id/cancel', authenticateToken, async (req, res) => {
       await redisClient.del(CACHE_KEYS.EVENT(reservation.event_id));
     } catch (cacheError) {
       console.error('⚠️  캐시 삭제 중 에러:', cacheError.message);
+    }
+
+    // 실시간 티켓 재고 업데이트 브로드캐스트 (취소로 인한 재고 증가)
+    try {
+      const io = req.app.locals.io;
+      if (io) {
+        for (const item of itemsResult.rows) {
+          if (item.ticket_type_id) {
+            const ticketResult = await db.query(
+              'SELECT id, available_quantity, total_quantity FROM ticket_types WHERE id = $1',
+              [item.ticket_type_id]
+            );
+
+            if (ticketResult.rows.length > 0) {
+              const ticket = ticketResult.rows[0];
+
+              emitToEvent(io, reservation.event_id, 'ticket-updated', {
+                ticketTypeId: ticket.id,
+                availableQuantity: ticket.available_quantity,
+                totalQuantity: ticket.total_quantity,
+                timestamp: new Date(),
+              });
+            }
+          }
+        }
+      }
+    } catch (socketError) {
+      console.error('⚠️  WebSocket 브로드캐스트 에러:', socketError.message);
     }
 
     res.json({ message: '예매가 취소되었습니다.' });

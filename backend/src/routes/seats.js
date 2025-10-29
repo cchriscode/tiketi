@@ -7,6 +7,7 @@ const express = require('express');
 const db = require('../config/database');
 const { acquireLock, releaseLock, client: redisClient } = require('../config/redis');
 const { authenticateToken } = require('../middleware/auth');
+const { emitToSeats } = require('../config/socket');
 const {
   SEAT_STATUS,
   RESERVATION_STATUS,
@@ -214,7 +215,27 @@ router.post('/reserve', authenticateToken, async (req, res) => {
     } catch (cacheError) {
       console.error('⚠️  캐시 삭제 중 에러:', cacheError.message);
     }
-    
+
+    // 실시간 좌석 상태 업데이트 브로드캐스트
+    try {
+      const io = req.app.locals.io;
+      if (io) {
+        // 선택된 좌석들을 다른 사용자들에게 실시간 알림
+        for (const seatId of seatIds) {
+          emitToSeats(io, eventId, 'seat-locked', {
+            seatId,
+            userId,
+            status: SEAT_STATUS.LOCKED,
+            timestamp: new Date(),
+          });
+        }
+
+        console.log(`🪑 Seats locked: ${seatIds.join(', ')} by user ${userId}`);
+      }
+    } catch (socketError) {
+      console.error('⚠️  WebSocket 브로드캐스트 에러:', socketError.message);
+    }
+
     res.status(201).json({
       message: SUCCESS_MESSAGES.SEAT_RESERVED,
       reservation: {

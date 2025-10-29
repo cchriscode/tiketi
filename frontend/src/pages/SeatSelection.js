@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { useSeatUpdates } from '../hooks/useSocket';
 import {
   SEAT_STATUS,
   SEAT_STATUS_DISPLAY,
@@ -22,6 +23,27 @@ function SeatSelection() {
   const [loading, setLoading] = useState(true);
   const [reserving, setReserving] = useState(false);
   const [error, setError] = useState(null);
+
+  // 실시간 좌석 상태 업데이트 콜백
+  const handleSeatUpdate = useCallback((data) => {
+    const { seatId, status } = data;
+
+    setSeats((prevSeats) =>
+      prevSeats.map((seat) =>
+        seat.id === seatId ? { ...seat, status } : seat
+      )
+    );
+
+    // 선택한 좌석이 다른 사람에게 예약되면 선택 해제
+    if (status === SEAT_STATUS.LOCKED || status === SEAT_STATUS.RESERVED) {
+      setSelectedSeats((prev) => prev.filter((s) => s.id !== seatId));
+    }
+
+    console.log(`🪑 Seat ${seatId} updated: ${status}`);
+  }, []);
+
+  // WebSocket 연결 및 실시간 업데이트 구독
+  const { isConnected } = useSeatUpdates(eventId, handleSeatUpdate);
 
   useEffect(() => {
     fetchSeats();
