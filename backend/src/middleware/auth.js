@@ -48,6 +48,7 @@ const requireAdmin = (req, res, next) => {
 
 module.exports = {
   authenticateToken,
+  authenticate: authenticateToken, // Alias for backward compatibility
   requireAdmin,
 };
 
