@@ -9,6 +9,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TZ: Asia/Seoul
+      PGTZ: Asia/Seoul
     ports:
       - "5432:5432"
     volumes:
@@ -49,6 +51,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      TZ: Asia/Seoul
     ports:
       - "3001:3001"
     depends_on:
@@ -68,6 +71,7 @@ services:
     container_name: tiketi-frontend
     environment:
       REACT_APP_API_URL: ${REACT_APP_API_URL}
+      TZ: Asia/Seoul
     ports:
       - "3000:3000"
     depends_on:

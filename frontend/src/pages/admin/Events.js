@@ -9,6 +9,7 @@ function Events() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('all'); // 상태 필터
 
   useEffect(() => {
     fetchEvents();
@@ -32,6 +33,17 @@ function Events() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // 상태별 필터링된 이벤트 목록
+  const filteredEvents = statusFilter === 'all'
+    ? events
+    : events.filter(event => event.status === statusFilter);
+
+  // 상태별 카운트
+  const getStatusCount = (status) => {
+    if (status === 'all') return events.length;
+    return events.filter(event => event.status === status).length;
   };
 
   const handleDelete = async (eventId) => {
@@ -71,18 +83,60 @@ function Events() {
           </Link>
         </div>
 
+        {/* 상태 필터 네비게이션 */}
+        <div className="status-filter-nav">
+          <button
+            className={`filter-tab ${statusFilter === 'all' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('all')}
+          >
+            전체 <span className="count">({getStatusCount('all')})</span>
+          </button>
+          <button
+            className={`filter-tab ${statusFilter === 'on_sale' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('on_sale')}
+          >
+            예매 중 <span className="count">({getStatusCount('on_sale')})</span>
+          </button>
+          <button
+            className={`filter-tab ${statusFilter === 'upcoming' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('upcoming')}
+          >
+            오픈 예정 <span className="count">({getStatusCount('upcoming')})</span>
+          </button>
+          <button
+            className={`filter-tab ${statusFilter === 'ended' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('ended')}
+          >
+            종료 <span className="count">({getStatusCount('ended')})</span>
+          </button>
+          <button
+            className={`filter-tab ${statusFilter === 'sold_out' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('sold_out')}
+          >
+            매진 <span className="count">({getStatusCount('sold_out')})</span>
+          </button>
+          <button
+            className={`filter-tab ${statusFilter === 'cancelled' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('cancelled')}
+          >
+            취소 <span className="count">({getStatusCount('cancelled')})</span>
+          </button>
+        </div>
+
         {error && <div className="alert alert-error">{error}</div>}
 
-        {events.length === 0 ? (
+        {filteredEvents.length === 0 ? (
           <div className="empty-state">
-            <p>등록된 이벤트가 없습니다.</p>
-            <Link to="/admin/events/new" className="btn btn-primary">
-              첫 이벤트 만들기
-            </Link>
+            <p>{statusFilter === 'all' ? '등록된 이벤트가 없습니다.' : '해당 상태의 이벤트가 없습니다.'}</p>
+            {statusFilter === 'all' && (
+              <Link to="/admin/events/new" className="btn btn-primary">
+                첫 이벤트 만들기
+              </Link>
+            )}
           </div>
         ) : (
           <div className="events-grid">
-            {events.map((event) => (
+            {filteredEvents.map((event) => (
               <div key={event.id} className="event-card">
                 <div className="event-card-header">
                   <h3 className="event-card-title">{event.title}</h3>

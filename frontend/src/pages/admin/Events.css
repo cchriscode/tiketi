@@ -19,6 +19,74 @@
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
+/* 상태 필터 네비게이션 */
+.status-filter-nav {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 32px;
+  padding: 0 20px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.status-filter-nav::-webkit-scrollbar {
+  height: 6px;
+}
+
+.status-filter-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.status-filter-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.filter-tab {
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filter-tab:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+.filter-tab.active {
+  background: white;
+  color: #667eea;
+  border-color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.filter-tab .count {
+  display: inline-block;
+  padding: 2px 8px;
+  background: rgba(102, 126, 234, 0.15);
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.filter-tab.active .count {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+}
+
 /* 이벤트 카드 그리드 */
 .events-grid {
   display: grid;
@@ -212,6 +280,20 @@
     font-size: 24px;
   }
 
+  .status-filter-nav {
+    gap: 8px;
+    padding-bottom: 8px;
+  }
+
+  .filter-tab {
+    padding: 10px 18px;
+    font-size: 13px;
+  }
+
+  .filter-tab .count {
+    font-size: 11px;
+  }
+
   .events-grid {
     grid-template-columns: 1fr;
   }
@@ -228,6 +310,20 @@
 @media (max-width: 480px) {
   .admin-events-page {
     padding: 20px 0;
+  }
+
+  .status-filter-nav {
+    gap: 6px;
+  }
+
+  .filter-tab {
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+
+  .filter-tab .count {
+    padding: 1px 6px;
+    font-size: 10px;
   }
 
   .event-card {
