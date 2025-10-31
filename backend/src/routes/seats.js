@@ -19,6 +19,7 @@ const {
   SUCCESS_MESSAGES,
   RESERVATION_SETTINGS,
 } = require('../shared/constants');
+const { invalidateCachePatterns, withTransactionAndLock } = require('../utils/transaction-helpers');
 
 const router = express.Router();
 
@@ -99,122 +100,114 @@ router.get('/events/:eventId', async (req, res) => {
  * Reserve seats (temporary reservation with 5 min expiry)
  */
 router.post('/reserve', authenticateToken, async (req, res) => {
-  const client = await db.getClient();
-  const locksAcquired = [];
-  
   try {
     const { eventId, seatIds } = req.body;
     const userId = req.user.userId;
-    
+
     // Validation
     if (!seatIds || !Array.isArray(seatIds) || seatIds.length === 0) {
       return res.status(400).json({ error: 'Please select at least one seat' });
     }
-    
+
     if (seatIds.length > RESERVATION_SETTINGS.MAX_SEATS_PER_RESERVATION) {
-      return res.status(400).json({ 
-        error: `최대 ${RESERVATION_SETTINGS.MAX_SEATS_PER_RESERVATION}석까지 선택 가능합니다.` 
+      return res.status(400).json({
+        error: `최대 ${RESERVATION_SETTINGS.MAX_SEATS_PER_RESERVATION}석까지 선택 가능합니다.`
       });
     }
-    
-    await client.query('BEGIN');
-    
-    // Acquire locks for all seats
-    for (const seatId of seatIds) {
-      const lockKey = LOCK_KEYS.SEAT(eventId, seatId);
-      const locked = await acquireLock(lockKey, LOCK_SETTINGS.SEAT_LOCK_TTL);
-      
-      if (!locked) {
-        throw new Error(ERROR_MESSAGES.SEAT_LOCKED);
+
+    // Generate all lock keys upfront
+    const lockKeys = seatIds.map(seatId => LOCK_KEYS.SEAT(eventId, seatId));
+
+    // Use withTransactionAndLock to handle transaction + distributed locks
+    const result = await withTransactionAndLock(
+      lockKeys,
+      LOCK_SETTINGS.SEAT_LOCK_TTL,
+      async (client) => {
+        // Check all seats are available
+        const seatsResult = await client.query(
+          `SELECT id, seat_label, price, status
+           FROM seats
+           WHERE id = ANY($1) AND event_id = $2
+           FOR UPDATE`,
+          [seatIds, eventId]
+        );
+
+        if (seatsResult.rows.length !== seatIds.length) {
+          throw new Error(ERROR_MESSAGES.SEAT_NOT_FOUND);
+        }
+
+        // Check if any seat is not available
+        const unavailableSeats = seatsResult.rows.filter(
+          seat => seat.status !== SEAT_STATUS.AVAILABLE
+        );
+
+        if (unavailableSeats.length > 0) {
+          const labels = unavailableSeats.map(s => s.seat_label).join(', ');
+          throw new Error(`${ERROR_MESSAGES.SEAT_ALREADY_RESERVED} (${labels})`);
+        }
+
+        // Calculate total amount
+        const totalAmount = seatsResult.rows.reduce((sum, seat) => sum + seat.price, 0);
+
+        // Set seats to locked status
+        await client.query(
+          `UPDATE seats
+           SET status = $1, updated_at = NOW()
+           WHERE id = ANY($2)`,
+          [SEAT_STATUS.LOCKED, seatIds]
+        );
+
+        // Calculate expiry time (5 minutes from now)
+        const expiresAt = new Date(Date.now() + RESERVATION_SETTINGS.TEMPORARY_RESERVATION_MINUTES * 60 * 1000);
+
+        // Generate reservation number
+        const reservationNumber = `TK${Date.now()}${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+
+        // Create reservation
+        const reservationResult = await client.query(
+          `INSERT INTO reservations (
+            user_id, event_id, reservation_number, total_amount,
+            status, payment_status, expires_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+          RETURNING id`,
+          [
+            userId,
+            eventId,
+            reservationNumber,
+            totalAmount,
+            RESERVATION_STATUS.PENDING,
+            PAYMENT_STATUS.PENDING,
+            expiresAt,
+          ]
+        );
+
+        const reservationId = reservationResult.rows[0].id;
+
+        // Create reservation items
+        for (const seat of seatsResult.rows) {
+          await client.query(
+            `INSERT INTO reservation_items (
+              reservation_id, ticket_type_id, quantity, unit_price, subtotal, seat_id
+            ) VALUES ($1, NULL, 1, $2, $2, $3)`,
+            [reservationId, seat.price, seat.id]
+          );
+        }
+
+        return {
+          reservationId,
+          reservationNumber,
+          totalAmount,
+          expiresAt,
+          seats: seatsResult.rows,
+        };
       }
-      
-      locksAcquired.push(lockKey);
-    }
-    
-    // Check all seats are available
-    const seatsResult = await client.query(
-      `SELECT id, seat_label, price, status
-       FROM seats
-       WHERE id = ANY($1) AND event_id = $2
-       FOR UPDATE`,
-      [seatIds, eventId]
     );
-    
-    if (seatsResult.rows.length !== seatIds.length) {
-      throw new Error(ERROR_MESSAGES.SEAT_NOT_FOUND);
-    }
-    
-    // Check if any seat is not available
-    const unavailableSeats = seatsResult.rows.filter(
-      seat => seat.status !== SEAT_STATUS.AVAILABLE
-    );
-    
-    if (unavailableSeats.length > 0) {
-      const labels = unavailableSeats.map(s => s.seat_label).join(', ');
-      throw new Error(`${ERROR_MESSAGES.SEAT_ALREADY_RESERVED} (${labels})`);
-    }
-    
-    // Calculate total amount
-    const totalAmount = seatsResult.rows.reduce((sum, seat) => sum + seat.price, 0);
-    
-    // Set seats to locked status
-    await client.query(
-      `UPDATE seats
-       SET status = $1, updated_at = NOW()
-       WHERE id = ANY($2)`,
-      [SEAT_STATUS.LOCKED, seatIds]
-    );
-    
-    // Calculate expiry time (5 minutes from now)
-    const expiresAt = new Date(Date.now() + RESERVATION_SETTINGS.TEMPORARY_RESERVATION_MINUTES * 60 * 1000);
-    
-    // Generate reservation number
-    const reservationNumber = `TK${Date.now()}${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-    
-    // Create reservation
-    const reservationResult = await client.query(
-      `INSERT INTO reservations (
-        user_id, event_id, reservation_number, total_amount,
-        status, payment_status, expires_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING id`,
-      [
-        userId,
-        eventId,
-        reservationNumber,
-        totalAmount,
-        RESERVATION_STATUS.PENDING,
-        PAYMENT_STATUS.PENDING,
-        expiresAt,
-      ]
-    );
-    
-    const reservationId = reservationResult.rows[0].id;
-    
-    // Create reservation items
-    for (const seat of seatsResult.rows) {
-      await client.query(
-        `INSERT INTO reservation_items (
-          reservation_id, ticket_type_id, quantity, unit_price, subtotal, seat_id
-        ) VALUES ($1, NULL, 1, $2, $2, $3)`,
-        [reservationId, seat.price, seat.id]
-      );
-    }
-    
-    await client.query('COMMIT');
-    
-    // Release all locks
-    for (const lockKey of locksAcquired) {
-      await releaseLock(lockKey);
-    }
-    
+
     // Invalidate cache (좌석 상태 변경 반영)
-    try {
-      await redisClient.del(CACHE_KEYS.EVENT(eventId));
-      await redisClient.del(CACHE_KEYS.SEATS(eventId));
-    } catch (cacheError) {
-      console.error('⚠️  캐시 삭제 중 에러:', cacheError.message);
-    }
+    await invalidateCachePatterns(redisClient, [
+      CACHE_KEYS.EVENT(eventId),
+      CACHE_KEYS.SEATS(eventId)
+    ]);
 
     // 실시간 좌석 상태 업데이트 브로드캐스트
     try {
@@ -239,26 +232,17 @@ router.post('/reserve', authenticateToken, async (req, res) => {
     res.status(201).json({
       message: SUCCESS_MESSAGES.SEAT_RESERVED,
       reservation: {
-        id: reservationId,
-        reservationNumber,
-        totalAmount,
-        expiresAt,
-        seats: seatsResult.rows,
+        id: result.reservationId,
+        reservationNumber: result.reservationNumber,
+        totalAmount: result.totalAmount,
+        expiresAt: result.expiresAt,
+        seats: result.seats,
       },
     });
-    
+
   } catch (error) {
-    await client.query('ROLLBACK');
-    
-    // Release all locks
-    for (const lockKey of locksAcquired) {
-      await releaseLock(lockKey);
-    }
-    
     console.error('Reserve seats error:', error);
     res.status(400).json({ error: error.message || 'Failed to reserve seats' });
-  } finally {
-    client.release();
   }
 });
 

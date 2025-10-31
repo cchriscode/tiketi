@@ -12,6 +12,7 @@ const {
   LOCK_SETTINGS,
   CACHE_KEYS,
 } = require('../shared/constants');
+const { invalidateCache, withTransaction } = require('../utils/transaction-helpers');
 
 const router = express.Router();
 
@@ -118,11 +119,7 @@ router.post('/', authenticateToken, async (req, res) => {
       }
 
       // Invalidate cache (이벤트 상세 캐시 삭제 - 재고 변동 반영)
-      try {
-        await redisClient.del(CACHE_KEYS.EVENT(eventId));
-      } catch (cacheError) {
-        console.error('⚠️  캐시 삭제 중 에러:', cacheError.message);
-      }
+      await invalidateCache(redisClient, CACHE_KEYS.EVENT(eventId));
 
       // 실시간 티켓 재고 업데이트 브로드캐스트
       try {
@@ -261,77 +258,71 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
 // 예매 취소
 router.post('/:id/cancel', authenticateToken, async (req, res) => {
-  const client = await db.getClient();
-
   try {
     const { id } = req.params;
     const userId = req.user.userId;
 
-    await client.query('BEGIN');
+    const result = await withTransaction(async (client) => {
+      // Get reservation
+      const reservationResult = await client.query(
+        'SELECT id, status, event_id FROM reservations WHERE id = $1 AND user_id = $2 FOR UPDATE',
+        [id, userId]
+      );
 
-    // Get reservation
-    const reservationResult = await client.query(
-      'SELECT id, status, event_id FROM reservations WHERE id = $1 AND user_id = $2 FOR UPDATE',
-      [id, userId]
-    );
-
-    if (reservationResult.rows.length === 0) {
-      throw new Error('예매 내역을 찾을 수 없습니다.');
-    }
-
-    const reservation = reservationResult.rows[0];
-
-    if (reservation.status === RESERVATION_STATUS.CANCELLED) {
-      throw new Error('이미 취소된 예매입니다.');
-    }
-
-    // Get reservation items
-    const itemsResult = await client.query(
-      'SELECT ticket_type_id, quantity, seat_id FROM reservation_items WHERE reservation_id = $1',
-      [id]
-    );
-
-    // Restore ticket quantities and seats
-    for (const item of itemsResult.rows) {
-      // Restore ticket quantity if ticket-based
-      if (item.ticket_type_id) {
-        await client.query(
-          'UPDATE ticket_types SET available_quantity = available_quantity + $1 WHERE id = $2',
-          [item.quantity, item.ticket_type_id]
-        );
+      if (reservationResult.rows.length === 0) {
+        throw new Error('예매 내역을 찾을 수 없습니다.');
       }
-      
-      // Restore seat status if seat-based
-      if (item.seat_id) {
-        await client.query(
-          `UPDATE seats SET status = $1, updated_at = NOW() WHERE id = $2`,
-          [SEAT_STATUS.AVAILABLE, item.seat_id]
-        );
+
+      const reservation = reservationResult.rows[0];
+
+      if (reservation.status === RESERVATION_STATUS.CANCELLED) {
+        throw new Error('이미 취소된 예매입니다.');
       }
-    }
 
-    // Update reservation status
-    await client.query(
-      `UPDATE reservations 
-       SET status = $1, payment_status = $2
-       WHERE id = $3`,
-      [RESERVATION_STATUS.CANCELLED, PAYMENT_STATUS.REFUNDED, id]
-    );
+      // Get reservation items
+      const itemsResult = await client.query(
+        'SELECT ticket_type_id, quantity, seat_id FROM reservation_items WHERE reservation_id = $1',
+        [id]
+      );
 
-    await client.query('COMMIT');
+      // Restore ticket quantities and seats
+      for (const item of itemsResult.rows) {
+        // Restore ticket quantity if ticket-based
+        if (item.ticket_type_id) {
+          await client.query(
+            'UPDATE ticket_types SET available_quantity = available_quantity + $1 WHERE id = $2',
+            [item.quantity, item.ticket_type_id]
+          );
+        }
+
+        // Restore seat status if seat-based
+        if (item.seat_id) {
+          await client.query(
+            `UPDATE seats SET status = $1, updated_at = NOW() WHERE id = $2`,
+            [SEAT_STATUS.AVAILABLE, item.seat_id]
+          );
+        }
+      }
+
+      // Update reservation status
+      await client.query(
+        `UPDATE reservations
+         SET status = $1, payment_status = $2
+         WHERE id = $3`,
+        [RESERVATION_STATUS.CANCELLED, PAYMENT_STATUS.REFUNDED, id]
+      );
+
+      return { reservation, items: itemsResult.rows };
+    });
 
     // Invalidate cache (재고 변동 반영)
-    try {
-      await redisClient.del(CACHE_KEYS.EVENT(reservation.event_id));
-    } catch (cacheError) {
-      console.error('⚠️  캐시 삭제 중 에러:', cacheError.message);
-    }
+    await invalidateCache(redisClient, CACHE_KEYS.EVENT(result.reservation.event_id));
 
     // 실시간 티켓 재고 업데이트 브로드캐스트 (취소로 인한 재고 증가)
     try {
       const io = req.app.locals.io;
       if (io) {
-        for (const item of itemsResult.rows) {
+        for (const item of result.items) {
           if (item.ticket_type_id) {
             const ticketResult = await db.query(
               'SELECT id, available_quantity, total_quantity FROM ticket_types WHERE id = $1',
@@ -341,7 +332,7 @@ router.post('/:id/cancel', authenticateToken, async (req, res) => {
             if (ticketResult.rows.length > 0) {
               const ticket = ticketResult.rows[0];
 
-              emitToEvent(io, reservation.event_id, 'ticket-updated', {
+              emitToEvent(io, result.reservation.event_id, 'ticket-updated', {
                 ticketTypeId: ticket.id,
                 availableQuantity: ticket.available_quantity,
                 totalQuantity: ticket.total_quantity,
@@ -358,11 +349,8 @@ router.post('/:id/cancel', authenticateToken, async (req, res) => {
     res.json({ message: '예매가 취소되었습니다.' });
 
   } catch (error) {
-    await client.query('ROLLBACK');
     console.error('Cancel reservation error:', error);
     res.status(400).json({ error: error.message || '예매 취소에 실패했습니다.' });
-  } finally {
-    client.release();
   }
 });
 

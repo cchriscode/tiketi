@@ -102,55 +102,37 @@ function EventForm() {
   };
 
   /**
-   * 서버에서 받은 UTC 날짜를 datetime-local input 형식으로 변환 (한국 시간 기준)
-   * @param {string} dateString - ISO 날짜 문자열 (UTC)
-   * @returns {string} - 'YYYY-MM-DDTHH:mm' 형식 (KST)
+   * 서버에서 받은 날짜를 datetime-local input 형식으로 변환
+   * 서버 DB가 Asia/Seoul 타임존이므로 받은 시간을 그대로 사용
+   * @param {string} dateString - ISO 날짜 문자열
+   * @returns {string} - 'YYYY-MM-DDTHH:mm' 형식
    */
   const formatDateForInput = (dateString) => {
     if (!dateString) return '';
-    
-    // UTC 시간을 파싱
-    const utcDate = new Date(dateString);
-    
-    // 한국 시간(UTC+9)으로 변환 - 9시간 추가
-    const kstDate = new Date(utcDate.getTime() + (9 * 60 * 60 * 1000));
-    
+
+    const date = new Date(dateString);
+
     // 'YYYY-MM-DDTHH:mm' 형식으로 포맷팅
-    const year = kstDate.getUTCFullYear();
-    const month = String(kstDate.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(kstDate.getUTCDate()).padStart(2, '0');
-    const hours = String(kstDate.getUTCHours()).padStart(2, '0');
-    const minutes = String(kstDate.getUTCMinutes()).padStart(2, '0');
-    
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
   /**
-   * datetime-local input의 값을 서버로 보낼 UTC ISO 문자열로 변환
-   * @param {string} inputValue - 'YYYY-MM-DDTHH:mm' 형식 (KST)
-   * @returns {string} - ISO 날짜 문자열 (UTC)
+   * datetime-local input의 값을 서버로 보낼 ISO 문자열로 변환
+   * 서버 DB가 Asia/Seoul 타임존이므로 로컬 시간을 그대로 전송
+   * @param {string} inputValue - 'YYYY-MM-DDTHH:mm' 형식
+   * @returns {string} - ISO 날짜 문자열
    */
   const formatDateForServer = (inputValue) => {
     if (!inputValue) return '';
-    
-    // 입력값 파싱
-    const [datePart, timePart] = inputValue.split('T');
-    const [year, month, day] = datePart.split('-');
-    const [hours, minutes] = timePart.split(':');
-    
-    // 한국 시간으로 Date 객체 생성 (UTC로 해석하되 실제론 KST)
-    const kstDate = new Date(Date.UTC(
-      parseInt(year),
-      parseInt(month) - 1,
-      parseInt(day),
-      parseInt(hours),
-      parseInt(minutes)
-    ));
-    
-    // 한국 시간(UTC+9)을 UTC로 변환하기 위해 9시간 빼기
-    const utcDate = new Date(kstDate.getTime() - (9 * 60 * 60 * 1000));
-    
-    return utcDate.toISOString();
+
+    // 입력값을 ISO 형식으로 변환 (초 추가)
+    return inputValue + ':00';
   };
 
   const handleChange = (e) => {

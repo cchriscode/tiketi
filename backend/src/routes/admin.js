@@ -11,6 +11,7 @@ const {
   CACHE_KEYS,
   PAGINATION_DEFAULTS,
 } = require('../shared/constants');
+const { invalidateCachePatterns, withTransaction } = require('../utils/transaction-helpers');
 
 const router = express.Router();
 
@@ -176,15 +177,7 @@ router.post('/events', async (req, res) => {
     console.log('🔄 이벤트 상태 업데이터 타이머 재설정');
 
     // Invalidate all event list caches (즉시 반영을 위해 모든 캐시 삭제)
-    try {
-      const keys = await redisClient.keys(CACHE_KEYS.EVENTS_PATTERN);
-      if (keys && keys.length > 0) {
-        await redisClient.del(keys);
-        console.log(`🗑️  이벤트 목록 캐시 ${keys.length}개 삭제 (즉시 반영)`);
-      }
-    } catch (cacheError) {
-      console.error('⚠️  캐시 삭제 중 에러 (계속 진행):', cacheError.message);
-    }
+    await invalidateCachePatterns(redisClient, [CACHE_KEYS.EVENTS_PATTERN]);
 
     res.status(201).json({
       message: '이벤트가 생성되었습니다.',
@@ -287,18 +280,10 @@ router.put('/events/:id', async (req, res) => {
     console.log('🔄 이벤트 상태 업데이터 타이머 재설정');
 
     // Invalidate cache - 모든 관련 캐시 삭제 (즉시 반영)
-    try {
-      await redisClient.del(CACHE_KEYS.EVENT(id));
-      
-      // events:로 시작하는 모든 캐시 키 삭제
-      const keys = await redisClient.keys(CACHE_KEYS.EVENTS_PATTERN);
-      if (keys && keys.length > 0) {
-        await redisClient.del(keys);
-        console.log(`🗑️  이벤트 목록 캐시 ${keys.length}개 삭제 (즉시 반영)`);
-      }
-    } catch (cacheError) {
-      console.error('⚠️  캐시 삭제 중 에러 (계속 진행):', cacheError.message);
-    }
+    await invalidateCachePatterns(redisClient, [
+      CACHE_KEYS.EVENT(id),
+      CACHE_KEYS.EVENTS_PATTERN
+    ]);
 
     res.json({
       message: '이벤트가 수정되었습니다.',
@@ -312,99 +297,91 @@ router.put('/events/:id', async (req, res) => {
 
 // 이벤트 취소
 router.post('/events/:id/cancel', async (req, res) => {
-  const client = await db.getClient();
-  
   try {
     const { id } = req.params;
 
-    await client.query('BEGIN');
+    const result = await withTransaction(async (client) => {
+      // 이벤트 상태를 취소로 변경
+      const eventResult = await client.query(
+        `UPDATE events
+         SET status = $1
+         WHERE id = $2 AND status != $1
+         RETURNING *`,
+        [EVENT_STATUS.CANCELLED, id]
+      );
 
-    // 이벤트 상태를 취소로 변경
-    const eventResult = await client.query(
-      `UPDATE events 
-       SET status = $1
-       WHERE id = $2 AND status != $1
-       RETURNING *`,
-      [EVENT_STATUS.CANCELLED, id]
-    );
+      if (eventResult.rows.length === 0) {
+        throw new Error('이벤트를 찾을 수 없거나 이미 취소되었습니다.');
+      }
 
-    if (eventResult.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error: '이벤트를 찾을 수 없거나 이미 취소되었습니다.' });
-    }
+      console.log(`🚫 이벤트 취소 시작: ${eventResult.rows[0].title}`);
 
-    console.log(`🚫 이벤트 취소 시작: ${eventResult.rows[0].title}`);
+      // 해당 이벤트의 모든 예약(pending, confirmed) 취소 및 환불 처리
+      const cancelledReservations = await client.query(
+        `UPDATE reservations
+         SET status = $1,
+             payment_status = CASE
+               WHEN payment_status = $2 THEN $3
+               ELSE payment_status
+             END
+         WHERE event_id = $4 AND status IN ($5, $6)
+         RETURNING id, reservation_number, status, payment_status, total_amount`,
+        [
+          RESERVATION_STATUS.CANCELLED,
+          PAYMENT_STATUS.COMPLETED,
+          PAYMENT_STATUS.REFUNDED,
+          id,
+          RESERVATION_STATUS.PENDING,
+          RESERVATION_STATUS.CONFIRMED
+        ]
+      );
 
-    // 해당 이벤트의 모든 예약(pending, confirmed) 취소 및 환불 처리
-    const cancelledReservations = await client.query(
-      `UPDATE reservations 
-       SET status = $1, 
-           payment_status = CASE 
-             WHEN payment_status = $2 THEN $3
-             ELSE payment_status
-           END
-       WHERE event_id = $4 AND status IN ($5, $6)
-       RETURNING id, reservation_number, status, payment_status, total_amount`,
-      [
-        RESERVATION_STATUS.CANCELLED,
-        PAYMENT_STATUS.COMPLETED,
-        PAYMENT_STATUS.REFUNDED,
-        id,
-        RESERVATION_STATUS.PENDING,
-        RESERVATION_STATUS.CONFIRMED
-      ]
-    );
+      console.log(`💰 취소된 예약: ${cancelledReservations.rowCount}건`);
 
-    console.log(`💰 취소된 예약: ${cancelledReservations.rowCount}건`);
-    
-    if (cancelledReservations.rowCount > 0) {
-      let totalRefund = 0;
-      cancelledReservations.rows.forEach(r => {
-        if (r.payment_status === PAYMENT_STATUS.REFUNDED) {
-          totalRefund += r.total_amount;
-          console.log(`  - ${r.reservation_number}: ${r.total_amount}원 환불 처리`);
-        }
-      });
-      console.log(`💸 총 환불 금액: ${totalRefund}원`);
-    }
+      if (cancelledReservations.rowCount > 0) {
+        let totalRefund = 0;
+        cancelledReservations.rows.forEach(r => {
+          if (r.payment_status === PAYMENT_STATUS.REFUNDED) {
+            totalRefund += r.total_amount;
+            console.log(`  - ${r.reservation_number}: ${r.total_amount}원 환불 처리`);
+          }
+        });
+        console.log(`💸 총 환불 금액: ${totalRefund}원`);
+      }
 
-    // 좌석이 있는 경우 locked 좌석을 available로 변경
-    const lockedSeats = await client.query(
-      `UPDATE seats 
-       SET status = $1
-       WHERE event_id = $2 AND status = $3`,
-      [SEAT_STATUS.AVAILABLE, id, SEAT_STATUS.LOCKED]
-    );
+      // 좌석이 있는 경우 locked 좌석을 available로 변경
+      const lockedSeats = await client.query(
+        `UPDATE seats
+         SET status = $1
+         WHERE event_id = $2 AND status = $3`,
+        [SEAT_STATUS.AVAILABLE, id, SEAT_STATUS.LOCKED]
+      );
 
-    console.log(`🪑 잠금 해제된 좌석: ${lockedSeats.rowCount}개`);
+      console.log(`🪑 잠금 해제된 좌석: ${lockedSeats.rowCount}개`);
 
-    await client.query('COMMIT');
+      return {
+        event: eventResult.rows[0],
+        cancelledReservationsCount: cancelledReservations.rowCount,
+      };
+    });
 
     // Invalidate cache - 모든 관련 캐시 삭제 (즉시 반영)
-    try {
-      await redisClient.del(CACHE_KEYS.EVENT(id));
-      const keys = await redisClient.keys(CACHE_KEYS.EVENTS_PATTERN);
-      if (keys && keys.length > 0) {
-        await redisClient.del(keys);
-        console.log(`🗑️  이벤트 목록 캐시 ${keys.length}개 삭제 (즉시 반영)`);
-      }
-    } catch (cacheError) {
-      console.error('⚠️  캐시 삭제 중 에러:', cacheError.message);
-    }
+    await invalidateCachePatterns(redisClient, [
+      CACHE_KEYS.EVENT(id),
+      CACHE_KEYS.EVENTS_PATTERN
+    ]);
 
-    console.log(`✅ 이벤트 취소 완료: ${eventResult.rows[0].title}`);
+    console.log(`✅ 이벤트 취소 완료: ${result.event.title}`);
 
     res.json({
       message: '이벤트가 취소되었습니다. 모든 예약이 취소되고 결제 완료된 예약은 환불 처리되었습니다.',
-      event: eventResult.rows[0],
-      cancelledReservations: cancelledReservations.rowCount,
+      event: result.event,
+      cancelledReservations: result.cancelledReservationsCount,
     });
   } catch (error) {
-    await client.query('ROLLBACK');
     console.error('❌ Cancel event error:', error);
-    res.status(500).json({ error: '이벤트 취소에 실패했습니다.' });
-  } finally {
-    client.release();
+    const statusCode = error.message === '이벤트를 찾을 수 없거나 이미 취소되었습니다.' ? 404 : 500;
+    res.status(statusCode).json({ error: error.message || '이벤트 취소에 실패했습니다.' });
   }
 });
 
@@ -426,16 +403,10 @@ router.delete('/events/:id', async (req, res) => {
     await db.query('DELETE FROM events WHERE id = $1', [id]);
 
     // Invalidate cache (즉시 반영)
-    try {
-      await redisClient.del(CACHE_KEYS.EVENT(id));
-      const keys = await redisClient.keys(CACHE_KEYS.EVENTS_PATTERN);
-      if (keys && keys.length > 0) {
-        await redisClient.del(keys);
-        console.log(`🗑️  이벤트 목록 캐시 ${keys.length}개 삭제 (즉시 반영)`);
-      }
-    } catch (cacheError) {
-      console.error('⚠️  캐시 삭제 중 에러:', cacheError.message);
-    }
+    await invalidateCachePatterns(redisClient, [
+      CACHE_KEYS.EVENT(id),
+      CACHE_KEYS.EVENTS_PATTERN
+    ]);
 
     res.json({ message: '이벤트가 삭제되었습니다.' });
   } catch (error) {
