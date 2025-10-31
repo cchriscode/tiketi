@@ -6,6 +6,7 @@ import { ko } from 'date-fns/locale';
 import { useCountdown } from '../hooks/useCountdown';
 import { useTicketUpdates } from '../hooks/useSocket';
 import WaitingRoomModal from '../components/WaitingRoomModal';
+import ConnectionStatus from '../components/ConnectionStatus';
 import api from '../services/api';
 import { EVENT_STATUS, EVENT_STATUS_MESSAGES } from '../shared/constants';
 import './EventDetail.css';
@@ -91,7 +92,7 @@ function EventDetail() {
   }, []);
 
   // WebSocket 연결 및 실시간 업데이트 구독
-  const { isConnected } = useTicketUpdates(id, handleTicketUpdate);
+  const { isConnected, isReconnecting } = useTicketUpdates(id, handleTicketUpdate);
 
   // 카운트다운이 종료되면 자동으로 이벤트 정보 새로고침
   const handleCountdownExpire = useCallback(() => {
@@ -217,6 +218,9 @@ function EventDetail() {
 
   return (
     <div className="event-detail-page">
+      {/* WebSocket 연결 상태 표시 (ALB 멀티 인스턴스 대비) */}
+      <ConnectionStatus isConnected={isConnected} isReconnecting={isReconnecting} />
+
       <div className="event-detail-hero">
         <div className="event-detail-header">
           <div className="event-poster">

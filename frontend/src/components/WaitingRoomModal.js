@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useQueueUpdates } from '../hooks/useSocket';
+import ConnectionStatus from './ConnectionStatus';
 import api from '../services/api';
 import './WaitingRoomModal.css';
 
@@ -61,10 +62,9 @@ function WaitingRoomModal({ eventId, onEntryAllowed, onClose }) {
     }, 500);
   }, [onEntryAllowed]);
 
-  // WebSocket 연결
-  const { isConnected } = useQueueUpdates(
+  // WebSocket 연결 (userId는 서버가 JWT에서 추출)
+  const { isConnected, isReconnecting } = useQueueUpdates(
     eventId,
-    userId,
     handleQueueUpdate,
     handleEntryAllowedSocket
   );
@@ -152,16 +152,13 @@ function WaitingRoomModal({ eventId, onEntryAllowed, onClose }) {
   return (
     <div className="waiting-room-modal-overlay">
       <div className="waiting-room-modal">
+        {/* WebSocket 연결 상태 표시 */}
+        <ConnectionStatus isConnected={isConnected} isReconnecting={isReconnecting} />
+
         {/* 헤더 */}
         <div className="modal-header">
           <h1>⏳ 대기열</h1>
           <p className="subtitle">잠시만 기다려주세요</p>
-
-          {/* WebSocket 연결 상태 */}
-          <div className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
-            <span className="status-dot"></span>
-            {isConnected ? '실시간 연결됨' : '연결 중...'}
-          </div>
         </div>
 
         {queueInfo && (
