@@ -3,16 +3,17 @@
   top: 0;
   left: 0;
   right: 0;
-  background: white;
+  background: #ffffff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   height: 80px;
 }
 
 .header-content {
-  display: flex;
+  display: grid;
+  grid-template-columns: 280px 1fr auto;
   align-items: center;
-  justify-content: space-between;
+  gap: 20px;
   height: 80px;
 }
 
@@ -22,7 +23,7 @@
   text-decoration: none;
   font-size: 24px;
   font-weight: 700;
-  color: var(--primary-color);
+  color: var(--dark-color);
 }
 
 .logo-icon {
@@ -32,6 +33,44 @@
 
 .logo-text {
   letter-spacing: -1px;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-subtitle {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.search-input {
+  flex: 1;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f5f5f5;
+}
+
+.search-btn {
+  height: 40px;
+  padding: 0 16px;
+  background: #111111;
+  color: #ffffff;
+}
+
+.search-btn:hover {
+  background: #000000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
 }
 
 .nav {
@@ -102,6 +141,7 @@
 
   .header-content {
     height: 60px;
+    grid-template-columns: 1fr auto;
   }
 
   .logo {
@@ -123,5 +163,8 @@
   .user-name {
     display: none;
   }
+
+  .brand-subtitle { display: none; }
+  .search { display: none; }
 }
 

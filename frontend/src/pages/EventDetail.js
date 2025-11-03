@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { eventsAPI, reservationsAPI } from '../services/api';
 import { format } from 'date-fns';
@@ -22,6 +22,7 @@ function EventDetail() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [showQueueModal, setShowQueueModal] = useState(false);
+  const ticketSectionRef = useRef(null);
 
   const fetchEventDetail = useCallback(async () => {
     try {
@@ -136,6 +137,57 @@ function EventDetail() {
     return Object.values(selectedTickets).reduce((sum, qty) => sum + qty, 0);
   };
 
+  const scrollToTickets = () => {
+    if (ticketSectionRef.current) {
+      ticketSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const formatCountdownValue = (countdown) => {
+    if (!countdown) return '';
+    const parts = [];
+    if (countdown.months && countdown.months > 0) {
+      parts.push(`${countdown.months}개월`);
+    }
+    if (countdown.days && countdown.days > 0) {
+      parts.push(`${countdown.days}일`);
+    }
+    parts.push(`${countdown.hours || 0}시간`);
+    parts.push(`${countdown.minutes || 0}분`);
+    parts.push(`${countdown.seconds || 0}초`);
+    return parts.join(' ');
+  };
+
+  const getCountdownChip = () => {
+    if (!event) return null;
+
+    if (
+      event.status === EVENT_STATUS.UPCOMING &&
+      saleStartCountdown &&
+      !saleStartCountdown.isExpired
+    ) {
+      return {
+        label: '판매 시작까지',
+        value: formatCountdownValue(saleStartCountdown),
+        variant: 'upcoming',
+      };
+    }
+
+    if (
+      event.status === EVENT_STATUS.ON_SALE &&
+      saleEndCountdown &&
+      !saleEndCountdown.isExpired
+    ) {
+      return {
+        label: '판매 종료까지',
+        value: formatCountdownValue(saleEndCountdown),
+        variant: 'on-sale',
+      };
+    }
+
+    return null;
+  };
+
   const handleReservation = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -209,114 +261,105 @@ function EventDetail() {
     );
   }
 
+  const isOnSale = event.status === EVENT_STATUS.ON_SALE;
+  const isCancelled = event.status === EVENT_STATUS.CANCELLED;
+  const totalQuantity = getTotalQuantity();
+  const hasSelection = totalQuantity > 0;
+  const totalPrice = calculateTotal();
+  const statusMessage = EVENT_STATUS_MESSAGES[event.status];
+  const countdownChip = getCountdownChip();
+
+  const topButtonLabel = (() => {
+    if (isCancelled) return '예매 불가';
+    if (!isOnSale) return statusMessage || '예매 불가';
+    if (event.seat_layout_id) return '좌석 선택하기';
+    return hasSelection
+      ? `예매하기 · ₩${formatPrice(totalPrice)}`
+      : '티켓 선택하기';
+  })();
+
+  const topButtonDisabled = isCancelled || !isOnSale;
+
+  const handleTopCTAClick = () => {
+    if (topButtonDisabled) return;
+
+    if (event.seat_layout_id) {
+      handleReservation();
+      return;
+    }
+
+    if (!hasSelection) {
+      scrollToTickets();
+      return;
+    }
+
+    handleReservation();
+  };
+
   return (
     <div className="event-detail-page">
       {/* WebSocket 연결 상태 표시 (ALB 멀티 인스턴스 대비) */}
       <ConnectionStatus isConnected={isConnected} isReconnecting={isReconnecting} />
 
       <div className="event-detail-hero">
-        <div className="event-detail-header">
-          <div className="event-poster">
-            {event.poster_image_url ? (
-              <img src={event.poster_image_url} alt={event.title} />
-            ) : (
-              <div className="poster-placeholder">🎭</div>
-            )}
-          </div>
-
-          <div className="event-info-section">
-            <h1 className="event-detail-title">{event.title}</h1>
-            <div className="event-detail-info">
-              <div className="info-row">
-                <span className="info-label">장소</span>
-                <span className="info-value">{event.venue}</span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">주소</span>
-                <span className="info-value">{event.address}</span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">날짜</span>
-                <span className="info-value">{formatDate(event.event_date)}</span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">예매 기간</span>
-                <span className="info-value">
-                  {formatDate(event.sale_start_date)} ~ {formatDate(event.sale_end_date)}
-                </span>
-              </div>
+        <div className="event-detail-hero-inner">
+          <div className="event-detail-header">
+            <div className="event-poster">
+              {event.poster_image_url ? (
+                <img src={event.poster_image_url} alt={event.title} />
+              ) : (
+                <div className="poster-placeholder">🎭</div>
+              )}
             </div>
-            {event.description && (
-              <div className="event-description">
-                <h3>이벤트 소개</h3>
-                <p>{event.description}</p>
-              </div>
-            )}
 
-            {/* 카운트다운 섹션 */}
-            {event.status === EVENT_STATUS.UPCOMING && saleStartCountdown && !saleStartCountdown.isExpired && (
-              <div className="countdown-section upcoming-countdown">
-                <div className="countdown-header">
-                  <span className="countdown-icon">🎯</span>
-                  <span className="countdown-label">판매 시작까지</span>
+            <div className="event-info-section">
+              <h1 className="event-detail-title">{event.title}</h1>
+              {countdownChip && (
+                <div className={`countdown-chip ${countdownChip.variant}`}>
+                  <span className="countdown-chip-label">{countdownChip.label}</span>
+                  <span className="countdown-chip-value">{countdownChip.value}</span>
                 </div>
-                <div className="countdown-display">
-                  {saleStartCountdown.months > 0 && (
-                    <div className="countdown-unit">
-                      <span className="countdown-number">{saleStartCountdown.months || 0}</span>
-                      <span className="countdown-text">개월</span>
-                    </div>
-                  )}
-                  {saleStartCountdown.days > 0 && (
-                    <div className="countdown-unit">
-                      <span className="countdown-number">{saleStartCountdown.days || 0}</span>
-                      <span className="countdown-text">일</span>
-                    </div>
-                  )}
-                  <div className="countdown-unit">
-                    <span className="countdown-number">{saleStartCountdown.hours || 0}</span>
-                    <span className="countdown-text">시간</span>
-                  </div>
-                  <div className="countdown-unit">
-                    <span className="countdown-number">{saleStartCountdown.minutes || 0}</span>
-                    <span className="countdown-text">분</span>
-                  </div>
-                  <div className="countdown-unit">
-                    <span className="countdown-number">{saleStartCountdown.seconds || 0}</span>
-                    <span className="countdown-text">초</span>
-                  </div>
-                </div>
-              </div>
-            )}
+              )}
 
-            {event.status === EVENT_STATUS.ON_SALE && saleEndCountdown && !saleEndCountdown.isExpired && (
-              <div className="countdown-section on-sale-countdown">
-                <div className="countdown-header">
-                  <span className="countdown-icon">⏰</span>
-                  <span className="countdown-label">판매 종료까지</span>
+              <div className="hero-primary-action">
+                <button
+                  type="button"
+                  className="btn btn-primary hero-primary-button"
+                  disabled={topButtonDisabled}
+                  onClick={handleTopCTAClick}
+                >
+                  {topButtonLabel}
+                </button>
+              </div>
+
+              <div className="event-detail-info">
+                <div className="info-row">
+                  <span className="info-label">장소</span>
+                  <span className="info-value">{event.venue}</span>
                 </div>
-                <div className="countdown-display">
-                  {saleEndCountdown.days > 0 && (
-                    <div className="countdown-unit">
-                      <span className="countdown-number">{saleEndCountdown.days || 0}</span>
-                      <span className="countdown-text">일</span>
-                    </div>
-                  )}
-                  <div className="countdown-unit">
-                    <span className="countdown-number">{saleEndCountdown.hours || 0}</span>
-                    <span className="countdown-text">시간</span>
-                  </div>
-                  <div className="countdown-unit">
-                    <span className="countdown-number">{saleEndCountdown.minutes || 0}</span>
-                    <span className="countdown-text">분</span>
-                  </div>
-                  <div className="countdown-unit">
-                    <span className="countdown-number">{saleEndCountdown.seconds || 0}</span>
-                    <span className="countdown-text">초</span>
-                  </div>
+                <div className="info-row">
+                  <span className="info-label">주소</span>
+                  <span className="info-value">{event.address}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">날짜</span>
+                  <span className="info-value">{formatDate(event.event_date)}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">예매 기간</span>
+                  <span className="info-value">
+                    {formatDate(event.sale_start_date)} ~ {formatDate(event.sale_end_date)}
+                  </span>
                 </div>
               </div>
-            )}
+
+              {event.description && (
+                <div className="event-description">
+                  <h3>이벤트 소개</h3>
+                  <p>{event.description}</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -325,46 +368,10 @@ function EventDetail() {
         {error && <div className="alert alert-error">{error}</div>}
         {success && <div className="alert alert-success">{success}</div>}
 
-        {/* 이벤트 취소 메시지 */}
-        {event.status === EVENT_STATUS.CANCELLED && (
-          <div className="booking-action-section">
-            <div className="alert alert-error" style={{ fontSize: '1.2rem', padding: '30px', textAlign: 'center' }}>
-              <h3 style={{ marginBottom: '15px' }}>❌ 취소된 이벤트입니다</h3>
-              <p>이 이벤트는 취소되었습니다. 예매가 불가능합니다.</p>
-            </div>
-          </div>
-        )}
-
-        {/* 좌석 선택이 있는 경우 */}
-        {event.status !== EVENT_STATUS.CANCELLED && event.seat_layout_id && (
-          <div className="booking-action-section">
-            <div className="booking-info">
-              <p className="booking-description">
-                🎫 좌석을 직접 선택하여 예매하실 수 있습니다.
-              </p>
-              <p className="booking-note">
-                예매하기 버튼을 클릭하여 좌석 선택 페이지로 이동합니다.
-              </p>
-            </div>
-            <button
-              className="btn btn-primary btn-booking"
-              onClick={handleReservation}
-              disabled={submitting || event.status !== EVENT_STATUS.ON_SALE}
-            >
-              {submitting ? '처리 중...' : event.status === EVENT_STATUS.ON_SALE ? '예매하기' : '예매 불가'}
-            </button>
-            {event.status !== EVENT_STATUS.ON_SALE && (
-              <p className="booking-status-message">
-                {EVENT_STATUS_MESSAGES[event.status]}
-              </p>
-            )}
-          </div>
-        )}
-
         {/* 티켓 타입 선택 (좌석 없는 경우) */}
         {event.status !== EVENT_STATUS.CANCELLED && !event.seat_layout_id && (
           <>
-            <div className="ticket-selection-section">
+            <div ref={ticketSectionRef} className="ticket-selection-section">
               <h2>티켓 선택</h2>
               <div className="ticket-types-list">
                 {ticketTypes.map((ticket) => (
@@ -418,24 +425,6 @@ function EventDetail() {
                 <div className="empty-state">티켓 정보가 없습니다.</div>
               )}
             </div>
-
-            {getTotalQuantity() > 0 && (
-              <div className="reservation-summary">
-                <div className="summary-content">
-                  <div className="summary-info">
-                    <span className="summary-label">총 {getTotalQuantity()}매</span>
-                    <span className="summary-total">₩{formatPrice(calculateTotal())}</span>
-                  </div>
-                  <button
-                    className="btn btn-primary btn-large"
-                    onClick={handleReservation}
-                    disabled={submitting || event.status !== EVENT_STATUS.ON_SALE}
-                  >
-                    {submitting ? '처리 중...' : '예매하기'}
-                  </button>
-                </div>
-              </div>
-            )}
           </>
         )}
       </div>

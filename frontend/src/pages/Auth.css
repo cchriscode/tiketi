@@ -3,7 +3,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #f9fafb 0%, #e5e7eb 100%);
   padding: 20px;
 }
 
@@ -13,10 +13,11 @@
 }
 
 .auth-card {
-  background: white;
+  background: #ffffff;
   border-radius: 16px;
   padding: 40px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 60px rgba(17, 17, 17, 0.08);
+  border: 1px solid #e5e7eb;
 }
 
 .auth-title {
@@ -47,7 +48,7 @@
 }
 
 .auth-link {
-  color: var(--primary-color);
+  color: #111111;
   font-weight: 600;
   text-decoration: none;
   transition: var(--transition);

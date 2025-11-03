@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { eventsAPI } from '../services/api';
 import EventCard from '../components/EventCard';
 import './Home.css';
@@ -8,6 +9,12 @@ function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('on_sale');
+  const location = useLocation();
+
+  const searchQuery = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get('q') || '';
+  }, [location.search]);
 
   useEffect(() => {
     fetchEvents();
@@ -18,6 +25,7 @@ function Home() {
     try {
       setLoading(true);
       const params = filter ? { status: filter } : {};
+      if (searchQuery) params.q = searchQuery;
       const response = await eventsAPI.getAll(params);
       setEvents(response.data.events);
       setError(null);
@@ -33,6 +41,7 @@ function Home() {
   const fetchEventsQuietly = async () => {
     try {
       const params = filter ? { status: filter } : {};
+      if (searchQuery) params.q = searchQuery;
       const response = await eventsAPI.getAll(params);
       setEvents(response.data.events);
       console.log('🔄 이벤트 목록 자동 새로고침 완료');
@@ -42,12 +51,54 @@ function Home() {
   };
 
 
+  // 간단한 슬라이드 데이터
+  const slides = [
+    { id: 1, title: '티켓 오픈 알림', subtitle: '인기 공연을 가장 먼저 예매하세요', theme: 'sky' },
+    { id: 2, title: '실시간 좌석 선택', subtitle: '남아있는 좌석을 지금 즉시 잡으세요', theme: 'mint' },
+    { id: 3, title: '얼리버드 · 패키지 혜택', subtitle: '티케티 단독 할인으로 더 알뜰하게', theme: 'lemon' }
+  ];
+
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrent((c) => (c + 1) % slides.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [slides.length]);
+
+  const go = (dir) => {
+    setCurrent((c) => (c + dir + slides.length) % slides.length);
+  };
+
   return (
     <div className="home-page">
-      <div className="hero-section">
+      <div className="hero-slider">
         <div className="container">
-          <h1 className="hero-title">🎫 TIKETI</h1>
-          <p className="hero-subtitle">간편하고 빠른 티켓 예매</p>
+          <div className="slider-frame">
+        <button className="slider-arrow left" onClick={() => go(-1)} aria-label="이전 배너">‹</button>
+        <div className="slides" style={{ transform: `translateX(-${current * 100}%)` }}>
+          {slides.map((s) => (
+            <div className={`slide theme-${s.theme}`} key={s.id}>
+              <div className="slide-inner">
+                <h1 className="hero-title">{s.title}</h1>
+                <p className="hero-subtitle">{s.subtitle}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <button className="slider-arrow right" onClick={() => go(1)} aria-label="다음 배너">›</button>
+        <div className="slider-dots">
+          {slides.map((_, idx) => (
+            <button
+              key={idx}
+              className={`dot ${idx === current ? 'active' : ''}`}
+              onClick={() => setCurrent(idx)}
+              aria-label={`배너 ${idx + 1}`}
+            />
+          ))}
+        </div>
+          </div>
         </div>
       </div>
 

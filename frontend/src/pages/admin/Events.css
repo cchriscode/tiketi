@@ -1,7 +1,7 @@
 .admin-events-page {
   padding: 40px 0;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #f5f6f8;
 }
 
 .page-header {
@@ -15,8 +15,7 @@
 .page-title {
   font-size: 32px;
   font-weight: 700;
-  color: white;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  color: #111111;
 }
 
 /* 상태 필터 네비게이션 */
@@ -27,7 +26,7 @@
   padding: 0 20px;
   overflow-x: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  scrollbar-color: #d1d5db transparent;
 }
 
 .status-filter-nav::-webkit-scrollbar {
@@ -39,52 +38,52 @@
 }
 
 .status-filter-nav::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
+  background: #d1d5db;
   border-radius: 3px;
 }
 
 .filter-tab {
   padding: 12px 24px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
-  color: white;
+  color: #374151;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
-  backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
 .filter-tab:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.4);
+  background: #e5e7eb;
+  border-color: #d1d5db;
   transform: translateY(-2px);
 }
 
 .filter-tab.active {
-  background: white;
-  color: #667eea;
-  border-color: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: #111111;
+  color: #ffffff;
+  border-color: #111111;
+  box-shadow: 0 6px 16px rgba(17, 17, 17, 0.18);
 }
 
 .filter-tab .count {
   display: inline-block;
   padding: 2px 8px;
-  background: rgba(102, 126, 234, 0.15);
+  background: #e5e7eb;
   border-radius: 10px;
   font-size: 12px;
   font-weight: 700;
+  color: #4b5563;
 }
 
 .filter-tab.active .count {
-  background: rgba(102, 126, 234, 0.1);
-  color: #667eea;
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
 }
 
 /* 이벤트 카드 그리드 */
@@ -97,12 +96,12 @@
 
 /* 개별 이벤트 카드 */
 .event-card {
-  background: white;
+  background: #ffffff;
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 12px 28px rgba(17, 17, 17, 0.08);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 2px solid transparent;
+  border: 1px solid #e5e7eb;
   position: relative;
   overflow: hidden;
 }
@@ -114,13 +113,13 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background: #e5e7eb;
 }
 
 .event-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
-  border-color: #667eea;
+  box-shadow: 0 16px 36px rgba(17, 17, 17, 0.12);
+  border-color: #111111;
 }
 
 /* 카드 헤더 */
@@ -148,32 +147,32 @@
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(17, 17, 17, 0.08);
 }
 
 .status-upcoming {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  color: white;
+  background: #edeff3;
+  color: #1f2937;
 }
 
 .status-on_sale {
-  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-  color: white;
+  background: #111111;
+  color: #ffffff;
 }
 
 .status-sold_out {
-  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-  color: white;
+  background: #d1d5db;
+  color: #1f2937;
 }
 
 .status-ended {
-  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-  color: #718096;
+  background: #f3f4f6;
+  color: #4b5563;
 }
 
 .status-cancelled {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  color: white;
+  background: #fee2e2;
+  color: #b91c1c;
 }
 
 /* 카드 바디 */
@@ -183,7 +182,7 @@
   gap: 12px;
   margin-bottom: 20px;
   padding: 16px;
-  background: #f7fafc;
+  background: #f7f7f9;
   border-radius: 12px;
 }
 
@@ -230,25 +229,25 @@
 }
 
 .btn-edit {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  background: #111111;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(17, 17, 17, 0.2);
 }
 
 .btn-edit:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 18px rgba(17, 17, 17, 0.24);
 }
 
 .btn-delete {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  color: white;
-  box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3);
+  background: #e11d48;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.25);
 }
 
 .btn-delete:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(245, 87, 108, 0.4);
+  box-shadow: 0 6px 18px rgba(225, 29, 72, 0.35);
 }
 
 /* 빈 상태 */
