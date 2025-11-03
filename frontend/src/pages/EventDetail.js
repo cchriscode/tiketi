@@ -95,22 +95,10 @@ function EventDetail() {
   // WebSocket 연결 및 실시간 업데이트 구독
   const { isConnected, isReconnecting } = useTicketUpdates(id, handleTicketUpdate);
 
-  // 카운트다운이 종료되면 자동으로 이벤트 정보 새로고침
-  const handleCountdownExpire = useCallback(() => {
-    console.log('⏰ 카운트다운 종료 - 이벤트 정보 새로고침');
-    fetchEventDetail();
-  }, [fetchEventDetail]);
-
-  // 카운트다운 훅 - 상태에 따라 콜백 전달 (단순화)
-  const saleStartCountdown = useCountdown(
-    event?.sale_start_date,
-    event?.status === EVENT_STATUS.UPCOMING ? handleCountdownExpire : null
-  );
-
-  const saleEndCountdown = useCountdown(
-    event?.sale_end_date,
-    event?.status === EVENT_STATUS.ON_SALE ? handleCountdownExpire : null
-  );
+  // 카운트다운 훅 - 콜백 없이 사용 (1초마다 리렌더링되면서 자동으로 버튼 활성화)
+  // API 호출 없이 클라이언트에서만 상태 계산하므로 서버 부하 없음
+  const saleStartCountdown = useCountdown(event?.sale_start_date, null);
+  const saleEndCountdown = useCountdown(event?.sale_end_date, null);
 
   const handleQuantityChange = (ticketTypeId, quantity) => {
     setSelectedTickets((prev) => {
@@ -161,8 +149,10 @@ function EventDetail() {
   const getCountdownChip = () => {
     if (!event) return null;
 
+    const actualStatus = getActualEventStatus();
+
     if (
-      event.status === EVENT_STATUS.UPCOMING &&
+      actualStatus === EVENT_STATUS.UPCOMING &&
       saleStartCountdown &&
       !saleStartCountdown.isExpired
     ) {
@@ -174,7 +164,7 @@ function EventDetail() {
     }
 
     if (
-      event.status === EVENT_STATUS.ON_SALE &&
+      actualStatus === EVENT_STATUS.ON_SALE &&
       saleEndCountdown &&
       !saleEndCountdown.isExpired
     ) {
@@ -237,6 +227,30 @@ function EventDetail() {
     }
   };
 
+  // 현재 시간을 기준으로 실제 판매 상태를 계산
+  const getActualEventStatus = useCallback(() => {
+    if (!event) return null;
+
+    // 취소된 이벤트는 그대로 반환
+    if (event.status === EVENT_STATUS.CANCELLED) {
+      return EVENT_STATUS.CANCELLED;
+    }
+
+    const now = new Date();
+    const saleStart = new Date(event.sale_start_date);
+    const saleEnd = new Date(event.sale_end_date);
+
+    // 현재 시간 기준으로 판매 상태 계산
+    if (now < saleStart) {
+      return EVENT_STATUS.UPCOMING;
+    } else if (now >= saleStart && now <= saleEnd) {
+      // 매진 상태가 아니면 판매 중
+      return event.status === EVENT_STATUS.SOLD_OUT ? EVENT_STATUS.SOLD_OUT : EVENT_STATUS.ON_SALE;
+    } else {
+      return EVENT_STATUS.ENDED;
+    }
+  }, [event]);
+
   const formatDate = (dateString) => {
     return format(new Date(dateString), 'yyyy년 M월 d일 (eee) HH:mm', { locale: ko });
   };
@@ -261,18 +275,20 @@ function EventDetail() {
     );
   }
 
-  const isOnSale = event.status === EVENT_STATUS.ON_SALE;
-  const isCancelled = event.status === EVENT_STATUS.CANCELLED;
+  // 실제 판매 상태를 계산 (현재 시간 기준)
+  const actualStatus = getActualEventStatus();
+  const isOnSale = actualStatus === EVENT_STATUS.ON_SALE;
+  const isCancelled = actualStatus === EVENT_STATUS.CANCELLED;
   const totalQuantity = getTotalQuantity();
   const hasSelection = totalQuantity > 0;
   const totalPrice = calculateTotal();
-  const statusMessage = EVENT_STATUS_MESSAGES[event.status];
+  const statusMessage = EVENT_STATUS_MESSAGES[actualStatus];
   const countdownChip = getCountdownChip();
 
   const topButtonLabel = (() => {
     if (isCancelled) return '예매 불가';
     if (!isOnSale) return statusMessage || '예매 불가';
-    if (event.seat_layout_id) return '좌석 선택하기';
+    if (event.seat_layout_id) return '예매하기';
     return hasSelection
       ? `예매하기 · ₩${formatPrice(totalPrice)}`
       : '티켓 선택하기';

@@ -100,9 +100,14 @@ export const useCountdown = (targetDate, onExpire) => {
         hasExpiredRef.current = true;
         // 콜백이 있으면 한 번만 실행 (비동기 처리로 무한 루프 방지)
         if (onExpireRef.current && typeof onExpireRef.current === 'function') {
+          // 콜백을 변수에 저장해서 타이밍 이슈 방지
+          const callback = onExpireRef.current;
           setTimeout(() => {
-            console.log('⏰ 카운트다운 종료 (초기 상태) - 자동 새로고침');
-            onExpireRef.current();
+            // 다시 한 번 함수인지 체크
+            if (typeof callback === 'function') {
+              console.log('⏰ 카운트다운 종료 (초기 상태) - 자동 새로고침');
+              callback();
+            }
           }, 100);
         }
       }
@@ -123,10 +128,15 @@ export const useCountdown = (targetDate, onExpire) => {
         clearInterval(timer);
 
         if (onExpireRef.current && typeof onExpireRef.current === 'function') {
+          // 콜백을 변수에 저장해서 타이밍 이슈 방지
+          const callback = onExpireRef.current;
           // 비동기 처리로 현재 렌더링 사이클과 분리
           setTimeout(() => {
-            console.log('⏰ 카운트다운 종료 - 자동 새로고침');
-            onExpireRef.current();
+            // 다시 한 번 함수인지 체크
+            if (typeof callback === 'function') {
+              console.log('⏰ 카운트다운 종료 - 자동 새로고침');
+              callback();
+            }
           }, 100);
         }
       }
