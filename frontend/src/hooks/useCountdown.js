@@ -11,9 +11,35 @@ import { useState, useEffect, useRef } from 'react';
  * @returns {Object} 남은 시간 객체 { months, days, hours, minutes, seconds, isExpired }
  */
 const calculateTimeLeft = (targetDate) => {
+  // targetDate가 없거나 유효하지 않으면 기본값 반환
+  if (!targetDate) {
+    return {
+      months: 0,
+      days: 0,
+      hours: 0,
+      minutes: 0,
+      seconds: 0,
+      totalDays: 0,
+      isExpired: true,
+    };
+  }
+
   const now = new Date();
   const target = new Date(targetDate);
   const difference = target - now;
+
+  // Invalid Date 체크
+  if (isNaN(difference)) {
+    return {
+      months: 0,
+      days: 0,
+      hours: 0,
+      minutes: 0,
+      seconds: 0,
+      totalDays: 0,
+      isExpired: true,
+    };
+  }
 
   if (difference <= 0) {
     return {
@@ -22,6 +48,7 @@ const calculateTimeLeft = (targetDate) => {
       hours: 0,
       minutes: 0,
       seconds: 0,
+      totalDays: 0,
       isExpired: true,
     };
   }
@@ -54,8 +81,8 @@ const calculateTimeLeft = (targetDate) => {
  */
 export const useCountdown = (targetDate, onExpire) => {
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(targetDate));
-  const [hasExpired, setHasExpired] = useState(false);
   const onExpireRef = useRef(onExpire);
+  const hasExpiredRef = useRef(false); // state 대신 ref 사용
 
   // onExpire 함수를 ref로 업데이트 (useEffect 재실행 방지)
   useEffect(() => {
@@ -67,15 +94,23 @@ export const useCountdown = (targetDate, onExpire) => {
     const initial = calculateTimeLeft(targetDate);
     setTimeLeft(initial);
 
-    // 이미 만료된 상태면 타이머 설정 안함 (무한 루프 방지)
+    // 이미 만료된 상태면 타이머 설정 안함
     if (initial.isExpired) {
-      if (!hasExpired) {
-        setHasExpired(true);
+      if (!hasExpiredRef.current) {
+        hasExpiredRef.current = true;
+        // 콜백이 있으면 한 번만 실행 (비동기 처리로 무한 루프 방지)
+        if (onExpireRef.current && typeof onExpireRef.current === 'function') {
+          setTimeout(() => {
+            console.log('⏰ 카운트다운 종료 (초기 상태) - 자동 새로고침');
+            onExpireRef.current();
+          }, 100);
+        }
       }
       return;
     }
 
-    setHasExpired(false);
+    // 아직 만료되지 않은 경우 hasExpired를 false로 리셋
+    hasExpiredRef.current = false;
 
     // 1초마다 업데이트
     const timer = setInterval(() => {
@@ -83,21 +118,23 @@ export const useCountdown = (targetDate, onExpire) => {
       setTimeLeft(newTimeLeft);
 
       // 시간이 만료되면 콜백 실행 (한 번만)
-      if (newTimeLeft.isExpired) {
-        setHasExpired(true);
+      if (newTimeLeft.isExpired && !hasExpiredRef.current) {
+        hasExpiredRef.current = true;
         clearInterval(timer);
 
         if (onExpireRef.current && typeof onExpireRef.current === 'function') {
-          // 즉시 콜백 실행 (백엔드 스마트 타이머가 동시에 업데이트)
-          console.log('⏰ 카운트다운 종료 - 자동 새로고침');
-          onExpireRef.current();
+          // 비동기 처리로 현재 렌더링 사이클과 분리
+          setTimeout(() => {
+            console.log('⏰ 카운트다운 종료 - 자동 새로고침');
+            onExpireRef.current();
+          }, 100);
         }
       }
     }, 1000);
 
     // Cleanup
     return () => clearInterval(timer);
-  }, [targetDate, hasExpired]);
+  }, [targetDate]); // targetDate만 의존성으로 유지
 
   return timeLeft;
 };

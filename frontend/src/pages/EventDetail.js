@@ -48,7 +48,7 @@ function EventDetail() {
     if (!token) return; // 로그인 안 한 경우 체크하지 않음
 
     try {
-      const response = await api.post(`/api/queue/check/${id}`, {}, {
+      const response = await api.post(`/queue/check/${id}`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -100,22 +100,15 @@ function EventDetail() {
     fetchEventDetail();
   }, [fetchEventDetail]);
 
-  // 현재 시간 체크 (이미 만료된 카운트다운에는 콜백을 설정하지 않음)
-  const now = new Date();
-  const isSaleStartExpired = event && new Date(event.sale_start_date) <= now;
-  const isSaleEndExpired = event && new Date(event.sale_end_date) <= now;
-
-  // 카운트다운 훅 (event 로드 후에만 사용)
+  // 카운트다운 훅 - 상태에 따라 콜백 전달 (단순화)
   const saleStartCountdown = useCountdown(
-    event?.sale_start_date || new Date(),
-    // 상태가 UPCOMING이고 아직 만료되지 않았을 때만 콜백 설정
-    (event?.status === EVENT_STATUS.UPCOMING && !isSaleStartExpired) ? handleCountdownExpire : null
+    event?.sale_start_date,
+    event?.status === EVENT_STATUS.UPCOMING ? handleCountdownExpire : null
   );
 
   const saleEndCountdown = useCountdown(
-    event?.sale_end_date || new Date(),
-    // 상태가 ON_SALE이고 아직 만료되지 않았을 때만 콜백 설정
-    (event?.status === EVENT_STATUS.ON_SALE && !isSaleEndExpired) ? handleCountdownExpire : null
+    event?.sale_end_date,
+    event?.status === EVENT_STATUS.ON_SALE ? handleCountdownExpire : null
   );
 
   const handleQuantityChange = (ticketTypeId, quantity) => {
@@ -261,7 +254,7 @@ function EventDetail() {
             )}
 
             {/* 카운트다운 섹션 */}
-            {event.status === EVENT_STATUS.UPCOMING && !saleStartCountdown.isExpired && (
+            {event.status === EVENT_STATUS.UPCOMING && saleStartCountdown && !saleStartCountdown.isExpired && (
               <div className="countdown-section upcoming-countdown">
                 <div className="countdown-header">
                   <span className="countdown-icon">🎯</span>
@@ -270,33 +263,33 @@ function EventDetail() {
                 <div className="countdown-display">
                   {saleStartCountdown.months > 0 && (
                     <div className="countdown-unit">
-                      <span className="countdown-number">{saleStartCountdown.months}</span>
+                      <span className="countdown-number">{saleStartCountdown.months || 0}</span>
                       <span className="countdown-text">개월</span>
                     </div>
                   )}
                   {saleStartCountdown.days > 0 && (
                     <div className="countdown-unit">
-                      <span className="countdown-number">{saleStartCountdown.days}</span>
+                      <span className="countdown-number">{saleStartCountdown.days || 0}</span>
                       <span className="countdown-text">일</span>
                     </div>
                   )}
                   <div className="countdown-unit">
-                    <span className="countdown-number">{saleStartCountdown.hours}</span>
+                    <span className="countdown-number">{saleStartCountdown.hours || 0}</span>
                     <span className="countdown-text">시간</span>
                   </div>
                   <div className="countdown-unit">
-                    <span className="countdown-number">{saleStartCountdown.minutes}</span>
+                    <span className="countdown-number">{saleStartCountdown.minutes || 0}</span>
                     <span className="countdown-text">분</span>
                   </div>
                   <div className="countdown-unit">
-                    <span className="countdown-number">{saleStartCountdown.seconds}</span>
+                    <span className="countdown-number">{saleStartCountdown.seconds || 0}</span>
                     <span className="countdown-text">초</span>
                   </div>
                 </div>
               </div>
             )}
 
-            {event.status === EVENT_STATUS.ON_SALE && !saleEndCountdown.isExpired && (
+            {event.status === EVENT_STATUS.ON_SALE && saleEndCountdown && !saleEndCountdown.isExpired && (
               <div className="countdown-section on-sale-countdown">
                 <div className="countdown-header">
                   <span className="countdown-icon">⏰</span>
@@ -305,20 +298,20 @@ function EventDetail() {
                 <div className="countdown-display">
                   {saleEndCountdown.days > 0 && (
                     <div className="countdown-unit">
-                      <span className="countdown-number">{saleEndCountdown.days}</span>
+                      <span className="countdown-number">{saleEndCountdown.days || 0}</span>
                       <span className="countdown-text">일</span>
                     </div>
                   )}
                   <div className="countdown-unit">
-                    <span className="countdown-number">{saleEndCountdown.hours}</span>
+                    <span className="countdown-number">{saleEndCountdown.hours || 0}</span>
                     <span className="countdown-text">시간</span>
                   </div>
                   <div className="countdown-unit">
-                    <span className="countdown-number">{saleEndCountdown.minutes}</span>
+                    <span className="countdown-number">{saleEndCountdown.minutes || 0}</span>
                     <span className="countdown-text">분</span>
                   </div>
                   <div className="countdown-unit">
-                    <span className="countdown-number">{saleEndCountdown.seconds}</span>
+                    <span className="countdown-number">{saleEndCountdown.seconds || 0}</span>
                     <span className="countdown-text">초</span>
                   </div>
                 </div>
