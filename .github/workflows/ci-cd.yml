@@ -1,0 +1,116 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # GitHub-Hosted Runner
+  build-and-push:
+    name: Build and Push Docker Images / Upload Frontend to S3
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write # OIDC 인증을 위해 GitHub의 ID 토큰을 발급받을 수 있는 권한
+
+    outputs:
+      image_tag: ${{ steps.define-vars.outputs.image_tag }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # --- Frontend ---
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm install
+          npm run build
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
+          aws-region: ap-northeast-2
+
+      - name: Upload Frontend to S3 and Invalidate CloudFront
+        run: |
+          aws s3 sync ./frontend/build s3://${{ secrets.S3_BUCKET_NAME }} --delete
+        # TODO: Invalidate CloudFront Cache
+
+      # --- Backend ---
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Define ECR Repo and Image Tag
+        id: define-vars
+        run: |
+          echo "ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${{ github.sha }}" >> $GITHUB_ENV
+          echo "image_tag=${{ github.sha }}" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker images via Docker Compose
+        env:
+          BACKEND_IMAGE_URI: ${{ env.ECR_REGISTRY }}/${{ secrets.ECR_BACKEND_REPO_NAME }}
+        run: |
+          docker compose -f docker-compose.yml build
+          docker compose -f docker-compose.yml push
+
+      - name: Deployment notification
+        run: |
+          echo "✅ Static files are uploaded to S3 / Docker image is pushed to ECR."
+
+  # Self-Hosted Runner
+  # deploy:
+  #   name: Deploy to EC2 Instance
+  #   runs-on: self-hosted
+  #   needs: build-and-push
+
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
+
+  #     - name: Configure AWS Credentials (OIDC)
+  #       uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
+  #         aws-region: ap-northeast-2
+
+  #     - name: Log in to Amazon ECR
+  #       id: login-ecr
+  #       uses: aws-actions/amazon-ecr-login@v2
+
+  #     - name: Pull and run Docker containers
+  #       env:
+  #         # 'build-and-push' 잡의 output에서 image_tag 값을 가져와 환경 변수로 설정
+  #         IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
+  #         # ECR 로그인 스텝에서 레지스트리 주소를 가져오기
+  #         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+  #         # docker-compose.yml이 참조할 수 있도록 URI를 다시 정의합니다.
+  #         BACKEND_IMAGE_URI: ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_BACKEND_REPO_NAME }}
+  #         # backend 환경변수
+  #         NODE_ENV: production
+  #         POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+  #         POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+  #         POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+  #         POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
+  #         POSTGRES_HOST: postgres
+  #         PORT: ${{ secrets.BACKEND_PORT }}
+  #         REDIS_HOST: dragonfly
+  #         REDIS_PORT: ${{ secrets.REDIS_PORT }}
+  #         JWT_SECRET: ${{ secrets.JWT_SECRET }}
+  #         ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+  #         ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+
+  #       run: |
+  #         echo "Deploying image with tag: $IMAGE_TAG"
+  #         docker compose -f docker-compose.prod.yml pull
+  #         docker compose -f docker-compose.prod.yml up -d --remove-orphans
