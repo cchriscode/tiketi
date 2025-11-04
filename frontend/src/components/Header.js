@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Header.css';
+import { ReactComponent as LogoIcon } from '../images/tiketi-logo.svg';
 
 function Header() {
   const [user, setUser] = useState(null);
@@ -33,9 +34,10 @@ function Header() {
         <div className="header-content">
           <div className="brand">
             <Link to="/" className="logo">
-              <span className="logo-text">티케티 TIKETI</span>
+            <span className="logo-icon"><LogoIcon width={28} height={28} /></span>
+              <span className="logo-text">tiketi.</span>
             </Link>
-            <div className="brand-subtitle">가장 빠른 티켓팅</div>
+            <div className="brand-subtitle">티케티. 가장 빠른 티켓팅</div>
           </div>
 
           <form className="search" onSubmit={handleSearchSubmit} role="search">
