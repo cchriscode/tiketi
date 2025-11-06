@@ -62,16 +62,13 @@ graph TB
         subgraph "Frontend 계층"
             FRONTEND[Frontend React<br/>Port: 3000<br/>- 좌석 선택 UI<br/>- WebSocket 클라이언트]
         end
-        
         subgraph "Backend 계층"
             BACKEND[Backend Node.js + Express<br/>Port: 3001<br/>- REST API + WebSocket<br/>- 비즈니스 로직<br/>- 분산 락 관리]
         end
-        
         subgraph "데이터 계층"
             POSTGRES[PostgreSQL<br/>Port: 5432<br/>- 티켓 데이터<br/>- 예약 정보<br/>- 사용자 정보]
-            DRAGONFLY[Dragonfly Redis 호환<br/>Port: 6379<br/>- 캐싱<br/>- 분산 락<br/>- 세션 관리]
+            DRAGONFLY[Dragonfly (Redis 호환)<br/>Port: 6379<br/>- 캐싱<br/>- 분산 락<br/>- 세션 관리]
         end
-        
         subgraph "Docker Volumes"
             VOL1[postgres-data<br/>영속적 데이터]
             VOL2[dragonfly-data<br/>캐시 데이터]
@@ -92,10 +89,6 @@ graph TB
     style DRAGONFLY fill:#ffebee
     style VOL1 fill:#e0f2f1
     style VOL2 fill:#e0f2f1
-Docker Network: tiketi-network
-Docker Volumes:
-  - postgres-data (영속적 데이터)
-  - dragonfly-data (캐시 데이터)
 
 ```
 
