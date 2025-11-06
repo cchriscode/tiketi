@@ -84,7 +84,7 @@
 │  - 사용자 정보 │     │  - 세션 관리     │
 │               │     │                  │
 └───────────────┘     └──────────────────┘
-mermaid
+```mermaid
 graph TB
     subgraph "사용자 계층"
         USER[사용자<br/>Browser]
