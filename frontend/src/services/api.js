@@ -31,7 +31,7 @@ api.interceptors.response.use(
       // Clear local storage
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      
+
       // Show user-friendly message
       const errorCode = error.response?.data?.code;
       if (errorCode === 'USER_NOT_FOUND') {
@@ -39,7 +39,7 @@ api.interceptors.response.use(
       } else {
         alert('인증이 필요합니다. 로그인해주세요.');
       }
-      
+
       // Redirect to login
       window.location.href = '/login';
     }
@@ -87,21 +87,34 @@ export const paymentsAPI = {
 // Admin APIs
 export const adminAPI = {
   getDashboardStats: () => api.get('/admin/dashboard/stats'),
-  
+
   // Events
   createEvent: (data) => api.post('/admin/events', data),
   updateEvent: (id, data) => api.put(`/admin/events/${id}`, data),
   deleteEvent: (id) => api.delete(`/admin/events/${id}`),
   cancelEvent: (id) => api.post(`/admin/events/${id}/cancel`),
-  
+
   // Tickets
   createTicket: (eventId, data) => api.post(`/admin/events/${eventId}/tickets`, data),
   updateTicket: (id, data) => api.put(`/admin/tickets/${id}`, data),
-  
+
   // Reservations
   getAllReservations: (params) => api.get('/admin/reservations', { params }),
   updateReservationStatus: (id, data) => api.patch(`/admin/reservations/${id}/status`, data),
 };
+
+export const imageAPI = {
+  uploadImage: (file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    return api.post('/image/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+  }
+}
 
 export default api;
 
