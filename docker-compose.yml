@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
@@ -24,7 +22,7 @@ services:
     image: docker.dragonflydb.io/dragonflydb/dragonfly:latest
     container_name: tiketi-dragonfly
     ports:
-      - "7379:6379"  # Windows 예약 포트 회피
+      - "7379:6379" # Windows 예약 포트 회피
     ulimits:
       memlock: -1
     volumes:
@@ -51,6 +49,10 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
       TZ: Asia/Seoul
     ports:
       - "3001:3001"
@@ -91,4 +93,3 @@ networks:
 volumes:
   postgres_data:
   dragonfly_data:
-
