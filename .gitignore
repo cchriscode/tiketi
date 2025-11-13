@@ -52,3 +52,6 @@ backend/dist/
 # Credentials
 credentials.txt
 *.key
+TIKETI.drawio
+package-lock.json
+frontend/package-lock.json
