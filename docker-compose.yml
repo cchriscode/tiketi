@@ -16,6 +16,10 @@ services:
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - tiketi-network
+    logging:
+      driver: json-file
+      options:
+        tag: "{{.ImageName}}|{{.Name}}"
 
   # DragonflyDB (Redis alternative)
   dragonfly:
@@ -64,6 +68,10 @@ services:
       - /app/node_modules
     networks:
       - tiketi-network
+    logging:
+      driver: json-file
+      options:
+        tag: "{{.ImageName}}|{{.Name}}"
 
   # Frontend
   frontend:
@@ -86,6 +94,44 @@ services:
     stdin_open: true
     tty: true
 
+  # Loki (로그 저장소)
+  loki:
+    image: grafana/loki:2.9.2
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./monitoring/loki-config.yaml:/etc/loki/local-config.yaml
+    networks:
+      - tiketi-network
+
+  # 2. Promtail (로그 수집기)
+  promtail:
+    image: grafana/promtail:2.9.2
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro # 도커 로그 파일 원본 읽기 (읽기 전용)
+      - ./monitoring/promtail-config.yaml:/etc/promtail/config.yaml
+      - /var/run/docker.sock:/var/run/docker.sock # 도커 소켓 접근
+    command: -config.file=/etc/promtail/config.yaml
+    networks:
+      - tiketi-network
+
+  # 3. Grafana (시각화 대시보드)
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3002:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana # 대시보드 설정 날아가지 않게 저장
+      - ./monitoring/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin # 초기 비번 설정 (나중에 바꾸세요)
+    networks:
+      - tiketi-network
+    depends_on:
+      - loki
+
 networks:
   tiketi-network:
     driver: bridge
@@ -93,3 +139,4 @@ networks:
 volumes:
   postgres_data:
   dragonfly_data:
+  grafana-data:
