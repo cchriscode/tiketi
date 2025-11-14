@@ -29,9 +29,9 @@ const logFormat = (req, res, args) => ({
   request: {
     method: req.method,
     url: req.originalUrl,
-    body: Object.keys(req.body).length ? req.body : undefined,
-    query: Object.keys(req.query).length ? req.query : undefined,
-    params: Object.keys(req.params).length ? req.params : undefined,
+    body: Object.keys(req.body || {}).length ? req.body : undefined,
+    query: Object.keys(req.query || {}).length ? req.query : undefined,
+    params: Object.keys(req.params || {}).length ? req.params : undefined,
   },
   response: {
     statusCode: res.statusCode,

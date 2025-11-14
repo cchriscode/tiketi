@@ -10,6 +10,7 @@ class CustomError extends Error {
         this.statusCode = statusCode;
         this.cause = cause; // 여기에 진짜 에러 내용(DB 에러 객체 등)을 담습니다.
         this.isOperational = true; // "우리가 예상하고 만든 에러다"라는 표시
+        this.name = 'CustomError';
 
         // 스택 트레이스 캡처
         Error.captureStackTrace(this, this.constructor);
