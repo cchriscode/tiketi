@@ -28,7 +28,14 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/seats', require('./routes/seats'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/queue', require('./routes/queue'));
-app.use('/api/image', require('./routes/image'));
+
+// Image upload route (only if AWS S3 is configured)
+if (process.env.AWS_S3_BUCKET) {
+  app.use('/api/image', require('./routes/image'));
+  console.log('✅ Image upload route enabled (S3 configured)');
+} else {
+  console.log('⚠️  Image upload route disabled (S3 not configured)');
+}
 
 // Health check (enhanced)
 app.use('/', require('./routes/health'));
