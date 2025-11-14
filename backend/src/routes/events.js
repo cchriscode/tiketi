@@ -6,23 +6,25 @@ const {
   CACHE_SETTINGS,
   PAGINATION_DEFAULTS,
 } = require('../shared/constants');
+const { logger } = require('../utils/logger');
+const CustomError = require('../utils/custom-error');
 
 const router = express.Router();
 
 // 이벤트 목록 조회 (캐싱 적용)
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   try {
-    const { 
-      status, 
-      page = PAGINATION_DEFAULTS.PAGE, 
-      limit = PAGINATION_DEFAULTS.EVENTS_LIMIT 
+    const {
+      status,
+      page = PAGINATION_DEFAULTS.PAGE,
+      limit = PAGINATION_DEFAULTS.EVENTS_LIMIT
     } = req.query;
     const offset = (page - 1) * limit;
 
     // Try cache first
     const cacheKey = CACHE_KEYS.EVENTS_LIST(status, page, limit);
     const cached = await redisClient.get(cacheKey);
-    
+
     if (cached) {
       return res.json(JSON.parse(cached));
     }
@@ -38,13 +40,13 @@ router.get('/', async (req, res) => {
       FROM events e
       LEFT JOIN ticket_types tt ON e.id = tt.event_id
     `;
-    
+
     const params = [];
     if (status) {
       query += ' WHERE e.status = $1';
       params.push(status);
     }
-    
+
     // 티켓팅 오픈 시간(sale_start_date) 가까운 순으로 정렬 (ASC)
     query += ' GROUP BY e.id ORDER BY e.sale_start_date ASC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
     params.push(parseInt(limit), offset);
@@ -76,20 +78,19 @@ router.get('/', async (req, res) => {
 
     res.json(response);
   } catch (error) {
-    console.error('Get events error:', error);
-    res.status(500).json({ error: '이벤트 목록을 불러오는데 실패했습니다.' });
+    next(new CustomError(500, error.message, error));
   }
 });
 
 // 이벤트 상세 조회 (티켓 타입 포함)
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
 
     // Try cache first
     const cacheKey = CACHE_KEYS.EVENT(id);
     const cached = await redisClient.get(cacheKey);
-    
+
     if (cached) {
       return res.json(JSON.parse(cached));
     }
@@ -124,8 +125,9 @@ router.get('/:id', async (req, res) => {
 
     res.json(response);
   } catch (error) {
-    console.error('Get event detail error:', error);
-    res.status(500).json({ error: '이벤트 정보를 불러오는데 실패했습니다.' });
+    error.status = 500;
+    error.message = '이벤트 정보를 불러오는데 실패했습니다.';
+    next(error);
   }
 });
 

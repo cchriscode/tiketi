@@ -2,6 +2,7 @@ const { Server } = require('socket.io');
 const { createAdapter } = require('@socket.io/redis-adapter');
 const { createClient } = require('redis');
 const jwt = require('jsonwebtoken');
+const { logger } = require('../utils/logger');
 const { CONFIG } = require('../shared/constants');
 const {
   saveUserSession,
@@ -49,10 +50,10 @@ function initializeSocketIO(server) {
       socket.data.userId = decoded.userId;
       socket.data.userRole = decoded.role;
 
-      console.log(`✅ Socket authenticated: ${socket.id} (user:${decoded.userId})`);
+      logger.info(`✅ Socket authenticated: ${socket.id} (user:${decoded.userId})`);
       next();
     } catch (error) {
-      console.error('❌ Socket authentication failed:', error.message);
+      logger.error('❌ Socket authentication failed:', error.message);
       next(new Error('Invalid authentication token'));
     }
   });
@@ -73,10 +74,10 @@ function initializeSocketIO(server) {
 
       io.adapter(createAdapter(pubClient, subClient));
 
-      console.log('✅ Socket.IO Redis Adapter connected (Multi-instance ready)');
+      logger.info('✅ Socket.IO Redis Adapter connected (Multi-instance ready)');
     } catch (error) {
-      console.error('❌ Redis Adapter connection failed:', error.message);
-      console.log('⚠️  Running Socket.IO in single-instance mode');
+      logger.error('❌ Redis Adapter connection failed:', error.message);
+      logger.info('⚠️  Running Socket.IO in single-instance mode');
     }
   };
 
@@ -87,7 +88,7 @@ function initializeSocketIO(server) {
   // ============================================
   io.on('connection', async (socket) => {
     const userId = socket.data.userId;
-    console.log(`🔌 Client connected: ${socket.id} (user:${userId})`);
+    logger.info(`🔌 Client connected: ${socket.id} (user:${userId})`);
 
     // Socket ID와 User ID 매핑 저장
     await mapSocketToUser(socket.id, userId);
@@ -97,7 +98,7 @@ function initializeSocketIO(server) {
     // ============================================
     const previousSession = await getUserSession(userId);
     if (previousSession) {
-      console.log(`🔄 Restoring session for user:${userId}`, previousSession);
+      logger.info(`🔄 Restoring session for user:${userId}, previousSession: ${JSON.stringify(previousSession)}`);
 
       // 이전에 참여했던 룸에 자동으로 재참여
       if (previousSession.eventId) {
@@ -130,7 +131,7 @@ function initializeSocketIO(server) {
     socket.on('join-event', async ({ eventId }) => {
       socket.join(`event:${eventId}`);
       socket.data.eventId = eventId;
-      console.log(`👤 ${socket.id} joined event:${eventId}`);
+      logger.info(`👤 ${socket.id} joined event:${eventId}`);
 
       // 세션에 저장
       await updateUserSession(userId, { eventId });
@@ -149,7 +150,7 @@ function initializeSocketIO(server) {
     socket.on('leave-event', async ({ eventId }) => {
       socket.leave(`event:${eventId}`);
       socket.data.eventId = null;
-      console.log(`👋 ${socket.id} left event:${eventId}`);
+      logger.info(`👋 ${socket.id} left event:${eventId}`);
 
       // 세션에서 제거
       await updateUserSession(userId, { eventId: null });
@@ -167,7 +168,7 @@ function initializeSocketIO(server) {
     socket.on('join-queue', async ({ eventId }) => {
       socket.join(`queue:${eventId}`);
       socket.data.queueEventId = eventId;
-      console.log(`⏳ ${socket.id} (user:${userId}) joined queue:${eventId}`);
+      logger.info(`⏳ ${socket.id} (user:${userId}) joined queue:${eventId}`);
 
       // 세션에 저장
       await updateUserSession(userId, { queueEventId: eventId });
@@ -179,7 +180,7 @@ function initializeSocketIO(server) {
     socket.on('join-seat-selection', async ({ eventId }) => {
       socket.join(`seats:${eventId}`);
       socket.data.seatEventId = eventId;
-      console.log(`🪑 ${socket.id} joined seats:${eventId}`);
+      logger.info(`🪑 ${socket.id} joined seats:${eventId}`);
 
       // 세션에 저장
       await updateUserSession(userId, { seatEventId: eventId });
@@ -199,7 +200,7 @@ function initializeSocketIO(server) {
     // 연결 해제
     // ============================================
     socket.on('disconnect', async () => {
-      console.log(`🔌 Client disconnected: ${socket.id} (user:${userId})`);
+      logger.info(`🔌 Client disconnected: ${socket.id} (user:${userId})`);
 
       // Socket 매핑 제거 (세션은 유지하여 재연결 대비)
       await unmapSocket(socket.id);

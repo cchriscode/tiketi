@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const db = require('../config/database');
 const { CONFIG } = require('../shared/constants');
+const CustomError = require('../utils/custom-error');
 
 const router = express.Router();
 
@@ -14,7 +15,7 @@ router.post('/register',
     body('password').isLength({ min: 6 }),
     body('name').trim().notEmpty(),
   ],
-  async (req, res) => {
+  async (req, res, next) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -62,8 +63,7 @@ router.post('/register',
         }
       });
     } catch (error) {
-      console.error('Register error:', error);
-      res.status(500).json({ error: '회원가입에 실패했습니다.' });
+      next(new CustomError(500, '회원가입에 실패했습니다.', error));
     }
   }
 );
@@ -74,7 +74,7 @@ router.post('/login',
     body('email').isEmail().normalizeEmail(),
     body('password').notEmpty(),
   ],
-  async (req, res) => {
+  async (req, res, next) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -119,8 +119,7 @@ router.post('/login',
         }
       });
     } catch (error) {
-      console.error('Login error:', error);
-      res.status(500).json({ error: '로그인에 실패했습니다.' });
+      next(new CustomError(500, '로그인에 실패했습니다.', error));
     }
   }
 );

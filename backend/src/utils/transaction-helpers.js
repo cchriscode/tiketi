@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const { logger } = require('../utils/logger');
 const { acquireLock, releaseLock } = require('../config/redis');
 
 /**
@@ -72,7 +73,7 @@ async function withLock(lockKeys, ttl, callback) {
       try {
         await releaseLock(lockKey);
       } catch (releaseError) {
-        console.error(`Failed to release lock ${lockKey}:`, releaseError.message);
+        logger.error(`Failed to release lock ${lockKey}: ${releaseError.message}`);
       }
     }
   }
@@ -116,17 +117,17 @@ async function invalidateCache(redisClient, cacheKeys) {
         const matchedKeys = await redisClient.keys(key);
         if (matchedKeys && matchedKeys.length > 0) {
           await redisClient.del(matchedKeys);
-          console.log(`🗑️  캐시 삭제: ${matchedKeys.length}개 (패턴: ${key})`);
+          logger.info(`🗑️  캐시 삭제: ${matchedKeys.length}개 (패턴: ${key})`);
         }
       } else {
         // 단일 키
         await redisClient.del(key);
-        console.log(`🗑️  캐시 삭제: ${key}`);
+        logger.info(`🗑️  캐시 삭제: ${key}`);
       }
     }
   } catch (cacheError) {
     // 캐시 무효화 실패는 치명적이지 않으므로 로그만 남김
-    console.error('⚠️  캐시 무효화 중 에러 (계속 진행):', cacheError.message);
+    logger.error(`⚠️  캐시 무효화 중 에러 (계속 진행): ${cacheError.message}`);
   }
 }
 

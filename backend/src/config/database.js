@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 const { CONFIG } = require('../shared/constants');
+const { logger } = require('../utils/logger');
 
 const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
@@ -13,11 +14,11 @@ const pool = new Pool({
 });
 
 pool.on('connect', () => {
-  console.log('✅ Connected to PostgreSQL database');
+  logger.info('✅ Connected to PostgreSQL database');
 });
 
 pool.on('error', (err) => {
-  console.error('❌ Unexpected error on idle client', err.message);
+  logger.error('❌ Unexpected error on idle client', err.message);
   // Don't exit process, just log the error
 });
 
