@@ -16,6 +16,23 @@ services:
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - tiketi-network
+    # 로그 관련 세팅
+    logging:
+      driver: json-file
+      options:
+        tag: "{{.ImageName}}|{{.Name}}"
+        max-size: "10m"
+        max-file: "3"
+    command:
+      - "postgres"
+      - "-c"
+      - "logging_collector=off" # 도커 로그(stdout)로 내보내기 위해 끔
+      - "-c"
+      - "log_destination=stderr" # 표준 에러로 출력 (Promtail이 가져감)
+      - "-c"
+      - "log_statement=all" # 데이터를 변경하는 쿼리(INSERT, UPDATE 등)는 기록 (선택사항)
+      - "-c"
+      - "log_min_duration_statement=0" # ★ 200ms(0.2초) 이상 걸린 쿼리만 기록!
 
   # DragonflyDB (Redis alternative)
   dragonfly:
@@ -24,11 +41,22 @@ services:
     ports:
       - "7379:6379" # Windows 예약 포트 회피
     ulimits:
-      memlock: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+      memlock:
+        soft: -1
+        hard: -1
     volumes:
       - dragonfly_data:/data
     networks:
       - tiketi-network
+    logging:
+      driver: json-file
+      options:
+        tag: "{{.ImageName}}|{{.Name}}"
+        max-size: "10m"
+        max-file: "3"
 
   # Backend API
   backend:
@@ -64,6 +92,12 @@ services:
       - /app/node_modules
     networks:
       - tiketi-network
+    logging:
+      driver: json-file
+      options:
+        tag: "{{.ImageName}}|{{.Name}}"
+        max-size: "10m"
+        max-file: "3"
 
   # Frontend
   frontend:
@@ -85,6 +119,66 @@ services:
       - tiketi-network
     stdin_open: true
     tty: true
+    logging:
+      driver: json-file
+      options:
+        tag: "{{.ImageName}}|{{.Name}}"
+        max-size: "10m"
+        max-file: "3"
+
+  # Loki volume 초기 소유권 설정용 (청소부)
+  init-loki:
+    image: grafana/loki:2.9.2
+    user: root # 얘는 잠깐만 Root로 실행!
+    entrypoint:
+      - "chown"
+      - "-R"
+      - "10001:10001"
+      - "/tmp/loki"
+    volumes:
+      - loki-data:/tmp/loki # Loki랑 같은 볼륨을 공유함
+
+  # Loki (로그 저장소)
+  loki:
+    image: grafana/loki:2.9.2
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./monitoring/loki-config.yaml:/etc/loki/local-config.yaml
+      - loki-data:/tmp/loki
+    networks:
+      - tiketi-network
+    depends_on:
+      init-loki:
+        condition: service_completed_successfully # ★ 청소부가 일을 '성공적으로 끝내면' 시작해라
+
+  # 2. Promtail (로그 수집기)
+  promtail:
+    image: grafana/promtail:2.9.2
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro # 도커 로그 파일 원본 읽기 (읽기 전용)
+      - ./monitoring/promtail-config.yaml:/etc/promtail/config.yaml
+      - /var/run/docker.sock:/var/run/docker.sock # 도커 소켓 접근
+    command: -config.file=/etc/promtail/config.yaml
+    networks:
+      - tiketi-network
+
+  # 3. Grafana (시각화 대시보드)
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3002:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana # 대시보드 설정 날아가지 않게 저장
+      - ./monitoring/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin # 초기 비번 설정 (나중에 바꾸세요)
+    networks:
+      - tiketi-network
+    depends_on:
+      - loki
 
 networks:
   tiketi-network:
@@ -93,3 +187,5 @@ networks:
 volumes:
   postgres_data:
   dragonfly_data:
+  grafana-data:
+  loki-data:

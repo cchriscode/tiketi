@@ -7,6 +7,9 @@ const initSeats = require('./config/init-seats');
 const reservationCleaner = require('./services/reservation-cleaner');
 const eventStatusUpdater = require('./services/event-status-updater');
 const { initializeSocketIO } = require('./config/socket');
+const errorHandler = require('./middleware/error-handler');
+const requestLogger = require('./middleware/request-logger');
+const { logger } = require('./utils/logger');
 
 dotenv.config();
 
@@ -18,6 +21,8 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(requestLogger)
+
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -40,16 +45,16 @@ if (process.env.AWS_S3_BUCKET) {
 // Health check (enhanced)
 app.use('/', require('./routes/health'));
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({
-    error: {
-      message: err.message || 'Internal Server Error',
-      status: err.status || 500
-    }
-  });
+// TODO: 확인용으로 추가. 다음 배포 시 제거할 것
+app.get('/error-test', (req, res, next) => {
+  const error = new Error('의도적으로 발생시킨 에러입니다!');
+  error.status = 400;
+  next(error);
 });
+
+
+// Error handling middleware
+app.use(errorHandler);
 
 // Initialize Socket.IO with Redis Adapter (AWS multi-instance ready)
 const io = initializeSocketIO(server);
@@ -58,22 +63,23 @@ const io = initializeSocketIO(server);
 app.locals.io = io;
 
 server.listen(PORT, async () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 Health check: http://localhost:${PORT}/health`);
-  console.log(`🔌 WebSocket ready on port ${PORT}`);
+  logger.info(`🚀 Server running on port ${PORT}`);
+  logger.info(`📡 Health check: http://localhost:${PORT}/health`);
+  logger.info(`🔌 WebSocket ready on port ${PORT}`);
+
 
   // Initialize admin account (with retry on database connection failure)
   try {
     await initializeAdmin();
   } catch (error) {
-    console.error('⚠️  Admin initialization will retry on database connection');
+    logger.error('⚠️  Admin initialization will retry on database connection');
   }
 
   // Initialize seats for events with seat layouts (with retry on database connection failure)
   try {
     await initSeats();
   } catch (error) {
-    console.error('⚠️  Seat initialization will retry on database connection');
+    logger.error('⚠️  Seat initialization will retry on database connection');
   }
 
   // Set Socket.IO for reservation cleaner (real-time seat release)
@@ -93,60 +99,60 @@ let isShuttingDown = false;
 
 async function gracefulShutdown(signal) {
   if (isShuttingDown) {
-    console.log('⚠️  Shutdown already in progress...');
+    logger.warn('⚠️  Shutdown already in progress...');
     return;
   }
   isShuttingDown = true;
 
-  console.log(`\n📥 Received ${signal}, starting graceful shutdown...`);
+  logger.info(`\n📥 Received ${signal}, starting graceful shutdown...`);
 
   try {
     // 1. Stop accepting new connections
-    console.log('⏸️  Stopping HTTP server (rejecting new connections)...');
+    logger.info('⏸️  Stopping HTTP server (rejecting new connections)...');
     server.close(() => {
-      console.log('✅ HTTP server closed');
+      logger.info('✅ HTTP server closed');
     });
 
     // 2. Stop background services
-    console.log('⏸️  Stopping background services...');
+    logger.info('⏸️  Stopping background services...');
     reservationCleaner.stop();
     eventStatusUpdater.stop();
-    console.log('✅ Background services stopped');
+    logger.info('✅ Background services stopped');
 
     // 3. Close Socket.IO connections
-    console.log('🔌 Closing WebSocket connections...');
+    logger.info('🔌 Closing WebSocket connections...');
     const io = app.locals.io;
     if (io) {
       io.close(() => {
-        console.log('✅ Socket.IO closed');
+        logger.info('✅ Socket.IO closed');
       });
     }
 
-    // 4. Wait for ongoing operations (max 30 seconds)
-    console.log('⏳ Waiting for ongoing operations to complete...');
+    // 4. Wait for ongoing operations (max 5 seconds)
+    logger.info('⏳ Waiting for ongoing operations to complete...');
     await new Promise((resolve) => setTimeout(resolve, 5000));
 
     // 5. Close database connections
-    console.log('💾 Closing database connections...');
+    logger.info('💾 Closing database connections...');
     const db = require('./config/database');
     const pool = db.getClient ? await db.getClient() : null;
     if (pool) {
       await pool.end();
     }
-    console.log('✅ Database connections closed');
+    logger.info('✅ Database connections closed');
 
     // 6. Close Redis connections
-    console.log('🗄️  Closing Redis connections...');
+    logger.info('🗄️  Closing Redis connections...');
     const { client: redisClient } = require('./config/redis');
     if (redisClient && redisClient.isOpen) {
       await redisClient.quit();
     }
-    console.log('✅ Redis connections closed');
+    logger.info('✅ Redis connections closed');
 
-    console.log('✨ Graceful shutdown complete');
+    logger.info('✨ Graceful shutdown complete');
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error during shutdown:', error);
+    logger.error('❌ Error during shutdown:', error);
     process.exit(1);
   }
 }
@@ -157,12 +163,12 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Uncaught exceptions
 process.on('uncaughtException', (error) => {
-  console.error('💥 Uncaught Exception:', error);
+  logger.error('💥 Uncaught Exception:', error);
   gracefulShutdown('uncaughtException');
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+  logger.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
   gracefulShutdown('unhandledRejection');
 });
 
