@@ -13,13 +13,15 @@ const {
   CACHE_KEYS,
 } = require('../shared/constants');
 const { invalidateCache, withTransaction } = require('../utils/transaction-helpers');
+const { logger } = require('../utils/logger');
+const CustomError = require('../utils/custom-error');
 
 const router = express.Router();
 
 // 예매하기 (분산 락 사용)
 router.post('/', authenticateToken, async (req, res) => {
   const client = await db.getClient();
-  
+
   try {
     const { eventId, items } = req.body; // items: [{ ticketTypeId, quantity }]
     const userId = req.user.userId;
@@ -95,7 +97,7 @@ router.post('/', authenticateToken, async (req, res) => {
       // Create reservation items
       for (const item of items) {
         const { ticketTypeId, quantity } = item;
-        
+
         const ticketResult = await client.query(
           'SELECT price FROM ticket_types WHERE id = $1',
           [ticketTypeId]
@@ -146,7 +148,7 @@ router.post('/', authenticateToken, async (req, res) => {
           }
         }
       } catch (socketError) {
-        console.error('⚠️  WebSocket 브로드캐스트 에러:', socketError.message);
+        logger.error('⚠️  WebSocket 브로드캐스트 에러:', socketError.message);
       }
 
       res.status(201).json({
@@ -161,7 +163,7 @@ router.post('/', authenticateToken, async (req, res) => {
     } catch (error) {
       // Rollback transaction
       await client.query('ROLLBACK');
-      
+
       // Release all locks
       for (const lockKey of locksAcquired) {
         await releaseLock(lockKey);
@@ -171,8 +173,7 @@ router.post('/', authenticateToken, async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Create reservation error:', error);
-    res.status(400).json({ error: error.message || '예매에 실패했습니다.' });
+    next(new CustomError(400, error.message || '예매에 실패했습니다.', error));
   } finally {
     client.release();
   }
@@ -209,8 +210,7 @@ router.get('/my', authenticateToken, async (req, res) => {
 
     res.json({ reservations: result.rows });
   } catch (error) {
-    console.error('Get my reservations error:', error);
-    res.status(500).json({ error: '예매 내역을 불러오는데 실패했습니다.' });
+    next(new CustomError(500, '예매 내역을 불러오는데 실패했습니다.', error));
   }
 });
 
@@ -251,8 +251,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
     res.json({ reservation: result.rows[0] });
   } catch (error) {
-    console.error('Get reservation detail error:', error);
-    res.status(500).json({ error: '예매 정보를 불러오는데 실패했습니다.' });
+    next(new CustomError(500, '예매 정보를 불러오는데 실패했습니다.', error));
   }
 });
 
@@ -343,16 +342,13 @@ router.post('/:id/cancel', authenticateToken, async (req, res) => {
         }
       }
     } catch (socketError) {
-      console.error('⚠️  WebSocket 브로드캐스트 에러:', socketError.message);
+      logger.error('⚠️  WebSocket 브로드캐스트 에러:', socketError.message);
     }
 
     res.json({ message: '예매가 취소되었습니다.' });
 
   } catch (error) {
-    console.error('Cancel reservation error:', error);
-    res.status(400).json({ error: error.message || '예매 취소에 실패했습니다.' });
+    next(new CustomError(400, error.message || '예매 취소에 실패했습니다.', error));
   }
-});
-
-module.exports = router;
+}); module.exports = router;
 

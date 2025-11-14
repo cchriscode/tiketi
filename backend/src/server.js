@@ -7,6 +7,9 @@ const initSeats = require('./config/init-seats');
 const reservationCleaner = require('./services/reservation-cleaner');
 const eventStatusUpdater = require('./services/event-status-updater');
 const { initializeSocketIO } = require('./config/socket');
+const errorHandler = require('./middleware/error-handler');
+const requestLogger = require('./middleware/request-logger');
+const { logger } = require('./utils/logger');
 
 dotenv.config();
 
@@ -18,6 +21,8 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(requestLogger)
+
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -35,16 +40,16 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({
-    error: {
-      message: err.message || 'Internal Server Error',
-      status: err.status || 500
-    }
-  });
+// TODO: 확인용으로 추가. 다음 배포 시 제거할 것
+app.get('/error-test', (req, res, next) => {
+  const error = new Error('의도적으로 발생시킨 에러입니다!');
+  error.status = 400;
+  next(error);
 });
+
+
+// Error handling middleware
+app.use(errorHandler);
 
 // Initialize Socket.IO with Redis Adapter (AWS multi-instance ready)
 const io = initializeSocketIO(server);
@@ -53,22 +58,23 @@ const io = initializeSocketIO(server);
 app.locals.io = io;
 
 server.listen(PORT, async () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 Health check: http://localhost:${PORT}/health`);
-  console.log(`🔌 WebSocket ready on port ${PORT}`);
+  logger.info(`🚀 Server running on port ${PORT}`);
+  logger.info(`📡 Health check: http://localhost:${PORT}/health`);
+  logger.info(`🔌 WebSocket ready on port ${PORT}`);
+
 
   // Initialize admin account (with retry on database connection failure)
   try {
     await initializeAdmin();
   } catch (error) {
-    console.error('⚠️  Admin initialization will retry on database connection');
+    logger.error('⚠️  Admin initialization will retry on database connection');
   }
 
   // Initialize seats for events with seat layouts (with retry on database connection failure)
   try {
     await initSeats();
   } catch (error) {
-    console.error('⚠️  Seat initialization will retry on database connection');
+    logger.error('⚠️  Seat initialization will retry on database connection');
   }
 
   // Set Socket.IO for reservation cleaner (real-time seat release)
@@ -83,14 +89,14 @@ server.listen(PORT, async () => {
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('SIGTERM signal received: closing HTTP server');
+  logger.info('SIGTERM signal received: closing HTTP server');
   reservationCleaner.stop();
   eventStatusUpdater.stop();
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
-  console.log('SIGINT signal received: closing HTTP server');
+  logger.info('SIGINT signal received: closing HTTP server');
   reservationCleaner.stop();
   eventStatusUpdater.stop();
   process.exit(0);

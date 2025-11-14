@@ -27,12 +27,7 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }
 });
 
-router.get('/test', (req, res) => {
-  res.json({ message: 'Image route is working' });
-});
-
 router.post('/upload', upload.single('image'), async (req, res) => {
-
   // S3에 저장된 파일의 위치(URL)를 프론트엔드에 돌려줍니다.
   return res.status(200).json({
     url: req.file.location, // S3 접근 URL

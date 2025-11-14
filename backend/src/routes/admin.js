@@ -3,6 +3,8 @@ const db = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const { client: redisClient } = require('../config/redis');
 const seatGenerator = require('../services/seat-generator');
+const { logger } = require('../utils/logger');
+const CustomError = require('../utils/custom-error');
 const {
   EVENT_STATUS,
   RESERVATION_STATUS,
@@ -28,7 +30,7 @@ router.get('/dashboard/stats', async (req, res) => {
 
     // Total reservations
     const reservationsResult = await db.query(
-      'SELECT COUNT(*) as count FROM reservations WHERE status != $1', 
+      'SELECT COUNT(*) as count FROM reservations WHERE status != $1',
       [RESERVATION_STATUS.CANCELLED]
     );
     const totalReservations = parseInt(reservationsResult.rows[0].count);
@@ -72,8 +74,7 @@ router.get('/dashboard/stats', async (req, res) => {
       recentReservations: recentResult.rows,
     });
   } catch (error) {
-    console.error('Get dashboard stats error:', error);
-    res.status(500).json({ error: '통계 정보를 불러오는데 실패했습니다.' });
+    next(new CustomError(500, '통계 정보를 불러오는데 실패했습니다.', error));
   }
 });
 
@@ -83,18 +84,17 @@ router.get('/seat-layouts', async (req, res) => {
     const result = await db.query(
       'SELECT id, name, description, total_seats, layout_config FROM seat_layouts ORDER BY name'
     );
-    
+
     res.json({ layouts: result.rows });
   } catch (error) {
-    console.error('Get seat layouts error:', error);
-    res.status(500).json({ error: '좌석 레이아웃을 불러오는데 실패했습니다.' });
+    next(new CustomError(500, '좌석 레이아웃을 불러오는데 실패했습니다.', error));
   }
 });
 
 // 이벤트 생성 (좌석 선택 기능 포함)
 router.post('/events', async (req, res) => {
   const client = await db.getClient();
-  
+
   try {
     const {
       title,
@@ -126,10 +126,12 @@ router.post('/events', async (req, res) => {
       initialStatus = EVENT_STATUS.ENDED;
     }
 
-    console.log(`🆕 새 이벤트 생성 - 초기 상태: ${initialStatus}`);
-    console.log(`  현재 시간: ${now.toISOString()}`);
-    console.log(`  예매 시작: ${saleStart.toISOString()}`);
-    console.log(`  예매 종료: ${saleEnd.toISOString()}`);
+    logger.info(
+      `🆕 새 이벤트 생성 - 초기 상태: ${initialStatus}
+      현재 시간: ${now.toISOString()}
+      예매 시작: ${saleStart.toISOString()}
+      예매 종료: ${saleEnd.toISOString()}`
+    );
 
     const result = await client.query(
       `INSERT INTO events
@@ -138,7 +140,7 @@ router.post('/events', async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING *`,
       [title, description, venue, address, eventDate, saleStartDate, saleEndDate,
-       posterImageUrl, artistName, seatLayoutId || null, req.user.userId, initialStatus]
+        posterImageUrl, artistName, seatLayoutId || null, req.user.userId, initialStatus]
     );
 
     const event = result.rows[0];
@@ -147,9 +149,9 @@ router.post('/events', async (req, res) => {
     if (seatLayoutId) {
       // Pass the transaction client to seat generator
       await seatGenerator.generateSeatsForEvent(event.id, seatLayoutId, client);
-      console.log(`✅ Generated seats for event: ${event.title} (Layout: ${seatLayoutId})`);
+      logger.info(`✅ Generated seats for event: ${event.title} (Layout: ${seatLayoutId})`);
     }
-    
+
     // 티켓 등급 방식: 티켓 타입 생성
     if (ticketTypes && Array.isArray(ticketTypes) && ticketTypes.length > 0) {
       for (const ticketType of ticketTypes) {
@@ -166,7 +168,7 @@ router.post('/events', async (req, res) => {
           ]
         );
       }
-      console.log(`✅ Created ${ticketTypes.length} ticket types for event: ${event.title}`);
+      logger.info(`✅ Created ${ticketTypes.length} ticket types for event: ${event.title}`);
     }
 
     await client.query('COMMIT');
@@ -174,7 +176,7 @@ router.post('/events', async (req, res) => {
     // 이벤트 상태 업데이터 타이머 재설정
     const eventStatusUpdater = require('../services/event-status-updater');
     eventStatusUpdater.reschedule();
-    console.log('🔄 이벤트 상태 업데이터 타이머 재설정');
+    logger.info('🔄 이벤트 상태 업데이터 타이머 재설정');
 
     // Invalidate all event list caches (즉시 반영을 위해 모든 캐시 삭제)
     await invalidateCachePatterns(redisClient, [CACHE_KEYS.EVENTS_PATTERN]);
@@ -185,8 +187,7 @@ router.post('/events', async (req, res) => {
     });
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Create event error:', error);
-    res.status(500).json({ error: '이벤트 생성에 실패했습니다.' });
+    next(new CustomError(500, '이벤트 생성에 실패했습니다.', error));
   } finally {
     client.release();
   }
@@ -208,19 +209,21 @@ router.put('/events/:id', async (req, res) => {
       artistName,
     } = req.body;
 
-    console.log('🔍 이벤트 수정 요청:');
-    console.log('  eventDate:', eventDate);
-    console.log('  saleStartDate:', saleStartDate);
-    console.log('  saleEndDate:', saleEndDate);
-    
+    logger.info(
+      `🔍 이벤트 수정 요청:
+      eventDate: ${eventDate}
+      saleStartDate: ${saleStartDate}
+      saleEndDate: ${saleEndDate}`
+    );
+
     // 날짜를 한국 시간으로 변환해서 출력
     if (saleStartDate) {
       const kst = new Date(new Date(saleStartDate).getTime() + (9 * 60 * 60 * 1000));
-      console.log('  saleStartDate (KST):', kst.toISOString().replace('T', ' ').slice(0, 16));
+      logger.log('  saleStartDate (KST):', kst.toISOString().replace('T', ' ').slice(0, 16));
     }
     if (saleEndDate) {
       const kst = new Date(new Date(saleEndDate).getTime() + (9 * 60 * 60 * 1000));
-      console.log('  saleEndDate (KST):', kst.toISOString().replace('T', ' ').slice(0, 16));
+      logger.log('  saleEndDate (KST):', kst.toISOString().replace('T', ' ').slice(0, 16));
     }
 
     // 상태는 event-status-updater가 자동으로 관리하므로 수동 업데이트 제외
@@ -234,26 +237,25 @@ router.put('/events/:id', async (req, res) => {
       [title, description, venue, address, eventDate, saleStartDate, saleEndDate, posterImageUrl, artistName, id]
     );
 
-    console.log('✅ UPDATE 쿼리 실행 완료');
-    console.log('  영향받은 행 수:', result.rowCount);
-    
+    logger.info('✅ UPDATE 쿼리 실행 완료\n  영향받은 행 수: ' + result.rowCount);
+
     if (result.rows.length === 0) {
-      console.error('❌ 이벤트를 찾을 수 없음:', id);
-      return res.status(404).json({ error: '이벤트를 찾을 수 없습니다.' });
+      next(new CustomError(404, '이벤트를 찾을 수 없습니다.'));
+      return;
     }
 
-    console.log('✅ 업데이트된 이벤트:', result.rows[0].title);
-    console.log('  sale_start_date:', result.rows[0].sale_start_date);
-    console.log('  sale_end_date:', result.rows[0].sale_end_date);
+    logger.info(`✅ 업데이트된 이벤트: ${result.rows[0].title} 
+      sale_start_date: ${result.rows[0].sale_start_date} 
+      sale_end_date: ${result.rows[0].sale_end_date}`);
 
     // 수정 후 즉시 상태를 계산하여 업데이트
     const updatedEvent = result.rows[0];
     const now = new Date();
     const saleStart = new Date(updatedEvent.sale_start_date);
     const saleEnd = new Date(updatedEvent.sale_end_date);
-    
+
     let newStatus = updatedEvent.status;
-    
+
     // 취소된 이벤트가 아닌 경우에만 상태 자동 계산
     if (updatedEvent.status !== EVENT_STATUS.CANCELLED) {
       if (now < saleStart) {
@@ -263,21 +265,21 @@ router.put('/events/:id', async (req, res) => {
       } else if (now >= saleEnd) {
         newStatus = EVENT_STATUS.ENDED;
       }
-      
+
       // 상태가 변경되었으면 업데이트
       if (newStatus !== updatedEvent.status) {
         await db.query(
           'UPDATE events SET status = $1 WHERE id = $2',
           [newStatus, id]
         );
-        console.log(`🔄 상태 자동 업데이트: ${updatedEvent.status} → ${newStatus}`);
+        logger.info(`🔄 상태 자동 업데이트: ${updatedEvent.status} → ${newStatus}`);
       }
     }
 
     // 이벤트 상태 업데이터 타이머 재설정
     const eventStatusUpdater = require('../services/event-status-updater');
     eventStatusUpdater.reschedule();
-    console.log('🔄 이벤트 상태 업데이터 타이머 재설정');
+    logger.info('🔄 이벤트 상태 업데이터 타이머 재설정');
 
     // Invalidate cache - 모든 관련 캐시 삭제 (즉시 반영)
     await invalidateCachePatterns(redisClient, [
@@ -290,8 +292,7 @@ router.put('/events/:id', async (req, res) => {
       event: { ...result.rows[0], status: newStatus },
     });
   } catch (error) {
-    console.error('Update event error:', error);
-    res.status(500).json({ error: '이벤트 수정에 실패했습니다.' });
+    next(new CustomError(500, '이벤트 수정에 실패했습니다.', error));
   }
 });
 
@@ -314,7 +315,7 @@ router.post('/events/:id/cancel', async (req, res) => {
         throw new Error('이벤트를 찾을 수 없거나 이미 취소되었습니다.');
       }
 
-      console.log(`🚫 이벤트 취소 시작: ${eventResult.rows[0].title}`);
+      logger.info(`🚫 이벤트 취소 시작: ${eventResult.rows[0].title}`);
 
       // 해당 이벤트의 모든 예약(pending, confirmed) 취소 및 환불 처리
       const cancelledReservations = await client.query(
@@ -336,17 +337,17 @@ router.post('/events/:id/cancel', async (req, res) => {
         ]
       );
 
-      console.log(`💰 취소된 예약: ${cancelledReservations.rowCount}건`);
+      logger.info(`💰 취소된 예약: ${cancelledReservations.rowCount}건`);
 
       if (cancelledReservations.rowCount > 0) {
         let totalRefund = 0;
         cancelledReservations.rows.forEach(r => {
           if (r.payment_status === PAYMENT_STATUS.REFUNDED) {
             totalRefund += r.total_amount;
-            console.log(`  - ${r.reservation_number}: ${r.total_amount}원 환불 처리`);
+            logger.info(`  - ${r.reservation_number}: ${r.total_amount}원 환불 처리`);
           }
         });
-        console.log(`💸 총 환불 금액: ${totalRefund}원`);
+        logger.info(`💸 총 환불 금액: ${totalRefund}원`);
       }
 
       // 좌석이 있는 경우 locked 좌석을 available로 변경
@@ -357,7 +358,7 @@ router.post('/events/:id/cancel', async (req, res) => {
         [SEAT_STATUS.AVAILABLE, id, SEAT_STATUS.LOCKED]
       );
 
-      console.log(`🪑 잠금 해제된 좌석: ${lockedSeats.rowCount}개`);
+      logger.info(`🪑 잠금 해제된 좌석: ${lockedSeats.rowCount}개`);
 
       return {
         event: eventResult.rows[0],
@@ -371,7 +372,7 @@ router.post('/events/:id/cancel', async (req, res) => {
       CACHE_KEYS.EVENTS_PATTERN
     ]);
 
-    console.log(`✅ 이벤트 취소 완료: ${result.event.title}`);
+    logger.info(`✅ 이벤트 취소 완료: ${result.event.title}`);
 
     res.json({
       message: '이벤트가 취소되었습니다. 모든 예약이 취소되고 결제 완료된 예약은 환불 처리되었습니다.',
@@ -379,9 +380,8 @@ router.post('/events/:id/cancel', async (req, res) => {
       cancelledReservations: result.cancelledReservationsCount,
     });
   } catch (error) {
-    console.error('❌ Cancel event error:', error);
     const statusCode = error.message === '이벤트를 찾을 수 없거나 이미 취소되었습니다.' ? 404 : 500;
-    res.status(statusCode).json({ error: error.message || '이벤트 취소에 실패했습니다.' });
+    next(new CustomError(statusCode, '이벤트 취소에 실패했습니다.', error));
   }
 });
 
@@ -410,8 +410,7 @@ router.delete('/events/:id', async (req, res) => {
 
     res.json({ message: '이벤트가 삭제되었습니다.' });
   } catch (error) {
-    console.error('Delete event error:', error);
-    res.status(500).json({ error: '이벤트 삭제에 실패했습니다.' });
+    next(new CustomError(500, '이벤트 삭제에 실패했습니다.', error));
   }
 });
 
@@ -419,50 +418,49 @@ router.delete('/events/:id', async (req, res) => {
 router.post('/events/:id/generate-seats', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Get event with seat layout
     const eventResult = await db.query(
       'SELECT id, title, seat_layout_id FROM events WHERE id = $1',
       [id]
     );
-    
+
     if (eventResult.rows.length === 0) {
       return res.status(404).json({ error: '이벤트를 찾을 수 없습니다.' });
     }
-    
+
     const event = eventResult.rows[0];
-    
+
     if (!event.seat_layout_id) {
       return res.status(400).json({ error: '좌석 레이아웃이 설정되지 않았습니다.' });
     }
-    
+
     // Check if seats already exist
     const existsResult = await db.query(
       'SELECT COUNT(*) as count FROM seats WHERE event_id = $1',
       [id]
     );
-    
+
     const existingSeats = parseInt(existsResult.rows[0].count);
-    
+
     if (existingSeats > 0) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: '이미 좌석이 생성되어 있습니다.',
-        existingSeats 
+        existingSeats
       });
     }
-    
+
     // Generate seats
     const seatsCreated = await seatGenerator.generateSeatsForEvent(id, event.seat_layout_id);
-    
+
     res.json({
       message: '좌석이 생성되었습니다.',
       seatsCreated,
       eventTitle: event.title,
     });
-    
+
   } catch (error) {
-    console.error('Generate seats error:', error);
-    res.status(500).json({ error: '좌석 생성에 실패했습니다.' });
+    next(new CustomError(500, '좌석 생성에 실패했습니다.', error));
   }
 });
 
@@ -470,7 +468,7 @@ router.post('/events/:id/generate-seats', async (req, res) => {
 router.delete('/events/:id/seats', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Check if there are any reservations with seats
     const reservationsResult = await db.query(
       `SELECT COUNT(*) as count 
@@ -481,23 +479,22 @@ router.delete('/events/:id/seats', async (req, res) => {
        AND r.status != 'cancelled'`,
       [id]
     );
-    
+
     if (parseInt(reservationsResult.rows[0].count) > 0) {
-      return res.status(400).json({ 
-        error: '예약된 좌석이 있어 삭제할 수 없습니다.' 
+      return res.status(400).json({
+        error: '예약된 좌석이 있어 삭제할 수 없습니다.'
       });
     }
-    
+
     const seatsDeleted = await seatGenerator.deleteSeatsForEvent(id);
-    
+
     res.json({
       message: '좌석이 삭제되었습니다.',
       seatsDeleted,
     });
-    
+
   } catch (error) {
-    console.error('Delete seats error:', error);
-    res.status(500).json({ error: '좌석 삭제에 실패했습니다.' });
+    next(new CustomError(500, '좌석 삭제에 실패했습니다.', error));
   }
 });
 
@@ -523,8 +520,7 @@ router.post('/events/:eventId/tickets', async (req, res) => {
       ticketType: result.rows[0],
     });
   } catch (error) {
-    console.error('Create ticket type error:', error);
-    res.status(500).json({ error: '티켓 등록에 실패했습니다.' });
+    next(new CustomError(500, '티켓 등록에 실패했습니다.', error));
   }
 });
 
@@ -568,18 +564,17 @@ router.put('/tickets/:id', async (req, res) => {
       ticketType: result.rows[0],
     });
   } catch (error) {
-    console.error('Update ticket type error:', error);
-    res.status(500).json({ error: '티켓 수정에 실패했습니다.' });
+    next(new CustomError(500, '티켓 수정에 실패했습니다.', error));
   }
 });
 
 // 모든 예매 내역 조회 (관리자)
 router.get('/reservations', async (req, res) => {
   try {
-    const { 
-      page = PAGINATION_DEFAULTS.PAGE, 
-      limit = PAGINATION_DEFAULTS.RESERVATIONS_LIMIT, 
-      status 
+    const {
+      page = PAGINATION_DEFAULTS.PAGE,
+      limit = PAGINATION_DEFAULTS.RESERVATIONS_LIMIT,
+      status
     } = req.query;
     const offset = (page - 1) * limit;
 
@@ -593,13 +588,13 @@ router.get('/reservations', async (req, res) => {
       JOIN users u ON r.user_id = u.id
       JOIN events e ON r.event_id = e.id
     `;
-    
+
     const params = [];
     if (status) {
       query += ' WHERE r.status = $1';
       params.push(status);
     }
-    
+
     query += ' ORDER BY r.created_at DESC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
     params.push(parseInt(limit), offset);
 
@@ -625,8 +620,7 @@ router.get('/reservations', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get all reservations error:', error);
-    res.status(500).json({ error: '예매 내역을 불러오는데 실패했습니다.' });
+    next(new CustomError(500, '예매 내역을 불러오는데 실패했습니다.', error));
   }
 });
 
@@ -672,8 +666,7 @@ router.patch('/reservations/:id/status', async (req, res) => {
       reservation: result.rows[0],
     });
   } catch (error) {
-    console.error('Update reservation status error:', error);
-    res.status(500).json({ error: '예매 상태 변경에 실패했습니다.' });
+    next(new CustomError(500, '예매 상태 변경에 실패했습니다.', error));
   }
 });
 

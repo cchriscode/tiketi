@@ -16,6 +16,8 @@ const {
   SUCCESS_MESSAGES,
 } = require('../shared/constants');
 const { withTransaction } = require('../utils/transaction-helpers');
+const { logger } = require('../utils/logger');
+const CustomError = require('../utils/custom-error');
 
 const router = express.Router();
 
@@ -135,11 +137,7 @@ router.post('/process', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Payment process error:', error);
-    res.status(400).json({
-      success: false,
-      error: error.message || ERROR_MESSAGES.PAYMENT_FAILED
-    });
+    next(new CustomError(400, 'Payment process error', error));
   }
 });
 

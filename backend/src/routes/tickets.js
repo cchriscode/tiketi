@@ -1,5 +1,7 @@
 const express = require('express');
 const db = require('../config/database');
+const { logger } = require('../utils/logger');
+const CustomError = require('../utils/custom-error');
 
 const router = express.Router();
 
@@ -19,8 +21,7 @@ router.get('/event/:eventId', async (req, res) => {
 
     res.json({ ticketTypes: result.rows });
   } catch (error) {
-    console.error('Get ticket types error:', error);
-    res.status(500).json({ error: '티켓 정보를 불러오는데 실패했습니다.' });
+    next(new CustomError(500, '티켓 정보를 불러오는데 실패했습니다.', error));
   }
 });
 
@@ -40,8 +41,7 @@ router.get('/availability/:ticketTypeId', async (req, res) => {
 
     res.json(result.rows[0]);
   } catch (error) {
-    console.error('Check availability error:', error);
-    res.status(500).json({ error: '재고 확인에 실패했습니다.' });
+    next(new CustomError(500, '재고 확인에 실패했습니다.', error));
   }
 });
 

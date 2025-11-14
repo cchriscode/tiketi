@@ -5,7 +5,8 @@
 
 const express = require('express');
 const db = require('../config/database');
-const { acquireLock, releaseLock, client: redisClient } = require('../config/redis');
+const { logger } = require('../utils/logger');
+const { client: redisClient } = require('../config/redis');
 const { authenticateToken } = require('../middleware/auth');
 const { emitToSeats } = require('../config/socket');
 const {
@@ -20,6 +21,7 @@ const {
   RESERVATION_SETTINGS,
 } = require('../shared/constants');
 const { invalidateCachePatterns, withTransactionAndLock } = require('../utils/transaction-helpers');
+const CustomError = require('../utils/custom-error');
 
 const router = express.Router();
 
@@ -39,8 +41,7 @@ router.get('/layouts', async (req, res) => {
       layouts: result.rows,
     });
   } catch (error) {
-    console.error('Get seat layouts error:', error);
-    res.status(500).json({ error: 'Failed to fetch seat layouts' });
+    next(new CustomError(500, 'Get seat layouts error:', error));
   }
 });
 
@@ -51,7 +52,7 @@ router.get('/layouts', async (req, res) => {
 router.get('/events/:eventId', async (req, res) => {
   try {
     const { eventId } = req.params;
-    
+
     // Get event info and layout
     const eventResult = await db.query(
       `SELECT e.id, e.title, e.seat_layout_id, sl.layout_config
@@ -60,17 +61,17 @@ router.get('/events/:eventId', async (req, res) => {
        WHERE e.id = $1`,
       [eventId]
     );
-    
+
     if (eventResult.rows.length === 0) {
       return res.status(404).json({ error: 'Event not found' });
     }
-    
+
     const event = eventResult.rows[0];
-    
+
     if (!event.seat_layout_id) {
       return res.status(404).json({ error: 'This event does not have seat selection' });
     }
-    
+
     // Get all seats for this event
     const seatsResult = await db.query(
       `SELECT id, section, row_number, seat_number, seat_label, price, status
@@ -79,7 +80,7 @@ router.get('/events/:eventId', async (req, res) => {
        ORDER BY section, row_number, seat_number`,
       [eventId]
     );
-    
+
     res.json({
       event: {
         id: event.id,
@@ -88,10 +89,9 @@ router.get('/events/:eventId', async (req, res) => {
       layout: event.layout_config,
       seats: seatsResult.rows,
     });
-    
+
   } catch (error) {
-    console.error('Get seats error:', error);
-    res.status(500).json({ error: 'Failed to fetch seats' });
+    next(new CustomError(500, 'Failed to fetch seats', error));
   }
 });
 
@@ -223,10 +223,10 @@ router.post('/reserve', authenticateToken, async (req, res) => {
           });
         }
 
-        console.log(`🪑 Seats locked: ${seatIds.join(', ')} by user ${userId}`);
+        logger.info(`🪑 Seats locked: ${seatIds.join(', ')} by user ${userId}`);
       }
     } catch (socketError) {
-      console.error('⚠️  WebSocket 브로드캐스트 에러:', socketError.message);
+      logger.error('⚠️  WebSocket 브로드캐스트 에러:', socketError.message);
     }
 
     res.status(201).json({
@@ -241,8 +241,7 @@ router.post('/reserve', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Reserve seats error:', error);
-    res.status(400).json({ error: error.message || 'Failed to reserve seats' });
+    next(new CustomError(400, 'Reverse seats error', error));
   }
 });
 
@@ -254,7 +253,7 @@ router.get('/reservation/:reservationId', authenticateToken, async (req, res) =>
   try {
     const { reservationId } = req.params;
     const userId = req.user.userId;
-    
+
     const result = await db.query(
       `SELECT 
         r.id, r.reservation_number, r.total_amount, r.status,
@@ -278,23 +277,22 @@ router.get('/reservation/:reservationId', authenticateToken, async (req, res) =>
       GROUP BY r.id, e.id`,
       [reservationId, userId]
     );
-    
+
     if (result.rows.length === 0) {
       return res.status(404).json({ error: ERROR_MESSAGES.RESERVATION_NOT_FOUND });
     }
-    
+
     const reservation = result.rows[0];
-    
+
     // Check if expired
     if (reservation.expires_at && new Date(reservation.expires_at) < new Date()) {
       reservation.isExpired = true;
     }
-    
+
     res.json({ reservation });
-    
+
   } catch (error) {
-    console.error('Get reservation error:', error);
-    res.status(500).json({ error: 'Failed to fetch reservation' });
+    next(new CustomError(500, 'Failed to fetch reservation', error));
   }
 });
 

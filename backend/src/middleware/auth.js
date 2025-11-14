@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const db = require('../config/database');
 const { CONFIG } = require('../shared/constants');
+const { logger } = require('../utils/logger');
 
 const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -23,7 +24,7 @@ const authenticateToken = async (req, res, next) => {
       );
 
       if (result.rows.length === 0) {
-        return res.status(401).json({ 
+        return res.status(401).json({
           error: '사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.',
           code: 'USER_NOT_FOUND'
         });
@@ -33,8 +34,9 @@ const authenticateToken = async (req, res, next) => {
       req.userInfo = result.rows[0]; // Optional: attach full user info
       next();
     } catch (dbError) {
-      console.error('Auth middleware DB error:', dbError);
-      return res.status(500).json({ error: '인증 처리 중 오류가 발생했습니다.' });
+      const error = new Error('인증 처리 중 오류가 발생했습니다.');
+      error.status = 500;
+      next(error);
     }
   });
 };

@@ -4,6 +4,8 @@ const { authenticate } = require('../middleware/auth');
 const { emitToQueue } = require('../config/socket');
 
 const router = express.Router();
+const { logger } = require('../utils/logger');
+const CustomError = require('../utils/custom-error');
 
 /**
  * 대기열 진입 확인
@@ -18,8 +20,7 @@ router.post('/check/:eventId', authenticate, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Queue check error:', error);
-    res.status(500).json({ error: '대기열 확인에 실패했습니다.' });
+    next(new CustomError(500, '대기열 확인에 실패했습니다.', error));
   }
 });
 
@@ -36,8 +37,7 @@ router.get('/status/:eventId', authenticate, async (req, res) => {
 
     res.json(status);
   } catch (error) {
-    console.error('Queue status error:', error);
-    res.status(500).json({ error: '대기열 상태 조회에 실패했습니다.' });
+    next(new CustomError(500, '대기열 상태 조회에 실패했습니다.', error));
   }
 });
 
@@ -55,8 +55,7 @@ router.post('/leave/:eventId', authenticate, async (req, res) => {
 
     res.json({ message: '대기열에서 나왔습니다.' });
   } catch (error) {
-    console.error('Queue leave error:', error);
-    res.status(500).json({ error: '대기열 나가기에 실패했습니다.' });
+    next(new CustomError(500, '대기열 나가기에 실패했습니다.', error));
   }
 });
 
@@ -82,8 +81,7 @@ router.get('/admin/:eventId', authenticate, async (req, res) => {
       available: threshold - currentUsers,
     });
   } catch (error) {
-    console.error('Queue admin info error:', error);
-    res.status(500).json({ error: '대기열 정보 조회에 실패했습니다.' });
+    next(new CustomError(500, '대기열 정보 조회에 실패했습니다.', error));
   }
 });
 
@@ -107,8 +105,7 @@ router.post('/admin/clear/:eventId', authenticate, async (req, res) => {
 
     res.json({ message: '대기열이 초기화되었습니다.' });
   } catch (error) {
-    console.error('Queue clear error:', error);
-    res.status(500).json({ error: '대기열 초기화에 실패했습니다.' });
+    next(new CustomError(500, '대기열 초기화에 실패했습니다.', error));
   }
 });
 
