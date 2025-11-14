@@ -22,6 +22,14 @@ common:
       store: inmemory
 # 우리는 Loki를 클러스터(여러 대)로 안 띄우고 딱 1대만 띄울 거죠?
 # 그래서 복제(Replication)도 안 하고, 상태 저장도 메모리에서 해결하겠다는 가벼운 설정입니다.
+ingester:
+  lifecycler:
+    address: 127.0.0.1
+    ring:
+      kvstore:
+        store: inmemory
+      replication_factor: 1
+    final_sleep: 0s
 
 schema_config:
   configs:
@@ -32,6 +40,15 @@ schema_config:
       index:
         prefix: index_
         period: 24h
+
+compactor:
+  working_directory: /tmp/loki/boltdb-shipper-compactor
+  shared_store: filesystem
+  retention_enabled: true # 삭제 기능 활성화
+  compaction_interval: 10m # 청소 주기 10분
+
+limits_config:
+  retention_period: 24h # 하루마다 삭제
 
 ruler:
   alertmanager_url: http://localhost:9093
