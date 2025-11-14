@@ -1,5 +1,6 @@
 // src/utils/logger.js
 const winston = require('winston');
+const jwt = require('jsonwebtoken');
 
 const logger = winston.createLogger({
   level: 'info', // info 레벨 이상만 출력
@@ -12,17 +13,31 @@ const logger = winston.createLogger({
   ],
 });
 
-const headerInfoExtractor = (req) => ({
-  clientIp: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-  userAgent: req.headers['user-agent'],
-  requestId: req.headers['x-request-id'] || 'unknown', // 추적용 ID가 있다면
-});
+const getUserInfo = req => {
+  return jwt.decode(req.headers.authorization?.split(' ')[1] || '') || {
+    userId: null,
+    email: 'anonymous',
+    role: 'guest'
+  };
+}
 
 const logFormat = (req, res, args) => ({
-  method: req.method,
-  url: req.originalUrl,
-  status: res.statusCode,
-  headers: headerInfoExtractor(req),
+  headers: {
+    clientIp: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+    userAgent: req.headers['user-agent'],
+  },
+  request: {
+    method: req.method,
+    url: req.originalUrl,
+    body: Object.keys(req.body).length ? req.body : undefined,
+    query: Object.keys(req.query).length ? req.query : undefined,
+    params: Object.keys(req.params).length ? req.params : undefined,
+  },
+  response: {
+    statusCode: res.statusCode,
+    ...(args?.response ? args.response : {}),
+  },
+  user: getUserInfo(req),
   message: 'backend log', // 로그 이쁘게 찍기 위해 기본 message 추가
   ...(args || {})
 })
