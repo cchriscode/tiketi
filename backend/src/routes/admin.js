@@ -22,7 +22,7 @@ router.use(authenticateToken);
 router.use(requireAdmin);
 
 // 대시보드 통계
-router.get('/dashboard/stats', async (req, res) => {
+router.get('/dashboard/stats', async (req, res, next) => {
   try {
     // Total events
     const eventsResult = await db.query('SELECT COUNT(*) as count FROM events');
@@ -79,7 +79,7 @@ router.get('/dashboard/stats', async (req, res) => {
 });
 
 // 좌석 레이아웃 목록 조회
-router.get('/seat-layouts', async (req, res) => {
+router.get('/seat-layouts', async (req, res, next) => {
   try {
     const result = await db.query(
       'SELECT id, name, description, total_seats, layout_config FROM seat_layouts ORDER BY name'
@@ -92,7 +92,7 @@ router.get('/seat-layouts', async (req, res) => {
 });
 
 // 이벤트 생성 (좌석 선택 기능 포함)
-router.post('/events', async (req, res) => {
+router.post('/events', async (req, res, next) => {
   const client = await db.getClient();
 
   try {
@@ -194,7 +194,7 @@ router.post('/events', async (req, res) => {
 });
 
 // 이벤트 수정
-router.put('/events/:id', async (req, res) => {
+router.put('/events/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     const {
@@ -297,7 +297,7 @@ router.put('/events/:id', async (req, res) => {
 });
 
 // 이벤트 취소
-router.post('/events/:id/cancel', async (req, res) => {
+router.post('/events/:id/cancel', async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -386,7 +386,7 @@ router.post('/events/:id/cancel', async (req, res) => {
 });
 
 // 이벤트 삭제
-router.delete('/events/:id', async (req, res) => {
+router.delete('/events/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -415,7 +415,7 @@ router.delete('/events/:id', async (req, res) => {
 });
 
 // 이벤트 좌석 생성
-router.post('/events/:id/generate-seats', async (req, res) => {
+router.post('/events/:id/generate-seats', async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -465,7 +465,7 @@ router.post('/events/:id/generate-seats', async (req, res) => {
 });
 
 // 이벤트 좌석 삭제 (재생성을 위해)
-router.delete('/events/:id/seats', async (req, res) => {
+router.delete('/events/:id/seats', async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -499,7 +499,7 @@ router.delete('/events/:id/seats', async (req, res) => {
 });
 
 // 티켓 타입 생성
-router.post('/events/:eventId/tickets', async (req, res) => {
+router.post('/events/:eventId/tickets', async (req, res, next) => {
   try {
     const { eventId } = req.params;
     const { name, price, totalQuantity, description } = req.body;
@@ -525,7 +525,7 @@ router.post('/events/:eventId/tickets', async (req, res) => {
 });
 
 // 티켓 타입 수정
-router.put('/tickets/:id', async (req, res) => {
+router.put('/tickets/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     const { name, price, totalQuantity, description } = req.body;
@@ -569,7 +569,7 @@ router.put('/tickets/:id', async (req, res) => {
 });
 
 // 모든 예매 내역 조회 (관리자)
-router.get('/reservations', async (req, res) => {
+router.get('/reservations', async (req, res, next) => {
   try {
     const {
       page = PAGINATION_DEFAULTS.PAGE,
@@ -625,7 +625,7 @@ router.get('/reservations', async (req, res) => {
 });
 
 // 예매 상태 변경 (관리자)
-router.patch('/reservations/:id/status', async (req, res) => {
+router.patch('/reservations/:id/status', async (req, res, next) => {
   try {
     const { id } = req.params;
     const { status, paymentStatus } = req.body;

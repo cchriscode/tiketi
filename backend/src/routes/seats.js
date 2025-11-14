@@ -29,7 +29,7 @@ const router = express.Router();
  * GET /api/seats/layouts
  * Get all available seat layouts
  */
-router.get('/layouts', async (req, res) => {
+router.get('/layouts', async (req, res, next) => {
   try {
     const result = await db.query(
       `SELECT id, name, description, total_seats, layout_config
@@ -49,7 +49,7 @@ router.get('/layouts', async (req, res) => {
  * GET /api/seats/events/:eventId
  * Get all seats for an event with real-time status
  */
-router.get('/events/:eventId', async (req, res) => {
+router.get('/events/:eventId', async (req, res, next) => {
   try {
     const { eventId } = req.params;
 
@@ -99,7 +99,7 @@ router.get('/events/:eventId', async (req, res) => {
  * POST /api/seats/reserve
  * Reserve seats (temporary reservation with 5 min expiry)
  */
-router.post('/reserve', authenticateToken, async (req, res) => {
+router.post('/reserve', authenticateToken, async (req, res, next) => {
   try {
     const { eventId, seatIds } = req.body;
     const userId = req.user.userId;
@@ -249,7 +249,7 @@ router.post('/reserve', authenticateToken, async (req, res) => {
  * GET /api/seats/reservation/:reservationId
  * Get reservation details with seats
  */
-router.get('/reservation/:reservationId', authenticateToken, async (req, res) => {
+router.get('/reservation/:reservationId', authenticateToken, async (req, res, next) => {
   try {
     const { reservationId } = req.params;
     const userId = req.user.userId;

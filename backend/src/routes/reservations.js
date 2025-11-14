@@ -19,7 +19,7 @@ const CustomError = require('../utils/custom-error');
 const router = express.Router();
 
 // 예매하기 (분산 락 사용)
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, async (req, res, next) => {
   const client = await db.getClient();
 
   try {
@@ -180,7 +180,7 @@ router.post('/', authenticateToken, async (req, res) => {
 });
 
 // 내 예매 목록 조회
-router.get('/my', authenticateToken, async (req, res) => {
+router.get('/my', authenticateToken, async (req, res, next) => {
   try {
     const userId = req.user.userId;
 
@@ -215,7 +215,7 @@ router.get('/my', authenticateToken, async (req, res) => {
 });
 
 // 예매 상세 조회
-router.get('/:id', authenticateToken, async (req, res) => {
+router.get('/:id', authenticateToken, async (req, res, next) => {
   try {
     const { id } = req.params;
     const userId = req.user.userId;
@@ -256,7 +256,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 // 예매 취소
-router.post('/:id/cancel', authenticateToken, async (req, res) => {
+router.post('/:id/cancel', authenticateToken, async (req, res, next) => {
   try {
     const { id } = req.params;
     const userId = req.user.userId;

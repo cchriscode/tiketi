@@ -25,7 +25,7 @@ const router = express.Router();
  * POST /api/payments/process
  * Process payment for a reservation (MOCK - no real PG integration)
  */
-router.post('/process', authenticateToken, async (req, res) => {
+router.post('/process', authenticateToken, async (req, res, next) => {
   try {
     const { reservationId, paymentMethod } = req.body;
     const userId = req.user.userId;
@@ -145,7 +145,7 @@ router.post('/process', authenticateToken, async (req, res) => {
  * GET /api/payments/methods
  * Get available payment methods
  */
-router.get('/methods', (req, res) => {
+router.get('/methods', (req, res, next) => {
   res.json({
     methods: [
       {

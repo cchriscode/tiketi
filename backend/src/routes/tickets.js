@@ -6,7 +6,7 @@ const CustomError = require('../utils/custom-error');
 const router = express.Router();
 
 // 특정 이벤트의 티켓 타입 조회
-router.get('/event/:eventId', async (req, res) => {
+router.get('/event/:eventId', async (req, res, next) => {
   try {
     const { eventId } = req.params;
 
@@ -26,7 +26,7 @@ router.get('/event/:eventId', async (req, res) => {
 });
 
 // 티켓 재고 확인
-router.get('/availability/:ticketTypeId', async (req, res) => {
+router.get('/availability/:ticketTypeId', async (req, res, next) => {
   try {
     const { ticketTypeId } = req.params;
 

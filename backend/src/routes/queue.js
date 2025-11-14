@@ -11,10 +11,10 @@ const CustomError = require('../utils/custom-error');
  * 대기열 진입 확인
  * POST /api/queue/check/:eventId
  */
-router.post('/check/:eventId', authenticate, async (req, res) => {
+router.post('/check/:eventId', authenticate, async (req, res, next) => {
   try {
     const { eventId } = req.params;
-    const userId = req.user.id;
+    const userId = req.user.id || req.user.userId;
 
     const result = await queueManager.checkQueueEntry(eventId, userId);
 
@@ -28,15 +28,16 @@ router.post('/check/:eventId', authenticate, async (req, res) => {
  * 대기열 상태 조회
  * GET /api/queue/status/:eventId
  */
-router.get('/status/:eventId', authenticate, async (req, res) => {
+router.get('/status/:eventId', authenticate, async (req, res, next) => {
   try {
     const { eventId } = req.params;
-    const userId = req.user.id;
+    const userId = req.user.id || req.user.userId;
 
     const status = await queueManager.getQueueStatus(eventId, userId);
 
     res.json(status);
   } catch (error) {
+
     next(new CustomError(500, '대기열 상태 조회에 실패했습니다.', error));
   }
 });
@@ -45,10 +46,10 @@ router.get('/status/:eventId', authenticate, async (req, res) => {
  * 대기열에서 나가기
  * POST /api/queue/leave/:eventId
  */
-router.post('/leave/:eventId', authenticate, async (req, res) => {
+router.post('/leave/:eventId', authenticate, async (req, res, next) => {
   try {
     const { eventId } = req.params;
-    const userId = req.user.id;
+    const userId = req.user.id || req.user.userId;
 
     await queueManager.removeFromQueue(eventId, userId);
     await queueManager.removeActiveUser(eventId, userId);
@@ -63,7 +64,7 @@ router.post('/leave/:eventId', authenticate, async (req, res) => {
  * 관리자: 대기열 정보 조회
  * GET /api/queue/admin/:eventId
  */
-router.get('/admin/:eventId', authenticate, async (req, res) => {
+router.get('/admin/:eventId', authenticate, async (req, res, next) => {
   try {
     // TODO: 관리자 권한 체크 추가
 
@@ -89,7 +90,7 @@ router.get('/admin/:eventId', authenticate, async (req, res) => {
  * 관리자: 대기열 초기화
  * POST /api/queue/admin/clear/:eventId
  */
-router.post('/admin/clear/:eventId', authenticate, async (req, res) => {
+router.post('/admin/clear/:eventId', authenticate, async (req, res, next) => {
   try {
     // TODO: 관리자 권한 체크 추가
 

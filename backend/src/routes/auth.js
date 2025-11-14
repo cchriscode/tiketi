@@ -15,7 +15,7 @@ router.post('/register',
     body('password').isLength({ min: 6 }),
     body('name').trim().notEmpty(),
   ],
-  async (req, res) => {
+  async (req, res, next) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -74,7 +74,7 @@ router.post('/login',
     body('email').isEmail().normalizeEmail(),
     body('password').notEmpty(),
   ],
-  async (req, res) => {
+  async (req, res, next) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {

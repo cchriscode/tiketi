@@ -12,7 +12,7 @@ const CustomError = require('../utils/custom-error');
 const router = express.Router();
 
 // 이벤트 목록 조회 (캐싱 적용)
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   try {
     const {
       status,
@@ -83,7 +83,7 @@ router.get('/', async (req, res) => {
 });
 
 // 이벤트 상세 조회 (티켓 타입 포함)
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
 
