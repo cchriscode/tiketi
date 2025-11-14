@@ -29,13 +29,17 @@ scrape_configs: # 수집 규칙
         target_label: "container_name"
     pipeline_stages:
       - docker: {} # 1. 도커 JSON 껍데기 벗기기
-      - multiline:
-          # [핵심] 로그의 첫 줄을 인식하는 규칙
-          # 패턴: "YYYY-MM-DD ..." 시간으로 시작하는 줄만 '새로운 로그'로 인정
-          # 그 외(들여쓰기 된 쿼리 등)는 다 윗줄에 이어 붙임
-          firstline: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}'
-          max_wait_time: 3s
-      - replace:
-          # (선택) 로그 앞에 붙은 지저분한 태그 제거용
-          expression: '(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \w{3}) \[\d+\] (LOG|STATEMENT):'
-          replace: "$2:"
+      - match:
+          # PostgreSQL 로그 전용 처리
+          selector: '{container_name=~".*postgres.*"}'
+          stages:
+            - multiline:
+                # [핵심] 로그의 첫 줄을 인식하는 규칙
+                # 패턴: "YYYY-MM-DD ..." 시간으로 시작하는 줄만 '새로운 로그'로 인정
+                # 그 외(들여쓰기 된 쿼리 등)는 다 윗줄에 이어 붙임
+                firstline: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}'
+                max_wait_time: 3s
+            - replace:
+                # (선택) 로그 앞에 붙은 지저분한 태그 제거용
+                expression: '(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \w{3}) \[\d+\] (LOG|STATEMENT):'
+                replace: "$2:"
