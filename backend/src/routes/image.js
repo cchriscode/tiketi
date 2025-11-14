@@ -6,6 +6,10 @@ const path = require('path');
 
 const router = express.Router();
 
+process.env.AWS_ACCESS_KEY_ID
+process.env.AWS_SECRET_ACCESS_KEY
+process.env.AWS_REGION
+
 const s3Client = new S3Client({
   region: process.env.AWS_REGION,
 });
@@ -32,6 +36,7 @@ router.get('/test', (req, res) => {
 });
 
 router.post('/upload', upload.single('image'), async (req, res) => {
+  console.log(req.file); // 업로드된 파일 정보 확인
 
   // S3에 저장된 파일의 위치(URL)를 프론트엔드에 돌려줍니다.
   return res.status(200).json({
