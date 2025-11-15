@@ -1,0 +1,234 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # 수동 실행 가능
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  # ========================================
+  # Job 1: Frontend 배포 (병렬 실행)
+  # ========================================
+  frontend:
+    name: Deploy Frontend to S3
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # OIDC 토큰 발급 권한
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Build React app
+        env:
+          REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Upload to S3
+        run: |
+          # JS/CSS 파일 (긴 캐시, 파일명에 해시 포함)
+          aws s3 sync frontend/build s3://${{ secrets.S3_BUCKET }}/ \
+            --delete \
+            --cache-control "max-age=31536000,immutable" \
+            --exclude "*.html" \
+            --exclude "*.json"
+
+          # HTML 파일 (짧은 캐시)
+          aws s3 sync frontend/build s3://${{ secrets.S3_BUCKET }}/ \
+            --cache-control "max-age=0,no-cache,no-store,must-revalidate" \
+            --exclude "*" \
+            --include "*.html" \
+            --include "*.json"
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_ID }} \
+            --paths "/index.html" "/asset-manifest.json"
+
+      - name: Frontend deployment complete
+        run: |
+          echo "✅ Frontend deployed successfully"
+          echo "🌐 S3 Bucket: ${{ secrets.S3_BUCKET }}"
+          echo "📦 Build completed at: $(date)"
+
+  # ========================================
+  # Job 2: Backend 빌드 & ECR 푸시 (병렬 실행)
+  # ========================================
+  backend:
+    name: Build Backend & Push to ECR
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # OIDC 토큰 발급 권한
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
+            docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
+
+      - name: Build Docker image
+        run: |
+          cd backend
+          docker build -f Dockerfile.prod \
+            -t ${{ env.ECR_REGISTRY }}/tiketi-backend:${{ env.IMAGE_TAG }} \
+            -t ${{ env.ECR_REGISTRY }}/tiketi-backend:latest .
+
+      - name: Push to ECR
+        run: |
+          docker push ${{ env.ECR_REGISTRY }}/tiketi-backend:${{ env.IMAGE_TAG }}
+          docker push ${{ env.ECR_REGISTRY }}/tiketi-backend:latest
+
+      - name: Backend build complete
+        run: |
+          echo "✅ Backend image pushed successfully"
+          echo "🐳 Image: ${{ env.ECR_REGISTRY }}/tiketi-backend:${{ env.IMAGE_TAG }}"
+          echo "📦 Build completed at: $(date)"
+
+  # ========================================
+  # Job 3: EC2 배포 (Self-hosted Runner)
+  # ========================================
+  deploy:
+    name: Deploy to EC2
+    needs: [frontend, backend]  # 두 Job이 모두 성공해야 실행
+    runs-on: self-hosted
+
+    steps:
+      - name: Login to ECR
+        run: |
+          aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
+            docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
+
+      - name: Pull latest image
+        run: |
+          docker pull ${{ env.ECR_REGISTRY }}/tiketi-backend:latest
+
+      - name: Deploy new container
+        run: |
+          set -e  # 에러 발생 시 즉시 중단
+
+          echo "🚀 Starting deployment..."
+
+          # 1. 새 컨테이너 시작 (포트 3002)
+          echo "📦 Starting new container on port 3002..."
+          docker run -d \
+            --name backend-new \
+            --network tiketi_network \
+            -p 3002:3001 \
+            --env-file /home/ubuntu/tiketi/.env \
+            ${{ env.ECR_REGISTRY }}/tiketi-backend:latest
+
+          # 2. Health check (30초 타임아웃)
+          echo "🏥 Running health checks..."
+          sleep 10
+
+          for i in {1..30}; do
+            if curl -f -s http://localhost:3002/health > /dev/null; then
+              echo "✅ Health check passed!"
+              break
+            fi
+
+            if [ $i -eq 30 ]; then
+              echo "❌ Health check failed after 30 attempts"
+              docker logs backend-new --tail 50
+              docker stop backend-new
+              docker rm backend-new
+              exit 1
+            fi
+
+            echo "⏳ Waiting for service to be ready... ($i/30)"
+            sleep 2
+          done
+
+          # 3. 기존 컨테이너 Graceful Shutdown (60초 유예)
+          echo "🔄 Stopping old container gracefully..."
+          docker stop --time=60 backend 2>/dev/null || echo "No existing container"
+          docker rm backend 2>/dev/null || echo "No container to remove"
+
+          # 4. 새 컨테이너를 포트 3001로 재시작
+          echo "🔄 Switching to port 3001..."
+          docker stop backend-new
+          docker rm backend-new
+
+          docker run -d \
+            --name backend \
+            --network tiketi_network \
+            -p 3001:3001 \
+            --env-file /home/ubuntu/tiketi/.env \
+            --restart unless-stopped \
+            ${{ env.ECR_REGISTRY }}/tiketi-backend:latest
+
+          # 5. 최종 Health check
+          echo "🏥 Final health check..."
+          sleep 5
+          for i in {1..15}; do
+            if curl -f http://localhost:3001/health && \
+               curl -f http://localhost:3001/health/db && \
+               curl -f http://localhost:3001/health/redis; then
+              echo "✅ All health checks passed!"
+              exit 0
+            fi
+            echo "⏳ Waiting... ($i/15)"
+            sleep 2
+          done
+
+          echo "❌ Final health check failed"
+          exit 1
+
+      - name: Cleanup old images
+        if: success()
+        run: |
+          docker image prune -af --filter "until=72h"
+          echo "🧹 Cleaned up old images"
+
+      - name: Deployment successful
+        if: success()
+        run: |
+          echo "✅ Deployment completed successfully!"
+          echo "📦 Image: ${{ env.ECR_REGISTRY }}/tiketi-backend:${{ env.IMAGE_TAG }}"
+          echo "👤 Deployed by: ${{ github.actor }}"
+          echo "📝 Commit: ${{ github.sha }}"
+          echo "🕐 Time: $(date)"
+
+      - name: Deployment failed
+        if: failure()
+        run: |
+          echo "❌ Deployment failed!"
+          echo "📋 Check logs with: docker logs backend"
+          echo "🔍 Debug: docker ps -a"
