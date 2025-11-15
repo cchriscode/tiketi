@@ -8,6 +8,10 @@ const reservationCleaner = require('./services/reservation-cleaner');
 const eventStatusUpdater = require('./services/event-status-updater');
 const { initializeSocketIO } = require('./config/socket');
 
+// ✅ 메트릭 import
+const metricsMiddleware = require('./metrics/middleware');
+const { register } = require('./metrics');
+
 dotenv.config();
 
 const app = express();
@@ -18,6 +22,9 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ✅ 메트릭 미들웨어 추가
+app.use(metricsMiddleware);
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -33,6 +40,16 @@ app.use('/api/image', require('./routes/image'));
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// ✅ Prometheus /metrics 엔드포인트
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', register.contentType);
+    res.end(await register.metrics());
+  } catch (err) {
+    res.status(500).end(err);
+  }
 });
 
 // Error handling middleware
@@ -55,6 +72,7 @@ app.locals.io = io;
 server.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📡 Health check: http://localhost:${PORT}/health`);
+  console.log(`📊 Metrics: http://localhost:${PORT}/metrics`); //추가
   console.log(`🔌 WebSocket ready on port ${PORT}`);
 
   // Initialize admin account (with retry on database connection failure)
