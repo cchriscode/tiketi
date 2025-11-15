@@ -8,10 +8,6 @@ const reservationCleaner = require('./services/reservation-cleaner');
 const eventStatusUpdater = require('./services/event-status-updater');
 const { initializeSocketIO } = require('./config/socket');
 
-// ✅ 메트릭 import
-const metricsMiddleware = require('./metrics/middleware');
-const { register } = require('./metrics');
-
 dotenv.config();
 
 const app = express();
@@ -23,9 +19,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ 메트릭 미들웨어 추가
-app.use(metricsMiddleware);
-
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/events', require('./routes/events'));
@@ -35,33 +28,27 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/seats', require('./routes/seats'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/queue', require('./routes/queue'));
-app.use('/api/image', require('./routes/image'));
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
+// Image upload route (only if AWS S3 is configured)
+if (process.env.AWS_S3_BUCKET) {
+  app.use('/api/image', require('./routes/image'));
+  console.log('✅ Image upload route enabled (S3 configured)');
+} else {
+  console.log('⚠️  Image upload route disabled (S3 not configured)');
+}
 
-// ✅ Prometheus /metrics 엔드포인트
-app.get('/metrics', async (req, res) => {
-  try {
-    res.set('Content-Type', register.contentType);
-    res.end(await register.metrics());
-  } catch (err) {
-    res.status(500).end(err);
-  }
+// Health check (enhanced)
+app.use('/', require('./routes/health'));
+
+// TODO: 확인용으로 추가. 다음 배포 시 제거할 것
+app.get('/error-test', (req, res, next) => {
+  const error = new Error('의도적으로 발생시킨 에러입니다!');
+  error.status = 400;
+  next(error);
 });
 
 // Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({
-    error: {
-      message: err.message || 'Internal Server Error',
-      status: err.status || 500
-    }
-  });
-});
+app.use(errorHandler);
 
 // Initialize Socket.IO with Redis Adapter (AWS multi-instance ready)
 const io = initializeSocketIO(server);
@@ -72,21 +59,20 @@ app.locals.io = io;
 server.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📡 Health check: http://localhost:${PORT}/health`);
-  console.log(`📊 Metrics: http://localhost:${PORT}/metrics`); //추가
   console.log(`🔌 WebSocket ready on port ${PORT}`);
 
   // Initialize admin account (with retry on database connection failure)
   try {
     await initializeAdmin();
   } catch (error) {
-    console.error('⚠️  Admin initialization will retry on database connection');
+    logger.error('⚠️  Admin initialization will retry on database connection');
   }
 
   // Initialize seats for events with seat layouts (with retry on database connection failure)
   try {
     await initSeats();
   } catch (error) {
-    console.error('⚠️  Seat initialization will retry on database connection');
+    logger.error('⚠️  Seat initialization will retry on database connection');
   }
 
   // Set Socket.IO for reservation cleaner (real-time seat release)
@@ -99,18 +85,83 @@ server.listen(PORT, async () => {
   eventStatusUpdater.start();
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM signal received: closing HTTP server');
-  reservationCleaner.stop();
-  eventStatusUpdater.stop();
-  process.exit(0);
+// ========================================
+// Graceful Shutdown Handler (Enhanced)
+// ========================================
+let isShuttingDown = false;
+
+async function gracefulShutdown(signal) {
+  if (isShuttingDown) {
+    logger.warn('⚠️  Shutdown already in progress...');
+    return;
+  }
+  isShuttingDown = true;
+
+  logger.info(`\n📥 Received ${signal}, starting graceful shutdown...`);
+
+  try {
+    // 1. Stop accepting new connections
+    logger.info('⏸️  Stopping HTTP server (rejecting new connections)...');
+    server.close(() => {
+      logger.info('✅ HTTP server closed');
+    });
+
+    // 2. Stop background services
+    logger.info('⏸️  Stopping background services...');
+    reservationCleaner.stop();
+    eventStatusUpdater.stop();
+    logger.info('✅ Background services stopped');
+
+    // 3. Close Socket.IO connections
+    logger.info('🔌 Closing WebSocket connections...');
+    const io = app.locals.io;
+    if (io) {
+      io.close(() => {
+        logger.info('✅ Socket.IO closed');
+      });
+    }
+
+    // 4. Wait for ongoing operations (max 5 seconds)
+    logger.info('⏳ Waiting for ongoing operations to complete...');
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    // 5. Close database connections
+    logger.info('💾 Closing database connections...');
+    const db = require('./config/database');
+    const pool = db.getClient ? await db.getClient() : null;
+    if (pool) {
+      await pool.end();
+    }
+    logger.info('✅ Database connections closed');
+
+    // 6. Close Redis connections
+    logger.info('🗄️  Closing Redis connections...');
+    const { client: redisClient } = require('./config/redis');
+    if (redisClient && redisClient.isOpen) {
+      await redisClient.quit();
+    }
+    logger.info('✅ Redis connections closed');
+
+    logger.info('✨ Graceful shutdown complete');
+    process.exit(0);
+  } catch (error) {
+    logger.error('❌ Error during shutdown:', error);
+    process.exit(1);
+  }
+}
+
+// Graceful shutdown handlers
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Uncaught exceptions
+process.on('uncaughtException', (error) => {
+  logger.error('💥 Uncaught Exception:', error);
+  gracefulShutdown('uncaughtException');
 });
 
-process.on('SIGINT', () => {
-  console.log('SIGINT signal received: closing HTTP server');
-  reservationCleaner.stop();
-  eventStatusUpdater.stop();
-  process.exit(0);
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+  gracefulShutdown('unhandledRejection');
 });
 

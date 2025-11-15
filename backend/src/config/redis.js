@@ -1,4 +1,5 @@
 const { createClient } = require('redis');
+const { logger } = require('../utils/logger');
 
 const redisClient = createClient({
   socket: {
@@ -8,11 +9,11 @@ const redisClient = createClient({
 });
 
 redisClient.on('error', (err) => {
-  console.error('❌ Redis Client Error', err);
+  logger.error('❌ Redis Client Error', err);
 });
 
 redisClient.on('connect', () => {
-  console.log('✅ Connected to DragonflyDB (Redis)');
+  logger.info('✅ Connected to DragonflyDB (Redis)');
 });
 
 // Connect to Redis
@@ -20,7 +21,7 @@ redisClient.on('connect', () => {
   try {
     await redisClient.connect();
   } catch (err) {
-    console.error('Failed to connect to Redis:', err);
+    logger.error('Failed to connect to Redis:', err);
   }
 })();
 
@@ -28,12 +29,12 @@ redisClient.on('connect', () => {
 const acquireLock = async (key, ttl = 5000) => {
   const lockKey = `lock:${key}`;
   const lockValue = Date.now() + ttl;
-  
+
   const result = await redisClient.set(lockKey, lockValue, {
     NX: true, // Only set if not exists
     PX: ttl,  // Expire after ttl milliseconds
   });
-  
+
   return result === 'OK';
 };
 

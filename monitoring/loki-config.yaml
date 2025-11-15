@@ -1,0 +1,54 @@
+auth_enabled: false
+# 중요: Loki는 원래 여러 회사가 같이 쓰는(Multi-tenancy) 기능이 있는데,
+# 우리는 혼자 쓸 거니까 인증 기능을 끕니다. 복잡한 헤더 설정 없이 바로 로그를 쏠 수 있게 합니다.
+
+server:
+  http_listen_port: 3100
+# Loki 웹 서버가 3100번 포트로 귀를 열고 있겠다는 뜻입니다.
+
+common:
+  path_prefix: /tmp/loki
+  storage:
+    filesystem: # 핵심!
+      chunks_directory: /tmp/loki/chunks # 로그 데이터 본체
+      rules_directory: /tmp/loki/rules
+  # AWS S3 같은 외부 스토리지를 안 쓰고, 그냥 로컬 파일시스템(컨테이너 내부 디스크)에 저장하겠다는 뜻입니다.
+  # 작은 프로젝트에는 이게 제일 빠르고 간편합니다.
+  # TODO: AWS S3 storage로 변경
+  replication_factor: 1
+  ring:
+    instance_addr: 127.0.0.1
+    kvstore:
+      store: inmemory
+# 우리는 Loki를 클러스터(여러 대)로 안 띄우고 딱 1대만 띄울 거죠?
+# 그래서 복제(Replication)도 안 하고, 상태 저장도 메모리에서 해결하겠다는 가벼운 설정입니다.
+ingester:
+  lifecycler:
+    address: 127.0.0.1
+    ring:
+      kvstore:
+        store: inmemory
+      replication_factor: 1
+    final_sleep: 0s
+
+schema_config:
+  configs:
+    - from: 2020-10-24
+      store: boltdb-shipper
+      object_store: filesystem
+      schema: v11
+      index:
+        prefix: index_
+        period: 24h
+
+compactor:
+  working_directory: /tmp/loki/boltdb-shipper-compactor
+  shared_store: filesystem
+  retention_enabled: true # 삭제 기능 활성화
+  compaction_interval: 10m # 청소 주기 10분
+
+limits_config:
+  retention_period: 24h # 하루마다 삭제
+
+ruler:
+  alertmanager_url: http://localhost:9093

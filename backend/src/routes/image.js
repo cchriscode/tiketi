@@ -6,6 +6,10 @@ const path = require('path');
 
 const router = express.Router();
 
+process.env.AWS_ACCESS_KEY_ID
+process.env.AWS_SECRET_ACCESS_KEY
+process.env.AWS_REGION
+
 const s3Client = new S3Client({
   region: process.env.AWS_REGION,
 });
@@ -27,11 +31,14 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }
 });
 
+// Test endpoint
 router.get('/test', (req, res) => {
   res.json({ message: 'Image route is working' });
 });
 
-router.post('/upload', upload.single('image'), async (req, res) => {
+router.post('/upload', upload.single('image'), async (req, res, next) => {
+  const { logger } = require('../utils/logger');
+  logger.info('File uploaded:', req.file); // 업로드된 파일 정보 로깅
 
   // S3에 저장된 파일의 위치(URL)를 프론트엔드에 돌려줍니다.
   return res.status(200).json({
