@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { PAYMENT_METHOD_DISPLAY, API_ENDPOINTS } from '../shared/constants';
@@ -12,11 +12,7 @@ function PaymentSuccess() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchReservation();
-  }, [reservationId]);
-
-  const fetchReservation = async () => {
+  const fetchReservation = useCallback(async () => {
     try {
       setLoading(true);
       const response = await api.get(API_ENDPOINTS.GET_RESERVATION(reservationId));
@@ -35,7 +31,11 @@ function PaymentSuccess() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [reservationId, navigate]);
+
+  useEffect(() => {
+    fetchReservation();
+  }, [fetchReservation]);
 
   if (loading) {
     return <div className="loading">예약 정보를 불러오는 중...</div>;
