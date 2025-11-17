@@ -201,15 +201,20 @@ jobs:
           echo "🚀 Starting deployment..."
           cd /home/ubuntu/tiketi
 
-          # 1. 최신 backend 이미지를 docker-compose.prod.yml에 반영
+          # 1. 기존 backend 컨테이너 graceful shutdown
+          echo "🔄 Stopping existing backend container..."
+          docker compose -f docker-compose.prod.yml stop -t 60 backend 2>/dev/null || true
+          docker compose -f docker-compose.prod.yml rm -f backend 2>/dev/null || true
+
+          # 2. 최신 backend 이미지를 docker-compose.prod.yml에 반영
           echo "📝 Updating backend image in docker-compose..."
           export BACKEND_IMAGE="${{ env.ECR_REGISTRY }}/tiketi-backend:latest"
 
-          # 2. docker compose로 backend만 재시작 (DB/Redis는 그대로)
-          echo "🔄 Restarting backend with docker compose..."
-          docker compose -f docker-compose.prod.yml up -d --force-recreate --no-deps backend
+          # 3. docker compose로 backend 시작
+          echo "🔄 Starting new backend with docker compose..."
+          docker compose -f docker-compose.prod.yml up -d backend
 
-          # 3. Health check (최대 60초)
+          # 4. Health check (최대 60초)
           echo "🏥 Running health checks..."
           sleep 10
 
