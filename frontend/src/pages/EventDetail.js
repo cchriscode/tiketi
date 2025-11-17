@@ -200,7 +200,6 @@ function EventDetail() {
 
     // Create reservation directly for non-seat events
     try {
-      setSubmitting(true);
       setError(null);
 
       const items = Object.entries(selectedTickets).map(([ticketTypeId, quantity]) => ({
@@ -221,8 +220,6 @@ function EventDetail() {
       const message = err.response?.data?.error || '예매에 실패했습니다.';
       setError(message);
       console.error(err);
-    } finally {
-      setSubmitting(false);
     }
   };
 
