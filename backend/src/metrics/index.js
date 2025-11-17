@@ -1,16 +1,17 @@
-// backend/src/metrics/index.js
 const client = require('prom-client');
 
-// Registry 생성
+// Prometheus에서 수집할 메트릭들을 담을 Registry 생성
 const register = new client.Registry();
 
 // 기본 메트릭 수집 (CPU, 메모리 등)
 client.collectDefaultMetrics({ register });
 
 // ==========================================
-// 📊 HTTP 메트릭
+// 📊 HTTP 요청 관련 메트릭
 // ==========================================
 
+// 총 HTTP 요청 수
+// method(GET/POST), path(/api/...), status(200/404 등) 별로 카운트
 const httpRequestCounter = new client.Counter({
   name: 'http_requests_total',
   help: 'Total number of HTTP requests',
@@ -18,6 +19,8 @@ const httpRequestCounter = new client.Counter({
   registers: [register]
 });
 
+// HTTP 요청 처리 시간 Histogram
+// 응답 시간 분포 파악용
 const httpRequestDuration = new client.Histogram({
   name: 'http_request_duration_seconds',
   help: 'Duration of HTTP requests in seconds',
@@ -26,6 +29,7 @@ const httpRequestDuration = new client.Histogram({
   registers: [register]
 });
 
+// 현재 처리 중인 요청 수 (동시 요청 측정)
 const activeRequests = new client.Gauge({
   name: 'http_requests_active',
   help: 'Number of active HTTP requests',
@@ -36,14 +40,15 @@ const activeRequests = new client.Gauge({
 // 🎫 비즈니스 메트릭
 // ==========================================
 
-// 대기열
+// 대기열에 현재 몇 명이 있는지 (Gauge: 변수값)
 const queueUsers = new client.Gauge({
   name: 'tiketi_queue_users_total',
   help: 'Number of users in queue',
-  labelNames: ['event_id'],
+  labelNames: ['event_id'], // 이벤트별로 분리하여 수집
   registers: [register]
 });
 
+// 대기열에서 대기한 시간
 const queueWaitTime = new client.Histogram({
   name: 'tiketi_queue_wait_seconds',
   help: 'Queue waiting time in seconds',
@@ -53,6 +58,7 @@ const queueWaitTime = new client.Histogram({
 });
 
 // 예약
+// 예약 생성 (성공/실패, 이벤트별)
 const reservationsCreated = new client.Counter({
   name: 'tiketi_reservations_created_total',
   help: 'Total reservations created',
@@ -60,6 +66,7 @@ const reservationsCreated = new client.Counter({
   registers: [register]
 });
 
+// 예약 취소 횟수
 const reservationsCancelled = new client.Counter({
   name: 'tiketi_reservations_cancelled_total',
   help: 'Total reservations cancelled',
@@ -67,6 +74,7 @@ const reservationsCancelled = new client.Counter({
   registers: [register]
 });
 
+// 예약 만료 횟수
 const reservationsExpired = new client.Counter({
   name: 'tiketi_reservations_expired_total',
   help: 'Total reservations expired',
@@ -74,7 +82,8 @@ const reservationsExpired = new client.Counter({
   registers: [register]
 });
 
-// 결제
+// 결제(Payments)
+// 결제 시도 횟수
 const paymentsTotal = new client.Counter({
   name: 'tiketi_payments_total',
   help: 'Total payment attempts',
@@ -82,6 +91,7 @@ const paymentsTotal = new client.Counter({
   registers: [register]
 });
 
+// 결제 금액 분포
 const paymentAmount = new client.Histogram({
   name: 'tiketi_payment_amount',
   help: 'Payment amount distribution',
@@ -90,7 +100,8 @@ const paymentAmount = new client.Histogram({
   registers: [register]
 });
 
-// 좌석
+// 좌석(Seat)
+// 예약된 좌석 수
 const seatsReserved = new client.Gauge({
   name: 'tiketi_seats_reserved_total',
   help: 'Number of reserved seats',
@@ -98,6 +109,7 @@ const seatsReserved = new client.Gauge({
   registers: [register]
 });
 
+// 남은 좌석 수
 const seatsAvailable = new client.Gauge({
   name: 'tiketi_seats_available_total',
   help: 'Number of available seats',
@@ -105,7 +117,8 @@ const seatsAvailable = new client.Gauge({
   registers: [register]
 });
 
-// 인증
+// 인증(Auth)
+// 로그인/회원가입 시도 수
 const authAttempts = new client.Counter({
   name: 'tiketi_auth_attempts_total',
   help: 'Total authentication attempts',
@@ -116,7 +129,7 @@ const authAttempts = new client.Counter({
 // ==========================================
 // 🗄️ 데이터베이스 메트릭
 // ==========================================
-
+// SQL 쿼리 실행 시간 측정
 const dbQueryDuration = new client.Histogram({
   name: 'tiketi_db_query_duration_seconds',
   help: 'Database query duration',
@@ -125,6 +138,7 @@ const dbQueryDuration = new client.Histogram({
   registers: [register]
 });
 
+// DB 커넥션 풀에서 현재 활성 커넥션 수
 const dbConnections = new client.Gauge({
   name: 'tiketi_db_connections_active',
   help: 'Active database connections',
@@ -132,7 +146,7 @@ const dbConnections = new client.Gauge({
 });
 
 // ==========================================
-// Export
+// 외부에서 사용하도록 Export
 // ==========================================
 
 module.exports = {
