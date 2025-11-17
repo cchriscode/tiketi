@@ -54,16 +54,22 @@ router.get('/', async (req, res, next) => {
     // Search filter with Korean-English cross-language support
     if (searchQuery && searchQuery.trim()) {
       const searchTerm = searchQuery.trim();
+      let searchTerms = [searchTerm];
 
-      // Get related keywords from keyword_mappings table
-      const mappingResult = await db.query(`
-        SELECT DISTINCT english FROM keyword_mappings WHERE korean ILIKE $1
-        UNION
-        SELECT DISTINCT korean FROM keyword_mappings WHERE english ILIKE $1
-      `, [`%${searchTerm}%`]);
+      // Try to get related keywords from keyword_mappings table (if exists)
+      try {
+        const mappingResult = await db.query(`
+          SELECT DISTINCT english FROM keyword_mappings WHERE korean ILIKE $1
+          UNION
+          SELECT DISTINCT korean FROM keyword_mappings WHERE english ILIKE $1
+        `, [`%${searchTerm}%`]);
 
-      // Collect all search terms (original + mapped)
-      const searchTerms = [searchTerm, ...mappingResult.rows.map(row => row.english || row.korean)];
+        // Add mapped keywords to search terms
+        searchTerms = [searchTerm, ...mappingResult.rows.map(row => row.english || row.korean)];
+      } catch (err) {
+        // keyword_mappings table doesn't exist yet, use basic search only
+        console.log('keyword_mappings 테이블 없음, 기본 검색만 사용');
+      }
 
       // Build OR conditions for each search term
       const searchConditions = searchTerms.map((term, index) => {
@@ -102,15 +108,21 @@ router.get('/', async (req, res, next) => {
 
     if (searchQuery && searchQuery.trim()) {
       const searchTerm = searchQuery.trim();
+      let countSearchTerms = [searchTerm];
 
-      // Get related keywords (same as above)
-      const countMappingResult = await db.query(`
-        SELECT DISTINCT english FROM keyword_mappings WHERE korean ILIKE $1
-        UNION
-        SELECT DISTINCT korean FROM keyword_mappings WHERE english ILIKE $1
-      `, [`%${searchTerm}%`]);
+      // Try to get related keywords from keyword_mappings table (if exists)
+      try {
+        const countMappingResult = await db.query(`
+          SELECT DISTINCT english FROM keyword_mappings WHERE korean ILIKE $1
+          UNION
+          SELECT DISTINCT korean FROM keyword_mappings WHERE english ILIKE $1
+        `, [`%${searchTerm}%`]);
 
-      const countSearchTerms = [searchTerm, ...countMappingResult.rows.map(row => row.english || row.korean)];
+        countSearchTerms = [searchTerm, ...countMappingResult.rows.map(row => row.english || row.korean)];
+      } catch (err) {
+        // keyword_mappings table doesn't exist yet, use basic search only
+        console.log('keyword_mappings 테이블 없음 (count), 기본 검색만 사용');
+      }
 
       const countSearchConditions = countSearchTerms.map((term, index) => {
         countParams.push(`%${term}%`);
