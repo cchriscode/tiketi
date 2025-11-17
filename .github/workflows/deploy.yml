@@ -157,6 +157,24 @@ jobs:
           aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
             docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
 
+      - name: Cleanup old images before pull
+        run: |
+          echo "🧹 Cleaning up old Docker images and containers..."
+
+          # 중지된 컨테이너 삭제
+          docker container prune -f
+
+          # 사용하지 않는 이미지 삭제
+          docker image prune -af --filter "until=24h"
+
+          # 사용하지 않는 볼륨 삭제
+          docker volume prune -f
+
+          # 디스크 사용량 확인
+          echo "📊 Disk usage:"
+          df -h /var/lib/docker
+          docker system df
+
       - name: Pull latest image
         run: |
           docker pull ${{ env.ECR_REGISTRY }}/tiketi-backend:latest
