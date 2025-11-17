@@ -83,9 +83,6 @@ services:
     depends_on:
       - postgres
       - dragonfly
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
     networks:
       - tiketi-network
     logging:
