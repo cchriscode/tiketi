@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { reservationsAPI } from '../services/api';
 import { format } from 'date-fns';
@@ -13,11 +13,7 @@ function ReservationDetail() {
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchReservationDetail();
-  }, [id]);
-
-  const fetchReservationDetail = async () => {
+  const fetchReservationDetail = useCallback(async () => {
     try {
       setLoading(true);
       const response = await reservationsAPI.getById(id);
@@ -28,7 +24,11 @@ function ReservationDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchReservationDetail();
+  }, [fetchReservationDetail]);
 
   const handleCancel = async () => {
     if (!window.confirm('정말 예매를 취소하시겠습니까?')) {
