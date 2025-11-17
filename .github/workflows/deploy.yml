@@ -161,72 +161,21 @@ jobs:
         run: |
           docker pull ${{ env.ECR_REGISTRY }}/tiketi-backend:latest
 
-      - name: Ensure DB and Redis are running
-        run: |
-          echo "🔍 Checking if PostgreSQL and DragonflyDB are running..."
-
-          # PostgreSQL 체크
-          if ! docker ps --format '{{.Names}}' | grep -q "tiketi-postgres"; then
-            echo "📦 Starting PostgreSQL..."
-            cd /home/ubuntu/tiketi
-            docker compose -f docker-compose.prod.yml up -d postgres
-
-            # PostgreSQL 준비 대기 (최대 30초)
-            for i in {1..15}; do
-              if docker exec tiketi-postgres pg_isready -U ${POSTGRES_USER:-tiketi_user} > /dev/null 2>&1; then
-                echo "✅ PostgreSQL is ready"
-                break
-              fi
-              echo "⏳ Waiting for PostgreSQL... ($i/15)"
-              sleep 2
-            done
-          else
-            echo "✅ PostgreSQL is already running"
-          fi
-
-          # DragonflyDB 체크
-          if ! docker ps --format '{{.Names}}' | grep -q "tiketi-dragonfly"; then
-            echo "📦 Starting DragonflyDB..."
-            cd /home/ubuntu/tiketi
-            docker compose -f docker-compose.prod.yml up -d dragonfly
-
-            # DragonflyDB 준비 대기 (최대 15초)
-            sleep 5
-            echo "✅ DragonflyDB started"
-          else
-            echo "✅ DragonflyDB is already running"
-          fi
-
-      - name: Deploy backend with docker-compose
+      - name: Deploy with docker-compose
         run: |
           set -e  # 에러 발생 시 즉시 중단
 
           echo "🚀 Starting deployment..."
           cd /home/ubuntu/tiketi
 
-          # 1. 3001 포트를 사용하는 모든 컨테이너 찾아서 정리
-          echo "🔄 Stopping containers using port 3001..."
-          PORT_CONTAINERS=$(docker ps -q --filter "publish=3001" 2>/dev/null || true)
-          if [ -n "$PORT_CONTAINERS" ]; then
-            echo "Found containers using port 3001: $PORT_CONTAINERS"
-            docker stop -t 60 $PORT_CONTAINERS 2>/dev/null || true
-            docker rm -f $PORT_CONTAINERS 2>/dev/null || true
-          fi
-
-          # 2. tiketi-backend 이름의 컨테이너도 정리 (혹시 다른 포트로 실행 중일 경우)
-          echo "🔄 Stopping tiketi-backend container..."
-          docker stop -t 60 tiketi-backend 2>/dev/null || true
-          docker rm -f tiketi-backend 2>/dev/null || true
-
-          # 3. 최신 backend 이미지를 docker-compose.prod.yml에 반영
-          echo "📝 Updating backend image in docker-compose..."
+          # 최신 backend 이미지를 docker-compose.prod.yml에 반영
           export BACKEND_IMAGE="${{ env.ECR_REGISTRY }}/tiketi-backend:latest"
 
-          # 4. docker compose로 backend 시작
-          echo "🔄 Starting new backend with docker compose..."
-          docker compose -f docker-compose.prod.yml up -d backend
+          # docker-compose.prod.yml의 모든 서비스 시작/업데이트
+          echo "🔄 Starting all services with docker compose..."
+          docker compose -f docker-compose.prod.yml up -d
 
-          # 5. Health check (최대 60초)
+          # Health check (최대 60초)
           echo "🏥 Running health checks..."
           sleep 10
 

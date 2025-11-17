@@ -95,32 +95,6 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # Frontend
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.prod
-      args:
-        REACT_APP_API_URL: ${REACT_APP_API_URL}
-    container_name: tiketi-frontend
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    networks:
-      - tiketi-network
-    stdin_open: true
-    tty: true
-    logging:
-      driver: json-file
-      options:
-        tag: "{{.ImageName}}|{{.Name}}"
-        max-size: "10m"
-        max-file: "3"
-
   # Loki volume 초기 소유권 설정용 (청소부)
   init-loki:
     image: grafana/loki:2.9.2
