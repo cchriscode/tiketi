@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import { eventsAPI } from '../services/api';
 import EventCard from '../components/EventCard';
 import './Home.css';
@@ -9,12 +8,6 @@ function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('on_sale');
-  const location = useLocation();
-
-  const searchQuery = useMemo(() => {
-    const params = new URLSearchParams(location.search);
-    return params.get('q') || '';
-  }, [location.search]);
 
   useEffect(() => {
     fetchEvents();
@@ -25,7 +18,6 @@ function Home() {
     try {
       setLoading(true);
       const params = filter ? { status: filter } : {};
-      if (searchQuery) params.q = searchQuery;
       const response = await eventsAPI.getAll(params);
       setEvents(response.data.events);
       setError(null);
@@ -41,7 +33,6 @@ function Home() {
   const fetchEventsQuietly = async () => {
     try {
       const params = filter ? { status: filter } : {};
-      if (searchQuery) params.q = searchQuery;
       const response = await eventsAPI.getAll(params);
       setEvents(response.data.events);
       console.log('🔄 이벤트 목록 자동 새로고침 완료');

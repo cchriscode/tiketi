@@ -35,6 +35,7 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/seats', require('./routes/seats'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/queue', require('./routes/queue'));
+app.use('/api/news', require('./routes/news'));
 
 // Image upload route (only if AWS S3 is configured)
 if (process.env.AWS_S3_BUCKET) {

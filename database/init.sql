@@ -3,6 +3,9 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Enable pg_trgm extension for fuzzy search and similarity matching
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 -- Users table
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -106,6 +109,28 @@ CREATE TABLE reservation_items (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Korean-English keyword mapping table for cross-language search
+CREATE TABLE keyword_mappings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    korean VARCHAR(255) NOT NULL,
+    english VARCHAR(255) NOT NULL,
+    entity_type VARCHAR(50) DEFAULT 'artist', -- 'artist', 'venue', 'general'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(korean, english)
+);
+
+-- News table for TiKETI News feature
+CREATE TABLE news (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    author VARCHAR(100) NOT NULL,
+    author_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    views INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create indexes for better performance
 CREATE INDEX idx_seat_layouts_name ON seat_layouts(name);
 CREATE INDEX idx_events_event_date ON events(event_date);
@@ -120,6 +145,20 @@ CREATE INDEX idx_reservations_event_id ON reservations(event_id);
 CREATE INDEX idx_reservations_status ON reservations(status);
 CREATE INDEX idx_ticket_types_event_id ON ticket_types(event_id);
 CREATE INDEX idx_reservation_items_seat ON reservation_items(seat_id);
+
+-- GIN index for full-text search on events
+-- Combines title, artist_name, venue, and address for comprehensive search
+CREATE INDEX idx_events_search ON events USING GIN (
+  (COALESCE(title, '') || ' ' || COALESCE(artist_name, '') || ' ' || COALESCE(venue, '') || ' ' || COALESCE(address, '')) gin_trgm_ops
+);
+
+-- Indexes for keyword mappings (for fast cross-language search)
+CREATE INDEX idx_keyword_mappings_korean ON keyword_mappings USING GIN (korean gin_trgm_ops);
+CREATE INDEX idx_keyword_mappings_english ON keyword_mappings USING GIN (english gin_trgm_ops);
+
+-- Indexes for news table
+CREATE INDEX idx_news_created_at ON news(created_at DESC);
+CREATE INDEX idx_news_author_id ON news(author_id);
 
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -147,6 +186,9 @@ CREATE TRIGGER update_ticket_types_updated_at BEFORE UPDATE ON ticket_types
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_reservations_updated_at BEFORE UPDATE ON reservations
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_news_updated_at BEFORE UPDATE ON news
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Note: Admin account (admin@tiketi.gg / admin123) is automatically created by backend on startup
@@ -210,3 +252,91 @@ INSERT INTO events (title, description, venue, address, event_date, sale_start_d
 ('ITZY CHECKMATE TOUR', '있지의 파워풀한 무대', '올림픽공원 체조경기장', '서울특별시 송파구 올림픽로 424', CURRENT_DATE + INTERVAL '80 days' + TIME '19:00', CURRENT_DATE + INTERVAL '19 days' + TIME '09:00', CURRENT_DATE + INTERVAL '19 days' + TIME '18:00', '/images/itzy.jpg', 'upcoming', (SELECT id FROM seat_layouts WHERE name = 'small_theater'), 'ITZY'),
 ('ZICO KING OF THE ZUNGLE', '지코의 힙합 라이브', 'YES24 라이브홀', '서울특별시 광진구 광나루로 56길 85', CURRENT_DATE + INTERVAL '82 days' + TIME '19:00', CURRENT_DATE + INTERVAL '20 days' + TIME '09:00', CURRENT_DATE + INTERVAL '20 days' + TIME '18:00', '/images/zico.jpg', 'upcoming', (SELECT id FROM seat_layouts WHERE name = 'small_theater'), 'ZICO');
 
+-- Insert Korean-English keyword mappings for cross-language search
+INSERT INTO keyword_mappings (korean, english, entity_type) VALUES
+-- Artists
+('싸이', 'PSY', 'artist'),
+('아이유', 'IU', 'artist'),
+('방탄소년단', 'BTS', 'artist'),
+('블랙핑크', 'BLACKPINK', 'artist'),
+('임영웅', 'Lim Young Woong', 'artist'),
+('뉴진스', 'NewJeans', 'artist'),
+('세븐틴', 'SEVENTEEN', 'artist'),
+('에스파', 'aespa', 'artist'),
+('엔시티 드림', 'NCT DREAM', 'artist'),
+('르세라핌', 'LE SSERAFIM', 'artist'),
+('아이브', 'IVE', 'artist'),
+('스트레이 키즈', 'Stray Kids', 'artist'),
+('트와이스', 'TWICE', 'artist'),
+('태양', 'TAEYANG', 'artist'),
+('태양', 'SOL', 'artist'),
+('지드래곤', 'G-DRAGON', 'artist'),
+('지드래곤', 'GD', 'artist'),
+('엑소', 'EXO', 'artist'),
+('레드벨벳', 'Red Velvet', 'artist'),
+('투모로우바이투게더', 'TOMORROW X TOGETHER', 'artist'),
+('투바투', 'TXT', 'artist'),
+('엔하이픈', 'ENHYPEN', 'artist'),
+('있지', 'ITZY', 'artist'),
+('지코', 'ZICO', 'artist'),
+
+-- Venues
+('서울', 'Seoul', 'venue'),
+('올림픽', 'Olympic', 'venue'),
+('잠실', 'Jamsil', 'venue'),
+('고척', 'Gocheok', 'venue'),
+('송파', 'Songpa', 'venue'),
+('구로', 'Guro', 'venue'),
+('용산', 'Yongsan', 'venue'),
+('광진', 'Gwangjin', 'venue'),
+('체조경기장', 'Gymnastics Arena', 'venue'),
+('경기장', 'Stadium', 'venue'),
+('돔', 'Dome', 'venue'),
+('스카이돔', 'Sky Dome', 'venue'),
+('실내체육관', 'Indoor Stadium', 'venue'),
+
+-- General terms
+('콘서트', 'Concert', 'general'),
+('투어', 'Tour', 'general'),
+('공연', 'Performance', 'general'),
+('뮤지컬', 'Musical', 'general');
+
+
+-- Insert sample news
+INSERT INTO news (title, content, author, views) VALUES
+('TiKETI 서비스 정식 오픈!', '안녕하세요, 티케티입니다.
+
+드디어 티케티 서비스가 정식으로 오픈하게 되었습니다!
+
+티케티는 가장 빠르고 안전한 티켓팅 서비스를 제공하기 위해 만들어졌습니다.
+실시간 좌석 선택, 공정한 대기열 시스템, 그리고 간편한 결제까지 모든 것을 한 곳에서 경험하실 수 있습니다.
+
+앞으로 더 나은 서비스로 보답하겠습니다.
+많은 이용 부탁드립니다!
+
+감사합니다.', '관리자', 125),
+('2024년 연말 콘서트 티켓 오픈 안내', '2024년 12월 연말 콘서트 티켓팅 일정을 안내드립니다.
+
+12월 한 달 동안 다양한 아티스트들의 연말 콘서트가 예정되어 있습니다.
+각 공연별 티켓 오픈 일정은 아래와 같습니다:
+
+- 12/15: 아이유 연말 콘서트
+- 12/20: BTS 월드 투어 서울 공연
+- 12/25: 크리스마스 특집 콘서트
+
+모든 티켓은 선착순이며, 공정한 대기열 시스템을 통해 진행됩니다.
+티켓 오픈 10분 전부터 대기가 가능하니 참고해주세요.
+
+행복한 연말 되세요!', '관리자', 89),
+('티케티 모바일 앱 출시 예정', '티케티 모바일 앱이 곧 출시됩니다!
+
+더욱 편리한 티켓팅을 위한 모바일 앱을 준비 중입니다.
+iOS와 Android 모두 지원 예정이며, 1월 중 출시를 목표로 하고 있습니다.
+
+모바일 앱에서는 다음과 같은 기능을 제공할 예정입니다:
+- 푸시 알림으로 티켓 오픈 알림 받기
+- 더 빠른 결제 프로세스
+- 모바일 티켓 QR코드
+- 나의 예매 내역 한눈에 보기
+
+많은 기대 부탁드립니다!', '관리자', 45);

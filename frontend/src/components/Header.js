@@ -25,7 +25,9 @@ function Header() {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     const query = searchText.trim();
-    navigate(query ? `/?q=${encodeURIComponent(query)}` : '/');
+    if (query) {
+      navigate(`/search?q=${encodeURIComponent(query)}`);
+    }
   };
 
   return (
@@ -53,7 +55,7 @@ function Header() {
           </form>
 
           <nav className="nav">
-            <Link to="/" className="nav-link">이벤트</Link>
+            <Link to="/news" className="nav-link">News</Link>
             {user ? (
               <>
                 <Link to="/my-reservations" className="nav-link">내 예매</Link>
