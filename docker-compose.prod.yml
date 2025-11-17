@@ -30,7 +30,7 @@ services:
       - "-c"
       - "log_destination=stderr" # 표준 에러로 출력 (Promtail이 가져감)
       - "-c"
-      - "log_statement=all" # 데이터를 변경하는 쿼리(INSERT, UPDATE 등)는 기록 (선택사항)
+      - "log_statement=none" # 데이터를 변경하는 쿼리(INSERT, UPDATE 등)는 기록 (선택사항)
       - "-c"
       - "log_min_duration_statement=0" # ★ 200ms(0.2초) 이상 걸린 쿼리만 기록!
 
@@ -159,7 +159,7 @@ services:
       - loki
       - prometheus
 
-# 5. Node Exporter (EC2 서버 리소스)
+  # 5. Node Exporter (EC2 서버 리소스)
   node-exporter:
     image: prom/node-exporter:latest
     container_name: node-exporter
@@ -171,9 +171,9 @@ services:
       - /sys:/host/sys:ro
       - /:/rootfs:ro
     command:
-      - '--path.procfs=/host/proc'
-      - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)"
     networks:
       - tiketi-network
 
@@ -189,7 +189,7 @@ services:
       - postgres
     networks:
       - tiketi-network
-      
+
   # 7. Dragonfly Exporter
   dragonfly-exporter:
     image: oliver006/redis_exporter:latest
