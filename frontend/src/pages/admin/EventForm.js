@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { adminAPI, eventsAPI } from '../../services/api';
+import { adminAPI, eventsAPI, imageAPI } from '../../services/api';
 import api from '../../services/api';
 import './EventForm.css';
 
@@ -60,10 +60,10 @@ function EventForm() {
     try {
       setLoading(true);
       console.log('📥 이벤트 데이터 로드 중...', eventId);
-      
+
       const response = await eventsAPI.getById(eventId);
       const event = response.data.event; // 백엔드는 { event: {...}, ticketTypes: [...] } 형식으로 반환
-      
+
       console.log('✅ 이벤트 데이터:', event);
 
       // UTC 시간을 한국 시간(KST, UTC+9)으로 변환하여 datetime-local input에 설정
@@ -81,7 +81,7 @@ function EventForm() {
         useSeatSelection: !!event.seat_layout_id,
         status: event.status || 'upcoming', // 읽기 전용, 표시용
       };
-      
+
       console.log('📝 폼 데이터 설정:', newFormData);
       setFormData(newFormData);
 
@@ -145,7 +145,7 @@ function EventForm() {
   const handleSeatLayoutChange = (e) => {
     const layoutId = e.target.value;
     setFormData({ ...formData, seatLayoutId: layoutId });
-    
+
     // 선택된 레이아웃 정보 찾기
     const layout = seatLayouts.find(l => l.id === layoutId);
     setSelectedLayout(layout);
@@ -162,6 +162,27 @@ function EventForm() {
       setSelectedLayout(null);
     }
   };
+
+  const handleChangeImage = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const isImage = file.type.startsWith('image/');
+    if (!isImage) {
+      window.alert('이미지 파일만 업로드할 수 있습니다.');
+      return;
+    }
+
+    const uploadImage = await imageAPI.uploadImage(file);
+    const imageUrl = uploadImage.data.url;
+
+    handleChange({
+      target: {
+        name: 'posterImageUrl',
+        value: imageUrl
+      }
+    });
+  }
 
   const addTicketType = () => {
     setTicketTypes([
@@ -207,7 +228,7 @@ function EventForm() {
         // 생성 모드: 좌석/티켓 정보 포함
         payload.seatLayoutId = formData.useSeatSelection ? formData.seatLayoutId : null;
         payload.ticketTypes = formData.useSeatSelection ? [] : ticketTypes;
-        
+
         await adminAPI.createEvent(payload);
         alert('이벤트가 생성되었습니다.');
       }
@@ -261,7 +282,7 @@ function EventForm() {
           {/* 기본 정보 */}
           <div className="form-section">
             <h2 className="section-title">기본 정보</h2>
-            
+
             <div className="form-row">
               <div className="form-group full-width">
                 <label className="form-label">이벤트명 *</label>
@@ -309,7 +330,7 @@ function EventForm() {
           {/* 장소 정보 */}
           <div className="form-section">
             <h2 className="section-title">장소 정보</h2>
-            
+
             <div className="form-row">
               <div className="form-group">
                 <label className="form-label">장소명 *</label>
@@ -342,7 +363,7 @@ function EventForm() {
           {/* 일정 정보 */}
           <div className="form-section">
             <h2 className="section-title">일정 정보</h2>
-            
+
             <div className="form-row">
               <div className="form-group">
                 <label className="form-label">공연일시 *</label>
@@ -388,7 +409,7 @@ function EventForm() {
           {isEditMode && (
             <div className="form-section">
               <h2 className="section-title">현재 상태</h2>
-              
+
               <div className="status-display">
                 <div className="status-badge-large">
                   <span className={`badge status-${formData.status}`}>
@@ -409,177 +430,184 @@ function EventForm() {
           {/* 좌석/티켓 설정 (생성 모드에서만 표시) */}
           {!isEditMode && (
             <div className="form-section">
-            <h2 className="section-title">좌석/티켓 설정</h2>
-            
-            <div className="form-row">
-              <div className="form-group full-width">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={formData.useSeatSelection}
-                    onChange={handleUseSeatSelectionChange}
-                  />
-                  <span>좌석 선택 방식 사용 (개별 좌석 선택)</span>
-                </label>
-                <p className="form-help">
-                  체크 시: 사용자가 개별 좌석을 선택<br />
-                  체크 해제 시: 티켓 등급(VIP, R석 등)으로 수량 선택
-                </p>
+              <h2 className="section-title">좌석/티켓 설정</h2>
+
+              <div className="form-row">
+                <div className="form-group full-width">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={formData.useSeatSelection}
+                      onChange={handleUseSeatSelectionChange}
+                    />
+                    <span>좌석 선택 방식 사용 (개별 좌석 선택)</span>
+                  </label>
+                  <p className="form-help">
+                    체크 시: 사용자가 개별 좌석을 선택<br />
+                    체크 해제 시: 티켓 등급(VIP, R석 등)으로 수량 선택
+                  </p>
+                </div>
               </div>
-            </div>
 
-            {formData.useSeatSelection ? (
-              // 좌석 선택 방식
-              <>
-                <div className="form-row">
-                  <div className="form-group full-width">
-                    <label className="form-label">좌석 레이아웃 *</label>
-                    <select
-                      className="form-control"
-                      value={formData.seatLayoutId}
-                      onChange={handleSeatLayoutChange}
-                      required
-                    >
-                      <option value="">레이아웃을 선택하세요</option>
-                      {seatLayouts.map(layout => (
-                        <option key={layout.id} value={layout.id}>
-                          {layout.name} - {layout.description} ({layout.total_seats}석)
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {selectedLayout && (
-                  <div className="layout-preview">
-                    <h3>선택된 레이아웃 정보</h3>
-                    <div className="layout-info">
-                      <p><strong>이름:</strong> {selectedLayout.name}</p>
-                      <p><strong>설명:</strong> {selectedLayout.description}</p>
-                      <p><strong>총 좌석 수:</strong> {selectedLayout.total_seats}석</p>
-                      <div className="sections-info">
-                        <strong>구역별 가격:</strong>
-                        <ul>
-                          {selectedLayout.layout_config.sections.map((section, idx) => (
-                            <li key={idx}>
-                              {section.name}: {section.price.toLocaleString()}원 
-                              ({section.rows}행 × {section.seatsPerRow}석)
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+              {formData.useSeatSelection ? (
+                // 좌석 선택 방식
+                <>
+                  <div className="form-row">
+                    <div className="form-group full-width">
+                      <label className="form-label">좌석 레이아웃 *</label>
+                      <select
+                        className="form-control"
+                        value={formData.seatLayoutId}
+                        onChange={handleSeatLayoutChange}
+                        required
+                      >
+                        <option value="">레이아웃을 선택하세요</option>
+                        {seatLayouts.map(layout => (
+                          <option key={layout.id} value={layout.id}>
+                            {layout.name} - {layout.description} ({layout.total_seats}석)
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
-                )}
-              </>
-            ) : (
-              // 티켓 등급 방식
-              <>
-                <div className="ticket-types-section">
-                  <div className="section-header">
-                    <h3>티켓 등급</h3>
-                    <button
-                      type="button"
-                      className="btn btn-outline btn-sm"
-                      onClick={addTicketType}
-                    >
-                      + 티켓 등급 추가
-                    </button>
-                  </div>
 
-                  {ticketTypes.length === 0 && (
-                    <p className="empty-message">
-                      티켓 등급을 추가해주세요 (예: VIP석, R석, S석)
-                    </p>
+                  {selectedLayout && (
+                    <div className="layout-preview">
+                      <h3>선택된 레이아웃 정보</h3>
+                      <div className="layout-info">
+                        <p><strong>이름:</strong> {selectedLayout.name}</p>
+                        <p><strong>설명:</strong> {selectedLayout.description}</p>
+                        <p><strong>총 좌석 수:</strong> {selectedLayout.total_seats}석</p>
+                        <div className="sections-info">
+                          <strong>구역별 가격:</strong>
+                          <ul>
+                            {selectedLayout.layout_config.sections.map((section, idx) => (
+                              <li key={idx}>
+                                {section.name}: {section.price.toLocaleString()}원
+                                ({section.rows}행 × {section.seatsPerRow}석)
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
                   )}
-
-                  {ticketTypes.map((ticket, index) => (
-                    <div key={index} className="ticket-type-item">
-                      <div className="ticket-type-header">
-                        <h4>티켓 등급 {index + 1}</h4>
-                        <button
-                          type="button"
-                          className="btn btn-danger btn-sm"
-                          onClick={() => removeTicketType(index)}
-                        >
-                          삭제
-                        </button>
-                      </div>
-
-                      <div className="form-row">
-                        <div className="form-group">
-                          <label className="form-label">등급명 *</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            value={ticket.name}
-                            onChange={(e) => handleTicketTypeChange(index, 'name', e.target.value)}
-                            placeholder="예: VIP석"
-                            required
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label className="form-label">가격 *</label>
-                          <input
-                            type="number"
-                            className="form-control"
-                            value={ticket.price}
-                            onChange={(e) => handleTicketTypeChange(index, 'price', e.target.value)}
-                            placeholder="150000"
-                            min="0"
-                            required
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label className="form-label">총 수량 *</label>
-                          <input
-                            type="number"
-                            className="form-control"
-                            value={ticket.totalQuantity}
-                            onChange={(e) => handleTicketTypeChange(index, 'totalQuantity', e.target.value)}
-                            placeholder="100"
-                            min="1"
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div className="form-row">
-                        <div className="form-group full-width">
-                          <label className="form-label">설명</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            value={ticket.description}
-                            onChange={(e) => handleTicketTypeChange(index, 'description', e.target.value)}
-                            placeholder="예: 최상의 시야와 사운드"
-                          />
-                        </div>
-                      </div>
+                </>
+              ) : (
+                // 티켓 등급 방식
+                <>
+                  <div className="ticket-types-section">
+                    <div className="section-header">
+                      <h3>티켓 등급</h3>
+                      <button
+                        type="button"
+                        className="btn btn-outline btn-sm"
+                        onClick={addTicketType}
+                      >
+                        + 티켓 등급 추가
+                      </button>
                     </div>
-                  ))}
-                </div>
-              </>
-            )}
+
+                    {ticketTypes.length === 0 && (
+                      <p className="empty-message">
+                        티켓 등급을 추가해주세요 (예: VIP석, R석, S석)
+                      </p>
+                    )}
+
+                    {ticketTypes.map((ticket, index) => (
+                      <div key={index} className="ticket-type-item">
+                        <div className="ticket-type-header">
+                          <h4>티켓 등급 {index + 1}</h4>
+                          <button
+                            type="button"
+                            className="btn btn-danger btn-sm"
+                            onClick={() => removeTicketType(index)}
+                          >
+                            삭제
+                          </button>
+                        </div>
+
+                        <div className="form-row">
+                          <div className="form-group">
+                            <label className="form-label">등급명 *</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              value={ticket.name}
+                              onChange={(e) => handleTicketTypeChange(index, 'name', e.target.value)}
+                              placeholder="예: VIP석"
+                              required
+                            />
+                          </div>
+
+                          <div className="form-group">
+                            <label className="form-label">가격 *</label>
+                            <input
+                              type="number"
+                              className="form-control"
+                              value={ticket.price}
+                              onChange={(e) => handleTicketTypeChange(index, 'price', e.target.value)}
+                              placeholder="150000"
+                              min="0"
+                              required
+                            />
+                          </div>
+
+                          <div className="form-group">
+                            <label className="form-label">총 수량 *</label>
+                            <input
+                              type="number"
+                              className="form-control"
+                              value={ticket.totalQuantity}
+                              onChange={(e) => handleTicketTypeChange(index, 'totalQuantity', e.target.value)}
+                              placeholder="100"
+                              min="1"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div className="form-row">
+                          <div className="form-group full-width">
+                            <label className="form-label">설명</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              value={ticket.description}
+                              onChange={(e) => handleTicketTypeChange(index, 'description', e.target.value)}
+                              placeholder="예: 최상의 시야와 사운드"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           )}
 
           {/* 포스터 이미지 */}
           <div className="form-section">
             <h2 className="section-title">포스터 이미지</h2>
-            
+
             <div className="form-row">
               <div className="form-group full-width">
                 <label className="form-label">포스터 이미지 URL</label>
+                {formData.posterImageUrl && (
+                  <div className="poster-preview">
+                    <img
+                      src={formData.posterImageUrl}
+                      alt="포스터 미리보기"
+                      className="poster-image"
+                    />
+                  </div>
+                )}
                 <input
-                  type="url"
+                  type="file"
                   name="posterImageUrl"
                   className="form-control"
-                  value={formData.posterImageUrl}
-                  onChange={handleChange}
-                  placeholder="https://example.com/poster.jpg"
+                  onChange={handleChangeImage}
                 />
               </div>
             </div>
@@ -594,7 +622,7 @@ function EventForm() {
             >
               돌아가기
             </button>
-            
+
             {isEditMode && formData.status !== 'cancelled' && (
               <button
                 type="button"
@@ -605,14 +633,14 @@ function EventForm() {
                 {cancelling ? '취소 처리 중...' : '🚫 이벤트 취소'}
               </button>
             )}
-            
+
             <button
               type="submit"
               className="btn btn-primary"
               disabled={submitting || cancelling}
             >
-              {submitting 
-                ? (isEditMode ? '수정 중...' : '생성 중...') 
+              {submitting
+                ? (isEditMode ? '수정 중...' : '생성 중...')
                 : (isEditMode ? '✏️ 이벤트 수정' : '➕ 이벤트 생성')
               }
             </button>

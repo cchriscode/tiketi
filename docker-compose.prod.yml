@@ -77,8 +77,6 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_REGION: ${AWS_REGION}
       AWS_S3_BUCKET: ${AWS_S3_BUCKET}
       TZ: Asia/Seoul
@@ -103,13 +101,12 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
+      args:
+        REACT_APP_API_URL: ${REACT_APP_API_URL}
     container_name: tiketi-frontend
-    environment:
-      REACT_APP_API_URL: ${REACT_APP_API_URL}
-      TZ: Asia/Seoul
     ports:
-      - "3000:3000"
+      - "80:80"
     depends_on:
       - backend
     volumes:

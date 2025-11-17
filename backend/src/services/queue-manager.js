@@ -1,5 +1,7 @@
 const { client: redisClient } = require('../config/redis');
 
+const { logger } = require('../utils/logger');
+
 /**
  * 대기열 관리 시스템
  *
@@ -59,8 +61,8 @@ class QueueManager {
       const currentUsers = await this.getCurrentUsers(eventId);
       const threshold = await this.getThreshold(eventId);
 
-      console.log(`🔄 User ${userId} already in queue (position: ${position}) - preserved on refresh`);
 
+      logger.info(`🔄 User ${userId} already in queue (position: ${position}) - preserved on refresh`);
       return {
         queued: true,
         position,
@@ -78,8 +80,8 @@ class QueueManager {
       const currentUsers = await this.getCurrentUsers(eventId);
       const threshold = await this.getThreshold(eventId);
 
-      console.log(`✅ User ${userId} already active - preserved on refresh`);
 
+      logger.info(`✅ User ${userId} already active - preserved on refresh`);
       return {
         queued: false,
         currentUsers,
@@ -98,8 +100,8 @@ class QueueManager {
       const position = await this.getQueuePosition(eventId, userId);
       const estimatedWait = await this.getEstimatedWait(eventId, position);
 
-      console.log(`⏳ User ${userId} added to queue (position: ${position})`);
 
+      logger.info(`⏳ User ${userId} added to queue (position: ${position})`);
       return {
         queued: true,
         position,
@@ -112,8 +114,8 @@ class QueueManager {
     // 바로 입장 가능
     await this.addActiveUser(eventId, userId);
 
-    console.log(`✅ User ${userId} allowed entry immediately`);
 
+    logger.info(`✅ User ${userId} allowed entry immediately`);
     return {
       queued: false,
       currentUsers,
@@ -134,7 +136,7 @@ class QueueManager {
       value: userId,
     });
 
-    console.log(`⏳ User ${userId} added to queue:${eventId} at ${timestamp}`);
+    logger.info(`⏳ User ${userId} added to queue:${eventId} at ${timestamp}`);
   }
 
   /**
@@ -192,7 +194,7 @@ class QueueManager {
         await this.addActiveUser(eventId, userId);
       }
 
-      console.log(`✅ ${users.length} users entered from queue:${eventId}`);
+      logger.info(`✅ ${users.length} users entered from queue:${eventId}`);
     }
 
     return users;
@@ -242,7 +244,7 @@ class QueueManager {
   async removeFromQueue(eventId, userId) {
     const queueKey = `queue:${eventId}`;
     await redisClient.zRem(queueKey, userId);
-    console.log(`❌ User ${userId} removed from queue:${eventId}`);
+    logger.info(`❌ User ${userId} removed from queue:${eventId}`);
   }
 
   /**
@@ -255,7 +257,7 @@ class QueueManager {
     await redisClient.del(queueKey);
     await redisClient.del(activeKey);
 
-    console.log(`🧹 Queue cleared for event:${eventId}`);
+    logger.info(`🧹 Queue cleared for event:${eventId}`);
   }
 
   /**
@@ -284,7 +286,7 @@ class QueueManager {
           });
         }
       } catch (error) {
-        console.error(`Error processing queue for event:${eventId}`, error);
+        logger.error(`Error processing queue for event:${eventId}`, error);
       }
     }, 1000); // 1초마다 실행
 
@@ -298,7 +300,7 @@ class QueueManager {
   stopQueueProcessor(intervalId) {
     if (intervalId) {
       clearInterval(intervalId);
-      console.log(`⏹️  Queue processor stopped`);
+      logger.info(`⏹️  Queue processor stopped`);
     }
   }
 }

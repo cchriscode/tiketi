@@ -4,6 +4,7 @@
  */
 
 const db = require('../config/database');
+const { logger } = require('../utils/logger');
 
 class EventStatusUpdater {
   constructor() {
@@ -14,8 +15,8 @@ class EventStatusUpdater {
    * 서비스 시작
    */
   start() {
-    console.log('🔄 Starting event status updater (smart timer mode)');
-    
+    logger.info('🔄 Starting event status updater (smart timer mode)');
+
     // 즉시 한 번 실행 후 다음 타이머 설정
     this.updateEventStatuses();
   }
@@ -27,7 +28,7 @@ class EventStatusUpdater {
     if (this.timeoutId) {
       clearTimeout(this.timeoutId);
       this.timeoutId = null;
-      console.log('🛑 Event status updater stopped');
+      logger.info('🛑 Event status updater stopped');
     }
   }
 
@@ -35,14 +36,14 @@ class EventStatusUpdater {
    * 타이머 재설정 (이벤트 생성/수정 시 호출)
    */
   reschedule() {
-    console.log('🔄 Rescheduling event status updater...');
-    
+    logger.info('🔄 Rescheduling event status updater...');
+
     // 기존 타이머 취소
     if (this.timeoutId) {
       clearTimeout(this.timeoutId);
       this.timeoutId = null;
     }
-    
+
     // 즉시 상태 업데이트 실행
     this.updateEventStatuses();
   }
@@ -53,7 +54,7 @@ class EventStatusUpdater {
   async calculateNextUpdateTime() {
     try {
       const now = new Date();
-      
+
       // 가장 가까운 상태 변경 시점 찾기
       const result = await db.query(
         `SELECT 
@@ -65,19 +66,19 @@ class EventStatusUpdater {
       );
 
       const nextChangeTime = result.rows[0].next_change_time;
-      
+
       if (!nextChangeTime) {
         // 예정된 상태 변경이 없으면 1시간 후 다시 체크
         return 3600000;
       }
 
       const msUntilChange = new Date(nextChangeTime).getTime() - now.getTime();
-      
+
       // 최소 1초, 최대 1시간으로 제한
       return Math.max(1000, Math.min(msUntilChange + 1000, 3600000)); // 1초 여유 추가
-      
+
     } catch (error) {
-      console.error('❌ Calculate next update time error:', error);
+      logger.error('❌ Calculate next update time error:', error);
       // 에러 시 1분 후 재시도
       return 60000;
     }
@@ -89,9 +90,9 @@ class EventStatusUpdater {
   async scheduleNextUpdate() {
     const delay = await this.calculateNextUpdateTime();
     const nextUpdateDate = new Date(Date.now() + delay);
-    
-    console.log(`⏰ 다음 상태 업데이트 예정: ${nextUpdateDate.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })} (${Math.round(delay / 1000)}초 후)`);
-    
+
+    logger.info(`⏰ 다음 상태 업데이트 예정: ${nextUpdateDate.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })} (${Math.round(delay / 1000)}초 후)`);
+
     this.timeoutId = setTimeout(() => {
       this.updateEventStatuses();
     }, delay);
@@ -102,7 +103,7 @@ class EventStatusUpdater {
    */
   async updateEventStatuses() {
     const { client: redisClient } = require('../config/redis');
-    
+
     try {
       const now = new Date();
       let updatedCount = 0;
@@ -121,7 +122,7 @@ class EventStatusUpdater {
 
       if (upcomingToOnSale.rows.length > 0) {
         upcomingToOnSale.rows.forEach(event => {
-          console.log(`  📢 판매 시작: ${event.title}`);
+          logger.info(`  📢 판매 시작: ${event.title}`);
           updatedEventIds.add(event.id);
         });
         updatedCount += upcomingToOnSale.rows.length;
@@ -141,7 +142,7 @@ class EventStatusUpdater {
 
       if (toEnded.rows.length > 0) {
         toEnded.rows.forEach(event => {
-          console.log(`  ⏰ 판매 종료: ${event.title}`);
+          logger.info(`  ⏰ 판매 종료: ${event.title}`);
           updatedEventIds.add(event.id);
         });
         updatedCount += toEnded.rows.length;
@@ -166,9 +167,9 @@ class EventStatusUpdater {
            AND event_date < $1`,
           [now]
         );
-        
+
         pastEventDate.rows.forEach(event => {
-          console.log(`  🎭 공연 종료: ${event.title}`);
+          logger.info(`  🎭 공연 종료: ${event.title}`);
           updatedEventIds.add(event.id);
         });
         updatedCount += pastEventDate.rows.length;
@@ -176,30 +177,30 @@ class EventStatusUpdater {
 
       // 캐시 무효화
       if (updatedCount > 0) {
-        console.log(`✅ ${updatedCount}개 이벤트 상태 업데이트 완료`);
-        
+        logger.info(`✅ ${updatedCount}개 이벤트 상태 업데이트 완료`);
+
         try {
           // 모든 이벤트 목록 캐시 삭제
           const keys = await redisClient.keys('events:*');
           if (keys.length > 0) {
             await redisClient.del(keys);
-            console.log(`🗑️  이벤트 목록 캐시 ${keys.length}개 삭제`);
+            logger.info(`🗑️  이벤트 목록 캐시 ${keys.length}개 삭제`);
           }
-          
+
           // 업데이트된 개별 이벤트 캐시 삭제
           for (const eventId of updatedEventIds) {
             await redisClient.del(`event:${eventId}`);
           }
-          console.log(`🗑️  개별 이벤트 캐시 ${updatedEventIds.size}개 삭제`);
+          logger.info(`🗑️  개별 이벤트 캐시 ${updatedEventIds.size}개 삭제`);
         } catch (cacheError) {
-          console.error('⚠️  캐시 삭제 실패:', cacheError.message);
+          logger.error('⚠️  캐시 삭제 실패:', cacheError.message);
         }
       } else {
-        console.log('ℹ️  상태 변경 필요한 이벤트 없음');
+        logger.info('ℹ️  상태 변경 필요한 이벤트 없음');
       }
 
     } catch (error) {
-      console.error('❌ Event status update failed:', error);
+      logger.error('❌ Event status update failed:', error);
     } finally {
       // 다음 업데이트 스케줄링
       await this.scheduleNextUpdate();

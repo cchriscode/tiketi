@@ -1,4 +1,5 @@
 const { client: redisClient } = require('../config/redis');
+const { logger } = require('../utils/logger');
 
 /**
  * WebSocket 세션 관리 (ALB 멀티 인스턴스 대비)
@@ -27,7 +28,7 @@ async function saveUserSession(userId, sessionData) {
     );
     return true;
   } catch (error) {
-    console.error('Failed to save user session:', error);
+    logger.error('Failed to save user session:', error);
     return false;
   }
 }
@@ -41,7 +42,7 @@ async function getUserSession(userId) {
     const data = await redisClient.get(key);
     return data ? JSON.parse(data) : null;
   } catch (error) {
-    console.error('Failed to get user session:', error);
+    logger.error('Failed to get user session:', error);
     return null;
   }
 }
@@ -55,7 +56,7 @@ async function deleteUserSession(userId) {
     await redisClient.del(key);
     return true;
   } catch (error) {
-    console.error('Failed to delete user session:', error);
+    logger.error('Failed to delete user session:', error);
     return false;
   }
 }
@@ -76,7 +77,7 @@ async function updateUserSession(userId, updates) {
 
     return await saveUserSession(userId, updatedSession);
   } catch (error) {
-    console.error('Failed to update user session:', error);
+    logger.error('Failed to update user session:', error);
     return false;
   }
 }
@@ -97,7 +98,7 @@ async function mapSocketToUser(socketId, userId) {
 
     return true;
   } catch (error) {
-    console.error('Failed to map socket to user:', error);
+    logger.error('Failed to map socket to user:', error);
     return false;
   }
 }
@@ -110,7 +111,7 @@ async function getUserIdBySocket(socketId) {
     const key = `socket:map:${socketId}`;
     return await redisClient.get(key);
   } catch (error) {
-    console.error('Failed to get userId by socket:', error);
+    logger.error('Failed to get userId by socket:', error);
     return null;
   }
 }
@@ -131,7 +132,7 @@ async function unmapSocket(socketId) {
 
     return true;
   } catch (error) {
-    console.error('Failed to unmap socket:', error);
+    logger.error('Failed to unmap socket:', error);
     return false;
   }
 }
@@ -144,7 +145,7 @@ async function getUserSockets(userId) {
     const key = `socket:user:${userId}`;
     return await redisClient.sMembers(key);
   } catch (error) {
-    console.error('Failed to get user sockets:', error);
+    logger.error('Failed to get user sockets:', error);
     return [];
   }
 }

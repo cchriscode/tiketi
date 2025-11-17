@@ -5,6 +5,7 @@
  */
 
 const db = require('../config/database');
+const { logger } = require('../utils/logger');
 const { SEAT_STATUS } = require('../shared/constants');
 
 class SeatGenerator {
@@ -18,27 +19,27 @@ class SeatGenerator {
   async generateSeatsForEvent(eventId, seatLayoutId, providedClient = null) {
     const client = providedClient || await db.getClient();
     const isExternalTransaction = !!providedClient;
-    
+
     try {
       if (!isExternalTransaction) {
         await client.query('BEGIN');
       }
-      
+
       // Get layout configuration
       const layoutResult = await client.query(
         'SELECT layout_config FROM seat_layouts WHERE id = $1',
         [seatLayoutId]
       );
-      
+
       if (layoutResult.rows.length === 0) {
         throw new Error('Seat layout not found');
       }
-      
+
       const { layout_config } = layoutResult.rows[0];
       const sections = layout_config.sections;
-      
+
       let totalSeatsCreated = 0;
-      
+
       // Generate seats for each section
       for (const section of sections) {
         const {
@@ -48,15 +49,15 @@ class SeatGenerator {
           price,
           startRow = 1,
         } = section;
-        
+
         // Generate seats for each row
         for (let rowIdx = 0; rowIdx < rows; rowIdx++) {
           const rowNumber = startRow + rowIdx;
-          
+
           // Generate seats in the row
           for (let seatNum = 1; seatNum <= seatsPerRow; seatNum++) {
             const seatLabel = this._generateSeatLabel(sectionName, rowNumber, seatNum);
-            
+
             await client.query(
               `INSERT INTO seats (
                 event_id, section, row_number, seat_number, seat_label, price, status
@@ -71,24 +72,23 @@ class SeatGenerator {
                 SEAT_STATUS.AVAILABLE,
               ]
             );
-            
+
             totalSeatsCreated++;
           }
         }
       }
-      
+
       if (!isExternalTransaction) {
         await client.query('COMMIT');
       }
-      
-      console.log(`✅ Generated ${totalSeatsCreated} seats for event ${eventId}`);
+      logger.info(`✅ Generated ${totalSeatsCreated} seats for event ${eventId}`);
       return totalSeatsCreated;
-      
+
     } catch (error) {
       if (!isExternalTransaction) {
         await client.query('ROLLBACK');
       }
-      console.error('Seat generation error:', error);
+      logger.error('Seat generation error:', error);
       throw error;
     } finally {
       if (!isExternalTransaction) {
@@ -96,7 +96,7 @@ class SeatGenerator {
       }
     }
   }
-  
+
   /**
    * Generate seat label
    * @param {string} section - Section name
@@ -108,7 +108,7 @@ class SeatGenerator {
   _generateSeatLabel(section, row, seat) {
     return `${section}-${row}-${seat}`;
   }
-  
+
   /**
    * Check if seats already exist for event
    * @param {string} eventId - Event UUID
@@ -121,7 +121,7 @@ class SeatGenerator {
     );
     return parseInt(result.rows[0].count) > 0;
   }
-  
+
   /**
    * Delete all seats for an event
    * @param {string} eventId - Event UUID
