@@ -164,12 +164,17 @@ jobs:
 
           echo "🚀 Starting deployment..."
 
-          # 1. 새 컨테이너 시작 (포트 3002)
-          echo "📦 Starting new container on port 3002..."
+          # 0. 사전 정리 - 이전 실패한 컨테이너 제거
+          echo "🧹 Cleaning up any existing backend-new container..."
+          docker stop backend-new 2>/dev/null || true
+          docker rm backend-new 2>/dev/null || true
+
+          # 1. 새 컨테이너 시작 (포트 3003)
+          echo "📦 Starting new container on port 3003..."
           docker run -d \
             --name backend-new \
             --network tiketi_network \
-            -p 3002:3001 \
+            -p 3003:3001 \
             --env-file /home/ubuntu/tiketi/.env \
             ${{ env.ECR_REGISTRY }}/tiketi-backend:latest
 
@@ -178,7 +183,7 @@ jobs:
           sleep 10
 
           for i in {1..30}; do
-            if curl -f -s http://localhost:3002/health > /dev/null; then
+            if curl -f -s http://localhost:3003/health > /dev/null; then
               echo "✅ Health check passed!"
               break
             fi
