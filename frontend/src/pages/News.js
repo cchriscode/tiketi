@@ -79,7 +79,7 @@ function News() {
         <div className="container">
           <div className="news-hero-content">
             <LogoIcon width={48} height={48} className="news-logo" />
-            <h1 className="news-main-title">TiKETI News</h1>
+            <h1 className="news-main-title">TIKETI News</h1>
             <p className="news-subtitle">티케티의 새로운 소식을 만나보세요</p>
           </div>
         </div>

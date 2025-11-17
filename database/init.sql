@@ -119,7 +119,7 @@ CREATE TABLE keyword_mappings (
     UNIQUE(korean, english)
 );
 
--- News table for TiKETI News feature
+-- News table for TIKETI News feature
 CREATE TABLE news (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title VARCHAR(255) NOT NULL,
@@ -304,7 +304,7 @@ INSERT INTO keyword_mappings (korean, english, entity_type) VALUES
 
 -- Insert sample news
 INSERT INTO news (title, content, author, views) VALUES
-('TiKETI 서비스 정식 오픈!', '안녕하세요, 티케티입니다.
+('TIKETI 서비스 정식 오픈!', '안녕하세요, 티케티입니다.
 
 드디어 티케티 서비스가 정식으로 오픈하게 되었습니다!
 
