@@ -95,7 +95,7 @@ const PAYMENT_SETTINGS = {
 // Cache Keys
 const CACHE_KEYS = {
   EVENT: (eventId) => `event:${eventId}`,
-  EVENTS_LIST: (status, page, limit) => `events:${status || 'all'}:${page}:${limit}`,
+  EVENTS_LIST: (status, page, limit, searchQuery) => `events:${status || 'all'}:${page}:${limit}:${searchQuery || 'none'}`,
   EVENTS_PATTERN: 'events:*', // 모든 이벤트 목록 캐시 패턴
   SEATS: (eventId) => `seats:${eventId}`,
 };

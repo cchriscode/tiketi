@@ -3,6 +3,9 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Enable pg_trgm extension for fuzzy search and similarity matching
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 -- Users table
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -106,6 +109,16 @@ CREATE TABLE reservation_items (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Korean-English keyword mapping table for cross-language search
+CREATE TABLE keyword_mappings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    korean VARCHAR(255) NOT NULL,
+    english VARCHAR(255) NOT NULL,
+    entity_type VARCHAR(50) DEFAULT 'artist', -- 'artist', 'venue', 'general'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(korean, english)
+);
+
 -- Create indexes for better performance
 CREATE INDEX idx_seat_layouts_name ON seat_layouts(name);
 CREATE INDEX idx_events_event_date ON events(event_date);
@@ -120,6 +133,16 @@ CREATE INDEX idx_reservations_event_id ON reservations(event_id);
 CREATE INDEX idx_reservations_status ON reservations(status);
 CREATE INDEX idx_ticket_types_event_id ON ticket_types(event_id);
 CREATE INDEX idx_reservation_items_seat ON reservation_items(seat_id);
+
+-- GIN index for full-text search on events
+-- Combines title, artist_name, venue, and address for comprehensive search
+CREATE INDEX idx_events_search ON events USING GIN (
+  (COALESCE(title, '') || ' ' || COALESCE(artist_name, '') || ' ' || COALESCE(venue, '') || ' ' || COALESCE(address, '')) gin_trgm_ops
+);
+
+-- Indexes for keyword mappings (for fast cross-language search)
+CREATE INDEX idx_keyword_mappings_korean ON keyword_mappings USING GIN (korean gin_trgm_ops);
+CREATE INDEX idx_keyword_mappings_english ON keyword_mappings USING GIN (english gin_trgm_ops);
 
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -209,4 +232,53 @@ INSERT INTO events (title, description, venue, address, event_date, sale_start_d
 ('ENHYPEN FATE TOUR', '엔하이픈의 강렬한 퍼포먼스', '고척스카이돔', '서울특별시 구로구 경인로 430', CURRENT_DATE + INTERVAL '78 days' + TIME '19:00', CURRENT_DATE + INTERVAL '18 days' + TIME '09:00', CURRENT_DATE + INTERVAL '18 days' + TIME '18:00', '/images/enhypen.jpg', 'upcoming', (SELECT id FROM seat_layouts WHERE name = 'large_theater'), 'ENHYPEN'),
 ('ITZY CHECKMATE TOUR', '있지의 파워풀한 무대', '올림픽공원 체조경기장', '서울특별시 송파구 올림픽로 424', CURRENT_DATE + INTERVAL '80 days' + TIME '19:00', CURRENT_DATE + INTERVAL '19 days' + TIME '09:00', CURRENT_DATE + INTERVAL '19 days' + TIME '18:00', '/images/itzy.jpg', 'upcoming', (SELECT id FROM seat_layouts WHERE name = 'small_theater'), 'ITZY'),
 ('ZICO KING OF THE ZUNGLE', '지코의 힙합 라이브', 'YES24 라이브홀', '서울특별시 광진구 광나루로 56길 85', CURRENT_DATE + INTERVAL '82 days' + TIME '19:00', CURRENT_DATE + INTERVAL '20 days' + TIME '09:00', CURRENT_DATE + INTERVAL '20 days' + TIME '18:00', '/images/zico.jpg', 'upcoming', (SELECT id FROM seat_layouts WHERE name = 'small_theater'), 'ZICO');
+
+-- Insert Korean-English keyword mappings for cross-language search
+INSERT INTO keyword_mappings (korean, english, entity_type) VALUES
+-- Artists
+('싸이', 'PSY', 'artist'),
+('아이유', 'IU', 'artist'),
+('방탄소년단', 'BTS', 'artist'),
+('블랙핑크', 'BLACKPINK', 'artist'),
+('임영웅', 'Lim Young Woong', 'artist'),
+('뉴진스', 'NewJeans', 'artist'),
+('세븐틴', 'SEVENTEEN', 'artist'),
+('에스파', 'aespa', 'artist'),
+('엔시티 드림', 'NCT DREAM', 'artist'),
+('르세라핌', 'LE SSERAFIM', 'artist'),
+('아이브', 'IVE', 'artist'),
+('스트레이 키즈', 'Stray Kids', 'artist'),
+('트와이스', 'TWICE', 'artist'),
+('태양', 'TAEYANG', 'artist'),
+('태양', 'SOL', 'artist'),
+('지드래곤', 'G-DRAGON', 'artist'),
+('지드래곤', 'GD', 'artist'),
+('엑소', 'EXO', 'artist'),
+('레드벨벳', 'Red Velvet', 'artist'),
+('투모로우바이투게더', 'TOMORROW X TOGETHER', 'artist'),
+('투바투', 'TXT', 'artist'),
+('엔하이픈', 'ENHYPEN', 'artist'),
+('있지', 'ITZY', 'artist'),
+('지코', 'ZICO', 'artist'),
+
+-- Venues
+('서울', 'Seoul', 'venue'),
+('올림픽', 'Olympic', 'venue'),
+('잠실', 'Jamsil', 'venue'),
+('고척', 'Gocheok', 'venue'),
+('송파', 'Songpa', 'venue'),
+('구로', 'Guro', 'venue'),
+('용산', 'Yongsan', 'venue'),
+('광진', 'Gwangjin', 'venue'),
+('체조경기장', 'Gymnastics Arena', 'venue'),
+('경기장', 'Stadium', 'venue'),
+('돔', 'Dome', 'venue'),
+('스카이돔', 'Sky Dome', 'venue'),
+('실내체육관', 'Indoor Stadium', 'venue'),
+
+-- General terms
+('콘서트', 'Concert', 'general'),
+('투어', 'Tour', 'general'),
+('공연', 'Performance', 'general'),
+('뮤지컬', 'Musical', 'general');
 

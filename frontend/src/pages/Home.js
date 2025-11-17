@@ -19,7 +19,7 @@ function Home() {
   useEffect(() => {
     fetchEvents();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
+  }, [filter, searchQuery]);
 
   const fetchEvents = async () => {
     try {
