@@ -55,7 +55,7 @@ function Header() {
           </form>
 
           <nav className="nav">
-            <Link to="/" className="nav-link">이벤트</Link>
+            <Link to="/news" className="nav-link">News</Link>
             {user ? (
               <>
                 <Link to="/my-reservations" className="nav-link">내 예매</Link>

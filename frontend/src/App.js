@@ -8,6 +8,7 @@ import Header from './components/Header';
 // Pages
 import Home from './pages/Home';
 import Search from './pages/Search';
+import News from './pages/News';
 import EventDetail from './pages/EventDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -46,6 +47,7 @@ function App() {
             {/* Public Routes */}
             <Route path="/" element={<Home />} />
             <Route path="/search" element={<Search />} />
+            <Route path="/news" element={<News />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/events/:id" element={<EventDetail />} />
