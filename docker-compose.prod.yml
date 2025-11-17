@@ -60,9 +60,7 @@ services:
 
   # Backend API
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ${BACKEND_IMAGE:-tiketi-backend:latest}
     container_name: tiketi-backend
     environment:
       NODE_ENV: ${NODE_ENV}
