@@ -155,7 +155,7 @@ services:
 
   # 2. Promtail (로그 수집기)
   promtail:
-    image: grafana/promtail:2.9.2
+    image: grafana/promtail:latest
     volumes:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro # 도커 로그 파일 원본 읽기 (읽기 전용)
       - ./monitoring/promtail-config.yaml:/etc/promtail/config.yaml
