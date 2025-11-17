@@ -18,7 +18,6 @@ function EventDetail() {
   const [ticketTypes, setTicketTypes] = useState([]);
   const [selectedTickets, setSelectedTickets] = useState({});
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [showQueueModal, setShowQueueModal] = useState(false);
