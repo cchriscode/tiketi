@@ -194,90 +194,29 @@ jobs:
             echo "✅ DragonflyDB is already running"
           fi
 
-      - name: Deploy new container
+      - name: Deploy backend with docker-compose
         run: |
           set -e  # 에러 발생 시 즉시 중단
 
           echo "🚀 Starting deployment..."
+          cd /home/ubuntu/tiketi
 
-          # 0. 네트워크 찾기
-          NETWORK=$(docker network ls --filter name=tiketi --format "{{.Name}}" | head -n 1)
-          if [ -z "$NETWORK" ]; then
-            echo "❌ No tiketi network found"
-            exit 1
-          fi
-          echo "📡 Using network: $NETWORK"
+          # 1. 최신 backend 이미지를 docker-compose.prod.yml에 반영
+          echo "📝 Updating backend image in docker-compose..."
+          export BACKEND_IMAGE="${{ env.ECR_REGISTRY }}/tiketi-backend:latest"
 
-          # 1. 사전 정리 - 이전 실패한 컨테이너 제거
-          echo "🧹 Cleaning up any existing backend-new container..."
-          docker stop backend-new 2>/dev/null || true
-          docker rm backend-new 2>/dev/null || true
+          # 2. docker-compose로 backend만 재시작 (DB/Redis는 그대로)
+          echo "🔄 Restarting backend with docker-compose..."
+          docker-compose -f docker-compose.prod.yml up -d --force-recreate --no-deps backend
 
-          # 2. 새 컨테이너 시작 (포트 3003)
-          echo "📦 Starting new container on port 3003..."
-          docker run -d \
-            --name backend-new \
-            --network "$NETWORK" \
-            -p 3003:3001 \
-            --env-file /home/ubuntu/tiketi/.env \
-            ${{ env.ECR_REGISTRY }}/tiketi-backend:latest
-
-          # 3. Health check (30초 타임아웃)
+          # 3. Health check (최대 60초)
           echo "🏥 Running health checks..."
           sleep 10
 
-          for i in {1..30}; do
-            if curl -f -s http://localhost:3003/health > /dev/null; then
-              echo "✅ Health check passed!"
-              break
-            fi
+          # 먼저 컨테이너 로그 확인
+          echo "📋 Backend container logs:"
+          docker logs tiketi-backend --tail 30
 
-            if [ $i -eq 30 ]; then
-              echo "❌ Health check failed after 30 attempts"
-              docker logs backend-new --tail 50
-              docker stop backend-new
-              docker rm backend-new
-              exit 1
-            fi
-
-            echo "⏳ Waiting for service to be ready... ($i/30)"
-            sleep 2
-          done
-
-          # 4. 기존 컨테이너 Graceful Shutdown (60초 유예)
-          echo "🔄 Stopping old container gracefully..."
-
-          # 포트 3001을 사용하는 컨테이너 찾기
-          OLD_CONTAINER=$(docker ps --filter "publish=3001" --format "{{.Names}}" 2>/dev/null || true)
-
-          if [ -n "$OLD_CONTAINER" ]; then
-            echo "Found container using port 3001: $OLD_CONTAINER"
-            docker stop --timeout=60 "$OLD_CONTAINER" 2>/dev/null || true
-            docker rm "$OLD_CONTAINER" 2>/dev/null || true
-          else
-            echo "No container using port 3001"
-          fi
-
-          # backend 이름의 컨테이너도 정리 (혹시 다른 포트로 실행 중일 경우)
-          docker stop --timeout=60 backend 2>/dev/null || true
-          docker rm backend 2>/dev/null || true
-
-          # 5. 새 컨테이너를 포트 3001로 재시작
-          echo "🔄 Switching to port 3001..."
-          docker stop backend-new
-          docker rm backend-new
-
-          docker run -d \
-            --name backend \
-            --network "$NETWORK" \
-            -p 3001:3001 \
-            --env-file /home/ubuntu/tiketi/.env \
-            --restart unless-stopped \
-            ${{ env.ECR_REGISTRY }}/tiketi-backend:latest
-
-          # 6. 최종 Health check
-          echo "🏥 Final health check..."
-          sleep 5
           for i in {1..15}; do
             if curl -f http://localhost:3001/health && \
                curl -f http://localhost:3001/health/db && \
@@ -285,11 +224,19 @@ jobs:
               echo "✅ All health checks passed!"
               exit 0
             fi
+
+            if [ $i -eq 5 ]; then
+              echo "⚠️ Health check still failing, showing logs..."
+              docker logs tiketi-backend --tail 50
+            fi
+
             echo "⏳ Waiting... ($i/15)"
             sleep 2
           done
 
           echo "❌ Final health check failed"
+          echo "📋 Full backend logs:"
+          docker logs tiketi-backend --tail 100
           exit 1
 
       - name: Cleanup old images
