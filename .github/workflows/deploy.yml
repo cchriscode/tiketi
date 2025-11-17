@@ -134,6 +134,13 @@ jobs:
         run: |
           if ! command -v aws &> /dev/null; then
             echo "Installing AWS CLI..."
+
+            # Install unzip if not present
+            if ! command -v unzip &> /dev/null; then
+              sudo apt-get update -qq
+              sudo apt-get install -y unzip
+            fi
+
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             unzip -q awscliv2.zip
             sudo ./aws/install
