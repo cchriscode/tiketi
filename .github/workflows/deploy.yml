@@ -130,6 +130,18 @@ jobs:
     runs-on: self-hosted
 
     steps:
+      - name: Install/Update AWS CLI
+        run: |
+          if ! command -v aws &> /dev/null; then
+            echo "Installing AWS CLI..."
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip -q awscliv2.zip
+            sudo ./aws/install
+            rm -rf aws awscliv2.zip
+          else
+            echo "AWS CLI already installed: $(aws --version)"
+          fi
+
       - name: Login to ECR
         run: |
           aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
