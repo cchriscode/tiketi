@@ -201,20 +201,29 @@ jobs:
           echo "🚀 Starting deployment..."
           cd /home/ubuntu/tiketi
 
-          # 1. 기존 backend 컨테이너 graceful shutdown
-          echo "🔄 Stopping existing backend container..."
-          docker compose -f docker-compose.prod.yml stop -t 60 backend 2>/dev/null || true
-          docker compose -f docker-compose.prod.yml rm -f backend 2>/dev/null || true
+          # 1. 3001 포트를 사용하는 모든 컨테이너 찾아서 정리
+          echo "🔄 Stopping containers using port 3001..."
+          PORT_CONTAINERS=$(docker ps -q --filter "publish=3001" 2>/dev/null || true)
+          if [ -n "$PORT_CONTAINERS" ]; then
+            echo "Found containers using port 3001: $PORT_CONTAINERS"
+            docker stop -t 60 $PORT_CONTAINERS 2>/dev/null || true
+            docker rm -f $PORT_CONTAINERS 2>/dev/null || true
+          fi
 
-          # 2. 최신 backend 이미지를 docker-compose.prod.yml에 반영
+          # 2. tiketi-backend 이름의 컨테이너도 정리 (혹시 다른 포트로 실행 중일 경우)
+          echo "🔄 Stopping tiketi-backend container..."
+          docker stop -t 60 tiketi-backend 2>/dev/null || true
+          docker rm -f tiketi-backend 2>/dev/null || true
+
+          # 3. 최신 backend 이미지를 docker-compose.prod.yml에 반영
           echo "📝 Updating backend image in docker-compose..."
           export BACKEND_IMAGE="${{ env.ECR_REGISTRY }}/tiketi-backend:latest"
 
-          # 3. docker compose로 backend 시작
+          # 4. docker compose로 backend 시작
           echo "🔄 Starting new backend with docker compose..."
           docker compose -f docker-compose.prod.yml up -d backend
 
-          # 4. Health check (최대 60초)
+          # 5. Health check (최대 60초)
           echo "🏥 Running health checks..."
           sleep 10
 
