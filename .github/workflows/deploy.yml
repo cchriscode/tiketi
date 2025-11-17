@@ -166,7 +166,7 @@ jobs:
           if ! docker ps --format '{{.Names}}' | grep -q "tiketi-postgres"; then
             echo "📦 Starting PostgreSQL..."
             cd /home/ubuntu/tiketi
-            docker-compose -f docker-compose.prod.yml up -d postgres
+            docker compose -f docker-compose.prod.yml up -d postgres
 
             # PostgreSQL 준비 대기 (최대 30초)
             for i in {1..15}; do
@@ -185,7 +185,7 @@ jobs:
           if ! docker ps --format '{{.Names}}' | grep -q "tiketi-dragonfly"; then
             echo "📦 Starting DragonflyDB..."
             cd /home/ubuntu/tiketi
-            docker-compose -f docker-compose.prod.yml up -d dragonfly
+            docker compose -f docker-compose.prod.yml up -d dragonfly
 
             # DragonflyDB 준비 대기 (최대 15초)
             sleep 5
@@ -205,9 +205,9 @@ jobs:
           echo "📝 Updating backend image in docker-compose..."
           export BACKEND_IMAGE="${{ env.ECR_REGISTRY }}/tiketi-backend:latest"
 
-          # 2. docker-compose로 backend만 재시작 (DB/Redis는 그대로)
-          echo "🔄 Restarting backend with docker-compose..."
-          docker-compose -f docker-compose.prod.yml up -d --force-recreate --no-deps backend
+          # 2. docker compose로 backend만 재시작 (DB/Redis는 그대로)
+          echo "🔄 Restarting backend with docker compose..."
+          docker compose -f docker-compose.prod.yml up -d --force-recreate --no-deps backend
 
           # 3. Health check (최대 60초)
           echo "🏥 Running health checks..."
