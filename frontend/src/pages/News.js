@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './News.css';
 import { ReactComponent as LogoIcon } from '../images/tiketi-logo.svg';
+import { newsAPI } from '../services/api';
 
 function News() {
   const [newsList, setNewsList] = useState([]);
@@ -19,32 +20,12 @@ function News() {
   const fetchNews = async () => {
     try {
       setLoading(true);
-      // TODO: API 호출로 변경
-      // const response = await newsAPI.getAll();
-      // setNewsList(response.data.news);
-
-      // 임시 데이터
-      setNewsList([
-        {
-          id: 1,
-          title: 'TiKETI 서비스 정식 오픈!',
-          content: '티케티가 정식으로 오픈했습니다. 많은 이용 부탁드립니다.',
-          author: '관리자',
-          createdAt: new Date().toISOString(),
-          views: 125
-        },
-        {
-          id: 2,
-          title: '2024년 연말 콘서트 티켓 오픈 안내',
-          content: '12월 연말 콘서트 티켓이 순차적으로 오픈됩니다.',
-          author: '관리자',
-          createdAt: new Date(Date.now() - 86400000).toISOString(),
-          views: 89
-        }
-      ]);
+      const response = await newsAPI.getAll();
+      setNewsList(response.data.news);
       setLoading(false);
     } catch (err) {
-      console.error(err);
+      console.error('Failed to fetch news:', err);
+      alert('뉴스를 불러오는데 실패했습니다.');
       setLoading(false);
     }
   };
@@ -57,26 +38,28 @@ function News() {
       return;
     }
 
-    try {
-      // TODO: API 호출로 변경
-      // await newsAPI.create(formData);
+    // Check if user is logged in
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!user.name) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
 
-      // 임시로 목록에 추가
-      const newPost = {
-        id: newsList.length + 1,
+    try {
+      await newsAPI.create({
         ...formData,
-        author: '사용자',
-        createdAt: new Date().toISOString(),
-        views: 0
-      };
-      setNewsList([newPost, ...newsList]);
+        author: user.name
+      });
 
       setFormData({ title: '', content: '' });
       setShowWriteForm(false);
       alert('게시글이 등록되었습니다.');
+
+      // Refresh the news list
+      fetchNews();
     } catch (err) {
       alert('게시글 등록에 실패했습니다.');
-      console.error(err);
+      console.error('Failed to create news:', err);
     }
   };
 

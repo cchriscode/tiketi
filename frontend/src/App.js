@@ -9,6 +9,7 @@ import Header from './components/Header';
 import Home from './pages/Home';
 import Search from './pages/Search';
 import News from './pages/News';
+import NewsDetail from './pages/NewsDetail';
 import EventDetail from './pages/EventDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -48,6 +49,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/search" element={<Search />} />
             <Route path="/news" element={<News />} />
+            <Route path="/news/:id" element={<NewsDetail />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/events/:id" element={<EventDetail />} />

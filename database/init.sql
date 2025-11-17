@@ -119,6 +119,18 @@ CREATE TABLE keyword_mappings (
     UNIQUE(korean, english)
 );
 
+-- News table for TiKETI News feature
+CREATE TABLE news (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    author VARCHAR(100) NOT NULL,
+    author_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    views INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create indexes for better performance
 CREATE INDEX idx_seat_layouts_name ON seat_layouts(name);
 CREATE INDEX idx_events_event_date ON events(event_date);
@@ -143,6 +155,10 @@ CREATE INDEX idx_events_search ON events USING GIN (
 -- Indexes for keyword mappings (for fast cross-language search)
 CREATE INDEX idx_keyword_mappings_korean ON keyword_mappings USING GIN (korean gin_trgm_ops);
 CREATE INDEX idx_keyword_mappings_english ON keyword_mappings USING GIN (english gin_trgm_ops);
+
+-- Indexes for news table
+CREATE INDEX idx_news_created_at ON news(created_at DESC);
+CREATE INDEX idx_news_author_id ON news(author_id);
 
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -170,6 +186,9 @@ CREATE TRIGGER update_ticket_types_updated_at BEFORE UPDATE ON ticket_types
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_reservations_updated_at BEFORE UPDATE ON reservations
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_news_updated_at BEFORE UPDATE ON news
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Note: Admin account (admin@tiketi.gg / admin123) is automatically created by backend on startup
@@ -282,3 +301,42 @@ INSERT INTO keyword_mappings (korean, english, entity_type) VALUES
 ('공연', 'Performance', 'general'),
 ('뮤지컬', 'Musical', 'general');
 
+
+-- Insert sample news
+INSERT INTO news (title, content, author, views) VALUES
+('TiKETI 서비스 정식 오픈!', '안녕하세요, 티케티입니다.
+
+드디어 티케티 서비스가 정식으로 오픈하게 되었습니다!
+
+티케티는 가장 빠르고 안전한 티켓팅 서비스를 제공하기 위해 만들어졌습니다.
+실시간 좌석 선택, 공정한 대기열 시스템, 그리고 간편한 결제까지 모든 것을 한 곳에서 경험하실 수 있습니다.
+
+앞으로 더 나은 서비스로 보답하겠습니다.
+많은 이용 부탁드립니다!
+
+감사합니다.', '관리자', 125),
+('2024년 연말 콘서트 티켓 오픈 안내', '2024년 12월 연말 콘서트 티켓팅 일정을 안내드립니다.
+
+12월 한 달 동안 다양한 아티스트들의 연말 콘서트가 예정되어 있습니다.
+각 공연별 티켓 오픈 일정은 아래와 같습니다:
+
+- 12/15: 아이유 연말 콘서트
+- 12/20: BTS 월드 투어 서울 공연
+- 12/25: 크리스마스 특집 콘서트
+
+모든 티켓은 선착순이며, 공정한 대기열 시스템을 통해 진행됩니다.
+티켓 오픈 10분 전부터 대기가 가능하니 참고해주세요.
+
+행복한 연말 되세요!', '관리자', 89),
+('티케티 모바일 앱 출시 예정', '티케티 모바일 앱이 곧 출시됩니다!
+
+더욱 편리한 티켓팅을 위한 모바일 앱을 준비 중입니다.
+iOS와 Android 모두 지원 예정이며, 1월 중 출시를 목표로 하고 있습니다.
+
+모바일 앱에서는 다음과 같은 기능을 제공할 예정입니다:
+- 푸시 알림으로 티켓 오픈 알림 받기
+- 더 빠른 결제 프로세스
+- 모바일 티켓 QR코드
+- 나의 예매 내역 한눈에 보기
+
+많은 기대 부탁드립니다!', '관리자', 45);
