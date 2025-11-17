@@ -202,8 +202,21 @@ jobs:
 
           # 3. 기존 컨테이너 Graceful Shutdown (60초 유예)
           echo "🔄 Stopping old container gracefully..."
-          docker stop --time=60 backend 2>/dev/null || echo "No existing container"
-          docker rm backend 2>/dev/null || echo "No container to remove"
+
+          # 포트 3001을 사용하는 컨테이너 찾기
+          OLD_CONTAINER=$(docker ps --filter "publish=3001" --format "{{.Names}}" 2>/dev/null || true)
+
+          if [ -n "$OLD_CONTAINER" ]; then
+            echo "Found container using port 3001: $OLD_CONTAINER"
+            docker stop --timeout=60 "$OLD_CONTAINER" 2>/dev/null || true
+            docker rm "$OLD_CONTAINER" 2>/dev/null || true
+          else
+            echo "No container using port 3001"
+          fi
+
+          # backend 이름의 컨테이너도 정리 (혹시 다른 포트로 실행 중일 경우)
+          docker stop --timeout=60 backend 2>/dev/null || true
+          docker rm backend 2>/dev/null || true
 
           # 4. 새 컨테이너를 포트 3001로 재시작
           echo "🔄 Switching to port 3001..."
