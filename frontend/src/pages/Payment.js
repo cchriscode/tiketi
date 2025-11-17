@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import {
   PAYMENT_METHODS,
   PAYMENT_METHOD_DISPLAY,
-  RESERVATION_SETTINGS,
   API_ENDPOINTS,
 } from '../shared/constants';
 import './Payment.css';
@@ -20,31 +19,7 @@ function Payment() {
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchReservation();
-  }, [reservationId]);
-
-  useEffect(() => {
-    if (reservation && reservation.expires_at) {
-      const interval = setInterval(() => {
-        const now = new Date();
-        const expiresAt = new Date(reservation.expires_at);
-        const remaining = Math.max(0, Math.floor((expiresAt - now) / 1000));
-        
-        setTimeRemaining(remaining);
-        
-        if (remaining === 0) {
-          clearInterval(interval);
-          alert('예약 시간이 만료되었습니다.');
-          navigate('/');
-        }
-      }, 1000);
-
-      return () => clearInterval(interval);
-    }
-  }, [reservation, navigate]);
-
-  const fetchReservation = async () => {
+  const fetchReservation = useCallback(async () => {
     try {
       setLoading(true);
       const response = await api.get(API_ENDPOINTS.GET_RESERVATION(reservationId));
@@ -70,7 +45,31 @@ function Payment() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [reservationId, navigate]);
+
+  useEffect(() => {
+    fetchReservation();
+  }, [fetchReservation]);
+
+  useEffect(() => {
+    if (reservation && reservation.expires_at) {
+      const interval = setInterval(() => {
+        const now = new Date();
+        const expiresAt = new Date(reservation.expires_at);
+        const remaining = Math.max(0, Math.floor((expiresAt - now) / 1000));
+
+        setTimeRemaining(remaining);
+
+        if (remaining === 0) {
+          clearInterval(interval);
+          alert('예약 시간이 만료되었습니다.');
+          navigate('/');
+        }
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [reservation, navigate]);
 
   const handlePayment = async () => {
     if (!paymentMethod) {

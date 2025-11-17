@@ -38,13 +38,8 @@ function EventDetail() {
     }
   }, [id]);
 
-  useEffect(() => {
-    fetchEventDetail();
-    checkQueueStatus(); // 대기열 상태 확인
-  }, [fetchEventDetail]);
-
   // 대기열 상태 확인
-  const checkQueueStatus = async () => {
+  const checkQueueStatus = useCallback(async () => {
     const token = localStorage.getItem('token');
     if (!token) return; // 로그인 안 한 경우 체크하지 않음
 
@@ -63,7 +58,12 @@ function EventDetail() {
       console.error('Queue check error:', err);
       // 에러 발생 시 대기열 없는 것으로 처리 (정상 진행)
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchEventDetail();
+    checkQueueStatus(); // 대기열 상태 확인
+  }, [fetchEventDetail, checkQueueStatus]);
 
   // 대기열 입장 허용 시
   const handleQueueEntryAllowed = () => {
@@ -209,7 +209,7 @@ function EventDetail() {
         quantity,
       }));
 
-      const response = await reservationsAPI.create({
+      await reservationsAPI.create({
         eventId: id,
         items,
       });

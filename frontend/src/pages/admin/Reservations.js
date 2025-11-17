@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { adminAPI } from '../../services/api';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -10,11 +10,7 @@ function Reservations() {
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('');
 
-  useEffect(() => {
-    fetchReservations();
-  }, [filter]);
-
-  const fetchReservations = async () => {
+  const fetchReservations = useCallback(async () => {
     try {
       setLoading(true);
       const params = filter ? { status: filter } : {};
@@ -26,7 +22,11 @@ function Reservations() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
+
+  useEffect(() => {
+    fetchReservations();
+  }, [fetchReservations]);
 
   const formatDate = (dateString) => {
     return format(new Date(dateString), 'yyyy.MM.dd HH:mm', { locale: ko });

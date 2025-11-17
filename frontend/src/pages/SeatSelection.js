@@ -43,13 +43,9 @@ function SeatSelection() {
   }, []);
 
   // WebSocket 연결 및 실시간 업데이트 구독
-  const { isConnected } = useSeatUpdates(eventId, handleSeatUpdate);
+  useSeatUpdates(eventId, handleSeatUpdate);
 
-  useEffect(() => {
-    fetchSeats();
-  }, [eventId]);
-
-  const fetchSeats = async () => {
+  const fetchSeats = useCallback(async () => {
     try {
       setLoading(true);
       const response = await api.get(API_ENDPOINTS.GET_SEATS(eventId));
@@ -63,7 +59,11 @@ function SeatSelection() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [eventId]);
+
+  useEffect(() => {
+    fetchSeats();
+  }, [fetchSeats]);
 
   const handleSeatClick = (seat) => {
     // Cannot select if reserved or locked
