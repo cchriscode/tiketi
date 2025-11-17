@@ -278,6 +278,11 @@ jobs:
           # 6. 최종 Health check
           echo "🏥 Final health check..."
           sleep 5
+
+          # 먼저 컨테이너 로그 확인
+          echo "📋 Backend container logs:"
+          docker logs backend --tail 30
+
           for i in {1..15}; do
             if curl -f http://localhost:3001/health && \
                curl -f http://localhost:3001/health/db && \
@@ -285,11 +290,19 @@ jobs:
               echo "✅ All health checks passed!"
               exit 0
             fi
+
+            if [ $i -eq 5 ]; then
+              echo "⚠️ Health check still failing, showing logs..."
+              docker logs backend --tail 50
+            fi
+
             echo "⏳ Waiting... ($i/15)"
             sleep 2
           done
 
           echo "❌ Final health check failed"
+          echo "📋 Full backend logs:"
+          docker logs backend --tail 100
           exit 1
 
       - name: Cleanup old images
