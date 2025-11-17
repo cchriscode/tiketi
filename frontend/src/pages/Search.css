@@ -2,94 +2,118 @@
 
 .search-page {
   min-height: 100vh;
-  background-color: #f9fafb;
+  background-color: #ffffff;
 }
 
 /* Search Hero Section */
 .search-hero {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 3rem 0;
-  margin-bottom: 2rem;
+  background: linear-gradient(135deg, #e0f2ff 0%, #c2e9ff 100%);
+  padding: 2.5rem 0;
+  margin: 16px 0 0 0;
+  border-radius: 14px;
 }
 
 .search-title {
   font-size: 2.5rem;
-  font-weight: 700;
-  color: white;
+  font-weight: 800;
+  color: #111111;
   margin: 0 0 0.5rem 0;
+  letter-spacing: -1px;
 }
 
 .search-query {
   font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: #333333;
   margin: 0;
+  opacity: 0.95;
 }
 
 /* Search Layout - Sidebar + Content */
 .search-layout {
   display: flex;
-  gap: 2rem;
+  gap: 2.5rem;
   align-items: flex-start;
-  margin-bottom: 3rem;
+  margin: 2rem 0 3rem 0;
 }
 
 /* Left Sidebar */
 .search-sidebar {
-  width: 240px;
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  width: 200px;
+  background: transparent;
+  padding: 0;
   position: sticky;
   top: 100px;
 }
 
 .sidebar-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1f2937;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111111;
   margin: 0 0 1rem 0;
-  padding-bottom: 0.75rem;
-  border-bottom: 2px solid #e5e7eb;
+  padding-left: 4px;
+  letter-spacing: -0.3px;
 }
 
 .filter-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .filter-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.875rem 1rem;
-  background: transparent;
-  border: 2px solid transparent;
-  border-radius: 8px;
+  gap: 10px;
+  padding: 12px 20px;
+  background: white;
+  border: none;
+  border-radius: 30px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   text-align: left;
-  font-size: 1rem;
-  color: #4b5563;
-  font-weight: 500;
+  font-size: 15px;
+  color: #4a5568;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.filter-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s;
+}
+
+.filter-item:hover::before {
+  left: 100%;
 }
 
 .filter-item:hover {
-  background-color: #f3f4f6;
-  border-color: #e5e7eb;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.12);
 }
 
 .filter-item.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #111111 0%, #000000 100%);
   color: white;
-  border-color: transparent;
-  box-shadow: 0 4px 6px rgba(102, 126, 234, 0.25);
+  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
 }
 
 .filter-icon {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.filter-item.active .filter-icon {
+  opacity: 1;
 }
 
 .filter-label {
@@ -108,48 +132,52 @@
 }
 
 .result-count {
-  font-size: 1.1rem;
-  color: #6b7280;
+  font-size: 1rem;
+  color: #666666;
   margin: 0;
+  font-weight: 500;
 }
 
 .result-count strong {
-  color: #1f2937;
-  font-weight: 600;
+  color: #111111;
+  font-weight: 700;
 }
 
 /* Events Grid */
 .events-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 28px;
 }
 
 /* Empty State */
 .empty-state {
   text-align: center;
-  padding: 4rem 2rem;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 5rem 2rem;
+  background: linear-gradient(135deg, #fff9db 0%, #ffefb5 100%);
+  border-radius: 14px;
 }
 
 .empty-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
+  font-size: 5rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.8;
 }
 
 .empty-message {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111111;
+  margin: 0 0 0.75rem 0;
+  letter-spacing: -0.5px;
 }
 
 .empty-hint {
   font-size: 1rem;
-  color: #6b7280;
+  color: #333333;
   margin: 0;
+  font-weight: 500;
+  opacity: 0.9;
 }
 
 /* Loading Spinner */
@@ -158,8 +186,8 @@
   width: 50px;
   height: 50px;
   margin: 4rem auto;
-  border: 4px solid #f3f4f6;
-  border-top-color: #667eea;
+  border: 4px solid #f0f0f0;
+  border-top-color: #111111;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -173,14 +201,15 @@
 /* Alert */
 .alert {
   padding: 1rem 1.5rem;
-  border-radius: 8px;
+  border-radius: 14px;
   margin-bottom: 1.5rem;
+  font-weight: 500;
 }
 
 .alert-error {
-  background-color: #fee2e2;
+  background: linear-gradient(135deg, #ffe0e0 0%, #ffc2c2 100%);
   color: #991b1b;
-  border: 1px solid #fecaca;
+  border: none;
 }
 
 /* Responsive Design */
@@ -194,19 +223,40 @@
     position: static;
   }
 
+  .sidebar-title {
+    display: none;
+  }
+
   .filter-list {
     flex-direction: row;
     overflow-x: auto;
-    gap: 0.75rem;
+    gap: 10px;
+    padding-bottom: 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .filter-list::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .filter-list::-webkit-scrollbar-thumb {
+    background: #e0e0e0;
+    border-radius: 4px;
   }
 
   .filter-item {
     flex-shrink: 0;
-    min-width: 120px;
+    min-width: auto;
+    white-space: nowrap;
   }
 }
 
 @media (max-width: 640px) {
+  .search-hero {
+    padding: 2rem 0;
+    margin: 12px 0 0 0;
+  }
+
   .search-title {
     font-size: 2rem;
   }
@@ -219,17 +269,24 @@
     grid-template-columns: 1fr;
   }
 
-  .filter-list {
-    gap: 0.5rem;
-  }
-
   .filter-item {
-    padding: 0.75rem;
-    min-width: 100px;
-    font-size: 0.9rem;
+    padding: 10px 16px;
+    font-size: 14px;
   }
 
   .filter-icon {
     font-size: 1rem;
+  }
+
+  .empty-state {
+    padding: 3rem 1.5rem;
+  }
+
+  .empty-icon {
+    font-size: 4rem;
+  }
+
+  .empty-message {
+    font-size: 1.2rem;
   }
 }
