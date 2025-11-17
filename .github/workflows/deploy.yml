@@ -158,27 +158,71 @@ jobs:
         run: |
           docker pull ${{ env.ECR_REGISTRY }}/tiketi-backend:latest
 
+      - name: Ensure DB and Redis are running
+        run: |
+          echo "🔍 Checking if PostgreSQL and DragonflyDB are running..."
+
+          # PostgreSQL 체크
+          if ! docker ps --format '{{.Names}}' | grep -q "tiketi-postgres"; then
+            echo "📦 Starting PostgreSQL..."
+            cd /home/ubuntu/tiketi
+            docker-compose -f docker-compose.prod.yml up -d postgres
+
+            # PostgreSQL 준비 대기 (최대 30초)
+            for i in {1..15}; do
+              if docker exec tiketi-postgres pg_isready -U ${POSTGRES_USER:-tiketi_user} > /dev/null 2>&1; then
+                echo "✅ PostgreSQL is ready"
+                break
+              fi
+              echo "⏳ Waiting for PostgreSQL... ($i/15)"
+              sleep 2
+            done
+          else
+            echo "✅ PostgreSQL is already running"
+          fi
+
+          # DragonflyDB 체크
+          if ! docker ps --format '{{.Names}}' | grep -q "tiketi-dragonfly"; then
+            echo "📦 Starting DragonflyDB..."
+            cd /home/ubuntu/tiketi
+            docker-compose -f docker-compose.prod.yml up -d dragonfly
+
+            # DragonflyDB 준비 대기 (최대 15초)
+            sleep 5
+            echo "✅ DragonflyDB started"
+          else
+            echo "✅ DragonflyDB is already running"
+          fi
+
       - name: Deploy new container
         run: |
           set -e  # 에러 발생 시 즉시 중단
 
           echo "🚀 Starting deployment..."
 
-          # 0. 사전 정리 - 이전 실패한 컨테이너 제거
+          # 0. 네트워크 찾기
+          NETWORK=$(docker network ls --filter name=tiketi --format "{{.Name}}" | head -n 1)
+          if [ -z "$NETWORK" ]; then
+            echo "❌ No tiketi network found"
+            exit 1
+          fi
+          echo "📡 Using network: $NETWORK"
+
+          # 1. 사전 정리 - 이전 실패한 컨테이너 제거
           echo "🧹 Cleaning up any existing backend-new container..."
           docker stop backend-new 2>/dev/null || true
           docker rm backend-new 2>/dev/null || true
 
-          # 1. 새 컨테이너 시작 (포트 3003)
+          # 2. 새 컨테이너 시작 (포트 3003)
           echo "📦 Starting new container on port 3003..."
           docker run -d \
             --name backend-new \
-            --network tiketi_network \
+            --network "$NETWORK" \
             -p 3003:3001 \
             --env-file /home/ubuntu/tiketi/.env \
             ${{ env.ECR_REGISTRY }}/tiketi-backend:latest
 
-          # 2. Health check (30초 타임아웃)
+          # 3. Health check (30초 타임아웃)
           echo "🏥 Running health checks..."
           sleep 10
 
@@ -200,7 +244,7 @@ jobs:
             sleep 2
           done
 
-          # 3. 기존 컨테이너 Graceful Shutdown (60초 유예)
+          # 4. 기존 컨테이너 Graceful Shutdown (60초 유예)
           echo "🔄 Stopping old container gracefully..."
 
           # 포트 3001을 사용하는 컨테이너 찾기
@@ -218,20 +262,20 @@ jobs:
           docker stop --timeout=60 backend 2>/dev/null || true
           docker rm backend 2>/dev/null || true
 
-          # 4. 새 컨테이너를 포트 3001로 재시작
+          # 5. 새 컨테이너를 포트 3001로 재시작
           echo "🔄 Switching to port 3001..."
           docker stop backend-new
           docker rm backend-new
 
           docker run -d \
             --name backend \
-            --network tiketi_network \
+            --network "$NETWORK" \
             -p 3001:3001 \
             --env-file /home/ubuntu/tiketi/.env \
             --restart unless-stopped \
             ${{ env.ECR_REGISTRY }}/tiketi-backend:latest
 
-          # 5. 최종 Health check
+          # 6. 최종 Health check
           echo "🏥 Final health check..."
           sleep 5
           for i in {1..15}; do
