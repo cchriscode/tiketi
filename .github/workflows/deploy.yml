@@ -170,6 +170,7 @@ jobs:
 
           # 최신 backend 이미지를 docker-compose.prod.yml에 반영
           export BACKEND_IMAGE="${{ env.ECR_REGISTRY }}/tiketi-backend:latest"
+          echo "📦 BACKEND_IMAGE: $BACKEND_IMAGE"
 
           # docker-compose.prod.yml의 모든 서비스 시작/업데이트
           echo "🔄 Starting all services with docker compose..."
