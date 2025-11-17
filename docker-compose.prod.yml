@@ -161,7 +161,19 @@ services:
     networks:
       - tiketi-network
 
-  # 3. Grafana (시각화 대시보드)
+  # 3. Prometheus (메트릭 수집)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - tiketi-network
+
+  # 4. Grafana (시각화 대시보드)
   grafana:
     image: grafana/grafana:latest
     ports:
@@ -176,6 +188,51 @@ services:
       - tiketi-network
     depends_on:
       - loki
+      - prometheus
+
+# 5. Node Exporter (EC2 서버 리소스)
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
+    pid: "host"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - tiketi-network
+
+  # 6. PostgreSQL Exporter (DB 모니터링)
+  postgres-exporter:
+    image: wrouesnel/postgres_exporter
+    container_name: postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
+    ports:
+      - "9187:9187"
+    depends_on:
+      - postgres
+    networks:
+      - tiketi-network
+      
+  # 7. Dragonfly Exporter
+  dragonfly-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: dragonfly-exporter
+    environment:
+      REDIS_ADDR: dragonfly:6379
+    ports:
+      - "9121:9121"
+    depends_on:
+      - dragonfly
+    networks:
+      - tiketi-network
 
 networks:
   tiketi-network:
@@ -186,3 +243,4 @@ volumes:
   dragonfly_data:
   grafana-data:
   loki-data:
+  prometheus_data:
