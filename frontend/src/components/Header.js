@@ -25,7 +25,9 @@ function Header() {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     const query = searchText.trim();
-    navigate(query ? `/?q=${encodeURIComponent(query)}` : '/');
+    if (query) {
+      navigate(`/search?q=${encodeURIComponent(query)}`);
+    }
   };
 
   return (
