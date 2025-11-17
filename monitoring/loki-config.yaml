@@ -49,6 +49,10 @@ compactor:
 
 limits_config:
   retention_period: 24h # 하루마다 삭제
+  # Loki가 초당 받아들일 수 있는 로그 용량을 4MB(기본) -> 20MB로 늘립니다.
+  ingestion_rate_mb: 20
+  # 순간적으로 몰리는 로그(Burst)도 40MB까지 허용합니다.
+  ingestion_burst_size_mb: 40
 
 ruler:
   alertmanager_url: http://localhost:9093
