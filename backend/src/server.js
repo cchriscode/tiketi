@@ -10,6 +10,8 @@ const { initializeSocketIO } = require('./config/socket');
 const errorHandler = require('./middleware/error-handler');
 const requestLogger = require('./middleware/request-logger');
 const { logger } = require('./utils/logger');
+const metricsMiddleware = require('./metrics/middleware');
+const { register } = require('./metrics');
 
 dotenv.config();
 
@@ -22,7 +24,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(requestLogger)
-
+app.use(metricsMiddleware);
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -52,6 +54,16 @@ app.get('/error-test', (req, res, next) => {
   next(error);
 });
 
+// Prometheus /metrics 엔드포인트
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', register.contentType);
+    res.end(await register.metrics());
+  } catch (err) {
+    logger.error('❌ Metrics endpoint error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Error handling middleware
 app.use(errorHandler);
@@ -65,8 +77,8 @@ app.locals.io = io;
 server.listen(PORT, async () => {
   logger.info(`🚀 Server running on port ${PORT}`);
   logger.info(`📡 Health check: http://localhost:${PORT}/health`);
+  logger.info(`📊 Metrics: http://localhost:${PORT}/metrics`);
   logger.info(`🔌 WebSocket ready on port ${PORT}`);
-
 
   // Initialize admin account (with retry on database connection failure)
   try {
