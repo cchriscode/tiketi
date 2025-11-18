@@ -117,6 +117,31 @@
   border-color: #111111;
 }
 
+.form-checkbox {
+  margin-bottom: 1rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #10b981;
+}
+
+.checkbox-label span {
+  font-size: 14px;
+  font-weight: 600;
+  color: #10b981;
+}
+
 .form-actions {
   display: flex;
   justify-content: flex-end;
@@ -172,7 +197,21 @@
   padding: 1.25rem 1.5rem;
   border-bottom: 1px solid #f0f0f0;
   align-items: center;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
+}
+
+.news-item.pinned {
+  border: 2px solid #10b981;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  background: linear-gradient(to right, #f0fdf4 0%, #ffffff 100%);
+}
+
+.news-item.pinned:hover {
+  background: linear-gradient(to right, #ecfdf5 0%, #fafafa 100%);
+  border-color: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
 }
 
 .news-item:hover {
@@ -185,6 +224,20 @@
 
 .news-item-title {
   text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pinned-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: #10b981;
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 6px;
+  flex-shrink: 0;
 }
 
 .news-link {

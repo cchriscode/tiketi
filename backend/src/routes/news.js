@@ -12,9 +12,9 @@ router.get('/', async (req, res, next) => {
     const offset = (page - 1) * limit;
 
     const result = await db.query(
-      `SELECT id, title, content, author, author_id, views, created_at, updated_at
+      `SELECT id, title, content, author, author_id, views, is_pinned, created_at, updated_at
        FROM news
-       ORDER BY created_at DESC
+       ORDER BY is_pinned DESC, created_at DESC
        LIMIT $1 OFFSET $2`,
       [parseInt(limit), offset]
     );
@@ -49,7 +49,7 @@ router.get('/:id', async (req, res, next) => {
 
     // Get news
     const result = await db.query(
-      `SELECT id, title, content, author, author_id, views, created_at, updated_at
+      `SELECT id, title, content, author, author_id, views, is_pinned, created_at, updated_at
        FROM news
        WHERE id = $1`,
       [id]
@@ -68,17 +68,17 @@ router.get('/:id', async (req, res, next) => {
 // Create new news
 router.post('/', async (req, res, next) => {
   try {
-    const { title, content, author, author_id } = req.body;
+    const { title, content, author, author_id, is_pinned = false } = req.body;
 
     if (!title || !content || !author) {
       return res.status(400).json({ error: '제목, 내용, 작성자는 필수입니다.' });
     }
 
     const result = await db.query(
-      `INSERT INTO news (title, content, author, author_id)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, title, content, author, author_id, views, created_at, updated_at`,
-      [title, content, author, author_id || null]
+      `INSERT INTO news (title, content, author, author_id, is_pinned)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, title, content, author, author_id, views, is_pinned, created_at, updated_at`,
+      [title, content, author, author_id || null, is_pinned]
     );
 
     res.status(201).json({ news: result.rows[0] });
@@ -91,19 +91,29 @@ router.post('/', async (req, res, next) => {
 router.put('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { title, content } = req.body;
+    const { title, content, is_pinned } = req.body;
 
     if (!title || !content) {
       return res.status(400).json({ error: '제목과 내용은 필수입니다.' });
     }
 
-    const result = await db.query(
-      `UPDATE news
-       SET title = $1, content = $2
-       WHERE id = $3
-       RETURNING id, title, content, author, author_id, views, created_at, updated_at`,
-      [title, content, id]
-    );
+    // Build dynamic query based on whether is_pinned is provided
+    let query, params;
+    if (is_pinned !== undefined) {
+      query = `UPDATE news
+               SET title = $1, content = $2, is_pinned = $3
+               WHERE id = $4
+               RETURNING id, title, content, author, author_id, views, is_pinned, created_at, updated_at`;
+      params = [title, content, is_pinned, id];
+    } else {
+      query = `UPDATE news
+               SET title = $1, content = $2
+               WHERE id = $3
+               RETURNING id, title, content, author, author_id, views, is_pinned, created_at, updated_at`;
+      params = [title, content, id];
+    }
+
+    const result = await db.query(query, params);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: '뉴스를 찾을 수 없습니다.' });
