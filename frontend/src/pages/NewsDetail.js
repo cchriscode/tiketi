@@ -14,6 +14,17 @@ function NewsDetail() {
     content: ''
   });
 
+  // Get current user info
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+
+  // Check if user can edit/delete this news
+  const canModify = () => {
+    if (!currentUser.userId || !news) return false;
+    const isAdmin = currentUser.role === 'admin';
+    const isOwner = news.author_id === currentUser.userId;
+    return isAdmin || isOwner;
+  };
+
   useEffect(() => {
     fetchNews();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -151,14 +162,16 @@ function NewsDetail() {
                 <button className="btn-back" onClick={() => navigate('/news')}>
                   목록
                 </button>
-                <div className="action-buttons">
-                  <button className="btn-edit" onClick={() => setIsEditing(true)}>
-                    수정
-                  </button>
-                  <button className="btn-delete" onClick={handleDelete}>
-                    삭제
-                  </button>
-                </div>
+                {canModify() && (
+                  <div className="action-buttons">
+                    <button className="btn-edit" onClick={() => setIsEditing(true)}>
+                      수정
+                    </button>
+                    <button className="btn-delete" onClick={handleDelete}>
+                      삭제
+                    </button>
+                  </div>
+                )}
               </div>
             </>
           )}

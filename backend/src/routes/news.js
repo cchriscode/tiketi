@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../config/database');
 const { logger } = require('../utils/logger');
 const CustomError = require('../utils/custom-error');
+const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -65,8 +66,8 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
-// Create new news
-router.post('/', async (req, res, next) => {
+// Create new news (requires authentication)
+router.post('/', authenticateToken, async (req, res, next) => {
   try {
     const { title, content, author, author_id, is_pinned = false } = req.body;
 
@@ -87,14 +88,32 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-// Update news
-router.put('/:id', async (req, res, next) => {
+// Update news (requires authentication and ownership)
+router.put('/:id', authenticateToken, async (req, res, next) => {
   try {
     const { id } = req.params;
     const { title, content, is_pinned } = req.body;
 
     if (!title || !content) {
       return res.status(400).json({ error: '제목과 내용은 필수입니다.' });
+    }
+
+    // Check if news exists and verify ownership
+    const newsCheck = await db.query(
+      'SELECT author_id FROM news WHERE id = $1',
+      [id]
+    );
+
+    if (newsCheck.rows.length === 0) {
+      return res.status(404).json({ error: '뉴스를 찾을 수 없습니다.' });
+    }
+
+    // Verify permission: admin or owner
+    const isAdmin = req.user.role === 'admin';
+    const isOwner = newsCheck.rows[0].author_id === req.user.userId;
+
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ error: '수정 권한이 없습니다.' });
     }
 
     // Build dynamic query based on whether is_pinned is provided
@@ -115,29 +134,37 @@ router.put('/:id', async (req, res, next) => {
 
     const result = await db.query(query, params);
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: '뉴스를 찾을 수 없습니다.' });
-    }
-
     res.json({ news: result.rows[0] });
   } catch (error) {
     next(new CustomError(500, '뉴스 수정에 실패했습니다.', error));
   }
 });
 
-// Delete news
-router.delete('/:id', async (req, res, next) => {
+// Delete news (requires authentication and ownership)
+router.delete('/:id', authenticateToken, async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const result = await db.query(
-      'DELETE FROM news WHERE id = $1 RETURNING id',
+    // Check if news exists and verify ownership
+    const newsCheck = await db.query(
+      'SELECT author_id FROM news WHERE id = $1',
       [id]
     );
 
-    if (result.rows.length === 0) {
+    if (newsCheck.rows.length === 0) {
       return res.status(404).json({ error: '뉴스를 찾을 수 없습니다.' });
     }
+
+    // Verify permission: admin or owner
+    const isAdmin = req.user.role === 'admin';
+    const isOwner = newsCheck.rows[0].author_id === req.user.userId;
+
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ error: '삭제 권한이 없습니다.' });
+    }
+
+    // Delete news
+    await db.query('DELETE FROM news WHERE id = $1', [id]);
 
     res.json({ message: '뉴스가 삭제되었습니다.' });
   } catch (error) {
