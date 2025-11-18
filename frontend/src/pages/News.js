@@ -50,6 +50,7 @@ function News() {
       await newsAPI.create({
         ...formData,
         author: user.name,
+        author_id: user.userId,
         is_pinned: user.role === 'admin' ? formData.is_pinned : false
       });
 
