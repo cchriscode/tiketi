@@ -10,7 +10,8 @@ function News() {
   const [showWriteForm, setShowWriteForm] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
-    content: ''
+    content: '',
+    is_pinned: false
   });
 
   useEffect(() => {
@@ -48,10 +49,11 @@ function News() {
     try {
       await newsAPI.create({
         ...formData,
-        author: user.name
+        author: user.name,
+        is_pinned: user.role === 'admin' ? formData.is_pinned : false
       });
 
-      setFormData({ title: '', content: '' });
+      setFormData({ title: '', content: '', is_pinned: false });
       setShowWriteForm(false);
       alert('게시글이 등록되었습니다.');
 
@@ -115,6 +117,18 @@ function News() {
                   value={formData.content}
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                 />
+                {JSON.parse(localStorage.getItem('user') || '{}').role === 'admin' && (
+                  <div className="form-checkbox">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={formData.is_pinned}
+                        onChange={(e) => setFormData({ ...formData, is_pinned: e.target.checked })}
+                      />
+                      <span>공지사항으로 등록</span>
+                    </label>
+                  </div>
+                )}
                 <div className="form-actions">
                   <button type="submit" className="btn-submit">
                     등록
@@ -141,8 +155,9 @@ function News() {
                 </div>
               ) : (
                 newsList.map((news) => (
-                  <div key={news.id} className="news-item">
+                  <div key={news.id} className={`news-item ${news.is_pinned ? 'pinned' : ''}`}>
                     <div className="news-item-title">
+                      {news.is_pinned && <span className="pinned-badge">공지</span>}
                       <Link to={`/news/${news.id}`} className="news-link">
                         {news.title}
                       </Link>
