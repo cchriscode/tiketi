@@ -46,6 +46,7 @@ jobs:
       - name: Build React app
         env:
           REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
+          REACT_APP_SOCKET_URL: ${{ secrets.REACT_APP_SOCKET_URL }}
         run: |
           cd frontend
           npm run build
