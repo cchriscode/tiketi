@@ -2,6 +2,7 @@ const { client: redisClient } = require('../config/redis');
 
 const { logger } = require('../utils/logger');
 
+const { queueWaitTime, queueUsers } = require('../metrics');
 /**
  * 대기열 관리 시스템
  *
@@ -186,6 +187,14 @@ class QueueManager {
     const users = await redisClient.zRange(queueKey, 0, available - 1);
 
     if (users.length > 0) {
+      // 대기 시간 측정을 위해 score(타임스탬프) 조회
+      for (const userId of users) {
+        const score = await redisClient.zScore(queueKey, userId);
+        if (score) {
+          const waitSeconds = (Date.now() - score) / 1000;
+          queueWaitTime.labels(eventId).observe(waitSeconds); // 메트릭 기록
+        }
+      }
       // 대기열에서 제거
       await redisClient.zRemRangeByRank(queueKey, 0, available - 1);
 
@@ -195,6 +204,10 @@ class QueueManager {
       }
 
       logger.info(`✅ ${users.length} users entered from queue:${eventId}`);
+
+      // 대기열 크기 메트릭 업데이트
+      const remainingQueueSize = await this.getQueueSize(eventId);
+      queueUsers.labels(eventId).set(remainingQueueSize);
     }
 
     return users;
