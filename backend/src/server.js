@@ -35,6 +35,7 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/seats', require('./routes/seats'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/queue', require('./routes/queue'));
+app.use('/api/news', require('./routes/news'));
 
 // Image upload route (only if AWS S3 is configured)
 if (process.env.AWS_S3_BUCKET) {
@@ -46,13 +47,6 @@ if (process.env.AWS_S3_BUCKET) {
 
 // Health check (enhanced)
 app.use('/', require('./routes/health'));
-
-// TODO: 확인용으로 추가. 다음 배포 시 제거할 것
-app.get('/error-test', (req, res, next) => {
-  const error = new Error('의도적으로 발생시킨 에러입니다!');
-  error.status = 400;
-  next(error);
-});
 
 // Prometheus /metrics 엔드포인트
 app.get('/metrics', async (req, res) => {

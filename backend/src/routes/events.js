@@ -16,13 +16,14 @@ router.get('/', async (req, res, next) => {
   try {
     const {
       status,
+      q: searchQuery,
       page = PAGINATION_DEFAULTS.PAGE,
       limit = PAGINATION_DEFAULTS.EVENTS_LIMIT
     } = req.query;
     const offset = (page - 1) * limit;
 
-    // Try cache first
-    const cacheKey = CACHE_KEYS.EVENTS_LIST(status, page, limit);
+    // Try cache first (include search query in cache key)
+    const cacheKey = CACHE_KEYS.EVENTS_LIST(status, page, limit, searchQuery);
     const cached = await redisClient.get(cacheKey);
 
     if (cached) {
@@ -30,10 +31,10 @@ router.get('/', async (req, res, next) => {
     }
 
     let query = `
-      SELECT 
+      SELECT
         e.id, e.title, e.description, e.venue, e.address,
         e.event_date, e.sale_start_date, e.sale_end_date,
-        e.poster_image_url, e.status,
+        e.poster_image_url, e.status, e.artist_name,
         COUNT(DISTINCT tt.id) as ticket_type_count,
         MIN(tt.price) as min_price,
         MAX(tt.price) as max_price
@@ -42,9 +43,51 @@ router.get('/', async (req, res, next) => {
     `;
 
     const params = [];
+    const whereConditions = [];
+
+    // Status filter
     if (status) {
-      query += ' WHERE e.status = $1';
+      whereConditions.push(`e.status = $${params.length + 1}`);
       params.push(status);
+    }
+
+    // Search filter with Korean-English cross-language support
+    if (searchQuery && searchQuery.trim()) {
+      const searchTerm = searchQuery.trim();
+      let searchTerms = [searchTerm];
+
+      // Try to get related keywords from keyword_mappings table (if exists)
+      try {
+        const mappingResult = await db.query(`
+          SELECT DISTINCT english FROM keyword_mappings WHERE korean ILIKE $1
+          UNION
+          SELECT DISTINCT korean FROM keyword_mappings WHERE english ILIKE $1
+        `, [`%${searchTerm}%`]);
+
+        // Add mapped keywords to search terms
+        searchTerms = [searchTerm, ...mappingResult.rows.map(row => row.english || row.korean)];
+      } catch (err) {
+        // keyword_mappings table doesn't exist yet, use basic search only
+        console.log('keyword_mappings 테이블 없음, 기본 검색만 사용');
+      }
+
+      // Build OR conditions for each search term
+      const searchConditions = searchTerms.map((term, index) => {
+        params.push(`%${term}%`);
+        return `(
+          COALESCE(e.title, '') || ' ' ||
+          COALESCE(e.artist_name, '') || ' ' ||
+          COALESCE(e.venue, '') || ' ' ||
+          COALESCE(e.address, '')
+        ) ILIKE $${params.length}`;
+      });
+
+      whereConditions.push(`(${searchConditions.join(' OR ')})`);
+    }
+
+    // Add WHERE clause if there are any conditions
+    if (whereConditions.length > 0) {
+      query += ' WHERE ' + whereConditions.join(' AND ');
     }
 
     // 티켓팅 오픈 시간(sale_start_date) 가까운 순으로 정렬 (ASC)
@@ -53,13 +96,51 @@ router.get('/', async (req, res, next) => {
 
     const result = await db.query(query, params);
 
-    // Count total
-    let countQuery = 'SELECT COUNT(*) FROM events';
+    // Count total with same search logic
+    let countQuery = 'SELECT COUNT(*) FROM events e';
     const countParams = [];
+    const countWhereConditions = [];
+
     if (status) {
-      countQuery += ' WHERE status = $1';
+      countWhereConditions.push(`e.status = $${countParams.length + 1}`);
       countParams.push(status);
     }
+
+    if (searchQuery && searchQuery.trim()) {
+      const searchTerm = searchQuery.trim();
+      let countSearchTerms = [searchTerm];
+
+      // Try to get related keywords from keyword_mappings table (if exists)
+      try {
+        const countMappingResult = await db.query(`
+          SELECT DISTINCT english FROM keyword_mappings WHERE korean ILIKE $1
+          UNION
+          SELECT DISTINCT korean FROM keyword_mappings WHERE english ILIKE $1
+        `, [`%${searchTerm}%`]);
+
+        countSearchTerms = [searchTerm, ...countMappingResult.rows.map(row => row.english || row.korean)];
+      } catch (err) {
+        // keyword_mappings table doesn't exist yet, use basic search only
+        console.log('keyword_mappings 테이블 없음 (count), 기본 검색만 사용');
+      }
+
+      const countSearchConditions = countSearchTerms.map((term, index) => {
+        countParams.push(`%${term}%`);
+        return `(
+          COALESCE(e.title, '') || ' ' ||
+          COALESCE(e.artist_name, '') || ' ' ||
+          COALESCE(e.venue, '') || ' ' ||
+          COALESCE(e.address, '')
+        ) ILIKE $${countParams.length}`;
+      });
+
+      countWhereConditions.push(`(${countSearchConditions.join(' OR ')})`);
+    }
+
+    if (countWhereConditions.length > 0) {
+      countQuery += ' WHERE ' + countWhereConditions.join(' AND ');
+    }
+
     const countResult = await db.query(countQuery, countParams);
     const total = parseInt(countResult.rows[0].count);
 
