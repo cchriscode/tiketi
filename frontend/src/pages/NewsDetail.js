@@ -22,6 +22,16 @@ function NewsDetail() {
     if (!currentUser.userId || !news) return false;
     const isAdmin = currentUser.role === 'admin';
     const isOwner = news.author_id === currentUser.userId;
+
+    // Debug logging
+    console.log('canModify check:', {
+      currentUserId: currentUser.userId,
+      newsAuthorId: news.author_id,
+      isAdmin,
+      isOwner,
+      result: isAdmin || isOwner
+    });
+
     return isAdmin || isOwner;
   };
 
