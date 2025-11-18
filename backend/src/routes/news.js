@@ -108,12 +108,11 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
       return res.status(404).json({ error: '뉴스를 찾을 수 없습니다.' });
     }
 
-    // Verify permission: admin or owner
-    const isAdmin = req.user.role === 'admin';
+    // Verify permission: only owner can edit (admin cannot edit)
     const isOwner = newsCheck.rows[0].author_id === req.user.userId;
 
-    if (!isAdmin && !isOwner) {
-      return res.status(403).json({ error: '수정 권한이 없습니다.' });
+    if (!isOwner) {
+      return res.status(403).json({ error: '작성자만 수정할 수 있습니다.' });
     }
 
     // Build dynamic query based on whether is_pinned is provided

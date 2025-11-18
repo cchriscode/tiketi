@@ -17,8 +17,14 @@ function NewsDetail() {
   // Get current user info
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
-  // Check if user can edit/delete this news
-  const canModify = () => {
+  // Check if user can edit this news (only owner can edit)
+  const canEdit = () => {
+    if (!currentUser.userId || !news) return false;
+    return news.author_id === currentUser.userId;
+  };
+
+  // Check if user can delete this news (owner or admin)
+  const canDelete = () => {
     if (!currentUser.userId || !news) return false;
     const isAdmin = currentUser.role === 'admin';
     const isOwner = news.author_id === currentUser.userId;
@@ -67,6 +73,12 @@ function NewsDetail() {
   };
 
   const handleDelete = async () => {
+    // Check permission
+    if (!canDelete()) {
+      alert('자신의 글만 삭제 가능합니다.');
+      return;
+    }
+
     if (!window.confirm('정말 삭제하시겠습니까?')) {
       return;
     }
@@ -162,16 +174,16 @@ function NewsDetail() {
                 <button className="btn-back" onClick={() => navigate('/news')}>
                   목록
                 </button>
-                {canModify() && (
-                  <div className="action-buttons">
+                <div className="action-buttons">
+                  {canEdit() && (
                     <button className="btn-edit" onClick={() => setIsEditing(true)}>
                       수정
                     </button>
-                    <button className="btn-delete" onClick={handleDelete}>
-                      삭제
-                    </button>
-                  </div>
-                )}
+                  )}
+                  <button className="btn-delete" onClick={handleDelete}>
+                    삭제
+                  </button>
+                </div>
               </div>
             </>
           )}

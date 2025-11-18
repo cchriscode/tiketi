@@ -127,6 +127,7 @@ CREATE TABLE news (
     author VARCHAR(100) NOT NULL,
     author_id UUID REFERENCES users(id) ON DELETE SET NULL,
     views INTEGER DEFAULT 0,
+    is_pinned BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -141,6 +142,7 @@ CREATE INDEX idx_seats_event ON seats(event_id);
 CREATE INDEX idx_seats_status ON seats(event_id, status);
 CREATE INDEX idx_seats_section ON seats(event_id, section);
 CREATE INDEX idx_reservations_user_id ON reservations(user_id);
+CREATE INDEX idx_news_pinned ON news(is_pinned, created_at DESC);
 CREATE INDEX idx_reservations_event_id ON reservations(event_id);
 CREATE INDEX idx_reservations_status ON reservations(status);
 CREATE INDEX idx_ticket_types_event_id ON ticket_types(event_id);
