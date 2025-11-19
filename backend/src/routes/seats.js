@@ -22,6 +22,11 @@ const {
 } = require('../shared/constants');
 const { invalidateCachePatterns, withTransactionAndLock } = require('../utils/transaction-helpers');
 const CustomError = require('../utils/custom-error');
+const { 
+  seatsReserved, 
+  seatsAvailable ,
+  conversionFunnel
+} = require('../metrics');
 
 const router = express.Router();
 
@@ -103,6 +108,9 @@ router.post('/reserve', authenticateToken, async (req, res, next) => {
   try {
     const { eventId, seatIds } = req.body;
     const userId = req.user.userId;
+
+    // 메트릭 추가: 좌석 선택 시작
+    conversionFunnel.labels('seat_select', eventId).inc();
 
     // Validation
     if (!seatIds || !Array.isArray(seatIds) || seatIds.length === 0) {
@@ -208,6 +216,10 @@ router.post('/reserve', authenticateToken, async (req, res, next) => {
       CACHE_KEYS.EVENT(eventId),
       CACHE_KEYS.SEATS(eventId)
     ]);
+
+    // 메트릭 추가: 좌석 예약
+    seatsReserved.labels(eventId).inc(seatIds.length);
+    seatsAvailable.labels(eventId).dec(seatIds.length);
 
     // 실시간 좌석 상태 업데이트 브로드캐스트
     try {

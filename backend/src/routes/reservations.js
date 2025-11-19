@@ -15,6 +15,11 @@ const {
 const { invalidateCache, withTransaction } = require('../utils/transaction-helpers');
 const { logger } = require('../utils/logger');
 const CustomError = require('../utils/custom-error');
+const { 
+  reservationsCreated, 
+  reservationsCancelled,
+  conversionFunnel
+} = require('../metrics');
 
 const router = express.Router();
 
@@ -115,6 +120,10 @@ router.post('/', authenticateToken, async (req, res, next) => {
       // Commit transaction
       await client.query('COMMIT');
 
+      // 메트릭 추가: 예약 생성 성공
+      reservationsCreated.labels(eventId, 'success').inc();
+      conversionFunnel.labels('reservation_created', eventId).inc();
+
       // Release all locks
       for (const lockKey of locksAcquired) {
         await releaseLock(lockKey);
@@ -163,6 +172,11 @@ router.post('/', authenticateToken, async (req, res, next) => {
     } catch (error) {
       // Rollback transaction
       await client.query('ROLLBACK');
+
+      // 메트릭 추가: 예약 생성 실패
+      if (eventId) {
+      reservationsCreated.labels(eventId, 'failed').inc();
+      }
 
       // Release all locks
       for (const lockKey of locksAcquired) {
@@ -310,6 +324,16 @@ router.post('/:id/cancel', authenticateToken, async (req, res, next) => {
          WHERE id = $3`,
         [RESERVATION_STATUS.CANCELLED, PAYMENT_STATUS.REFUNDED, id]
       );
+
+      // 메트릭 추가: 예약 취소
+      reservationsCancelled.labels(reservation.event_id, 'user_cancel').inc();
+
+      // 메트릭 추가: 좌석 해제 (좌석 기반 예약인 경우)
+      const seatCount = itemsResult.rows.filter(item => item.seat_id).length;
+      if (seatCount > 0) {
+        seatsReserved.labels(reservation.event_id).dec(seatCount);
+        seatsAvailable.labels(reservation.event_id).inc(seatCount);
+      }
 
       return { reservation, items: itemsResult.rows };
     });

@@ -18,6 +18,11 @@ const {
 const { withTransaction } = require('../utils/transaction-helpers');
 const { logger } = require('../utils/logger');
 const CustomError = require('../utils/custom-error');
+const { 
+  paymentsTotal, 
+  paymentAmount,
+  conversionFunnel 
+} = require('../metrics');
 
 const router = express.Router();
 
@@ -88,6 +93,11 @@ router.post('/process', authenticateToken, async (req, res, next) => {
         ]
       );
 
+      // ✅ 메트릭 추가: 결제 성공
+      paymentsTotal.labels('success', reservation.event_id).inc();
+      paymentAmount.labels(reservation.event_id).observe(reservation.total_amount);
+      conversionFunnel.labels('payment_completed', reservation.event_id).inc();
+
       // Update seats status to reserved
       await client.query(
         `UPDATE seats
@@ -137,6 +147,22 @@ router.post('/process', authenticateToken, async (req, res, next) => {
     });
 
   } catch (error) {
+    // 메트릭 추가: 결제 실패
+    // 예약 정보가 있다면 이벤트 ID 기록
+    try {
+      if (reservationId) {
+        const eventResult = await db.query(
+          'SELECT event_id FROM reservations WHERE id = $1',
+          [reservationId]
+        );
+        if (eventResult.rows.length > 0) {
+          paymentsTotal.labels('failed', eventResult.rows[0].event_id).inc();
+        }
+      }
+    } catch (metricError) {
+      logger.error('⚠️  메트릭 기록 실패:', metricError);
+    }
+
     next(new CustomError(400, 'Payment process error', error));
   }
 });
