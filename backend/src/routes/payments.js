@@ -18,12 +18,55 @@ const {
 const { withTransaction } = require('../utils/transaction-helpers');
 const { logger } = require('../utils/logger');
 const CustomError = require('../utils/custom-error');
+const { 
+  paymentsTotal, 
+  paymentAmount,
+  conversionFunnel 
+} = require('../metrics');
 
 const router = express.Router();
 
 /**
- * POST /api/payments/process
- * Process payment for a reservation (MOCK - no real PG integration)
+ * @swagger
+ * /api/payments/process:
+ *   post:
+ *     summary: 결제 처리
+ *     tags: [Payments]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - reservationId
+ *               - paymentMethod
+ *             properties:
+ *               reservationId:
+ *                 type: integer
+ *                 description: 예약 ID
+ *               paymentMethod:
+ *                 type: string
+ *                 enum: [naver_pay, kakao_pay, bank_transfer]
+ *                 description: 결제 수단
+ *     responses:
+ *       200:
+ *         description: 결제 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 payment:
+ *                   type: object
+ *       400:
+ *         description: 잘못된 요청
  */
 router.post('/process', authenticateToken, async (req, res, next) => {
   try {
@@ -88,6 +131,11 @@ router.post('/process', authenticateToken, async (req, res, next) => {
         ]
       );
 
+      // ✅ 메트릭 추가: 결제 성공
+      paymentsTotal.labels('success', reservation.event_id).inc();
+      paymentAmount.labels(reservation.event_id).observe(reservation.total_amount);
+      conversionFunnel.labels('payment_completed', reservation.event_id).inc();
+
       // Update seats status to reserved
       await client.query(
         `UPDATE seats
@@ -137,13 +185,51 @@ router.post('/process', authenticateToken, async (req, res, next) => {
     });
 
   } catch (error) {
+    // 메트릭 추가: 결제 실패
+    // 예약 정보가 있다면 이벤트 ID 기록
+    try {
+      if (reservationId) {
+        const eventResult = await db.query(
+          'SELECT event_id FROM reservations WHERE id = $1',
+          [reservationId]
+        );
+        if (eventResult.rows.length > 0) {
+          paymentsTotal.labels('failed', eventResult.rows[0].event_id).inc();
+        }
+      }
+    } catch (metricError) {
+      logger.error('⚠️  메트릭 기록 실패:', metricError);
+    }
+
     next(new CustomError(400, 'Payment process error', error));
   }
 });
 
 /**
- * GET /api/payments/methods
- * Get available payment methods
+ * @swagger
+ * /api/payments/methods:
+ *   get:
+ *     summary: 결제 수단 목록 조회
+ *     tags: [Payments]
+ *     responses:
+ *       200:
+ *         description: 결제 수단 목록
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 methods:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       name:
+ *                         type: string
+ *                       description:
+ *                         type: string
  */
 router.get('/methods', (req, res, next) => {
   res.json({

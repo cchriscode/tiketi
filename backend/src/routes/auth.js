@@ -8,7 +8,59 @@ const CustomError = require('../utils/custom-error');
 
 const router = express.Router();
 
-// 회원가입
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: 회원가입
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *               - name
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: 이메일
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *                 description: 비밀번호 (최소 6자)
+ *               name:
+ *                 type: string
+ *                 description: 이름
+ *               phone:
+ *                 type: string
+ *                 description: 전화번호
+ *     responses:
+ *       201:
+ *         description: 회원가입 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 token:
+ *                   type: string
+ *                   description: JWT 토큰
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: 잘못된 요청 또는 이미 존재하는 이메일
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.post('/register',
   [
     body('email').isEmail().normalizeEmail(),
@@ -69,7 +121,51 @@ router.post('/register',
   }
 );
 
-// 로그인
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: 로그인
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: 이메일
+ *               password:
+ *                 type: string
+ *                 description: 비밀번호
+ *     responses:
+ *       200:
+ *         description: 로그인 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 token:
+ *                   type: string
+ *                   description: JWT 토큰
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         description: 이메일 또는 비밀번호 불일치
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.post('/login',
   [
     body('email').isEmail().normalizeEmail(),

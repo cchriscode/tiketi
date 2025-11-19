@@ -5,7 +5,32 @@ const CustomError = require('../utils/custom-error');
 
 const router = express.Router();
 
-// 특정 이벤트의 티켓 타입 조회
+/**
+ * @swagger
+ * /api/tickets/event/{eventId}:
+ *   get:
+ *     summary: 특정 이벤트의 티켓 타입 조회
+ *     tags: [Tickets]
+ *     parameters:
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 이벤트 ID
+ *     responses:
+ *       200:
+ *         description: 티켓 타입 목록
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ticketTypes:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/TicketType'
+ */
 router.get('/event/:eventId', async (req, res, next) => {
   try {
     const { eventId } = req.params;
@@ -25,7 +50,34 @@ router.get('/event/:eventId', async (req, res, next) => {
   }
 });
 
-// 티켓 재고 확인
+/**
+ * @swagger
+ * /api/tickets/availability/{ticketTypeId}:
+ *   get:
+ *     summary: 티켓 재고 확인
+ *     tags: [Tickets]
+ *     parameters:
+ *       - in: path
+ *         name: ticketTypeId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 티켓 타입 ID
+ *     responses:
+ *       200:
+ *         description: 티켓 재고 정보
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 available_quantity:
+ *                   type: integer
+ *                 total_quantity:
+ *                   type: integer
+ *       404:
+ *         description: 티켓 타입을 찾을 수 없음
+ */
 router.get('/availability/:ticketTypeId', async (req, res, next) => {
   try {
     const { ticketTypeId } = req.params;

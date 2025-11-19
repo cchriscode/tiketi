@@ -4,8 +4,29 @@ const db = require('../config/database');
 const { client: redisClient } = require('../config/redis');
 
 /**
- * 기본 Health Check
- * GET /health
+ * @swagger
+ * /health:
+ *   get:
+ *     summary: 기본 헬스체크
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: 서버 상태 정보
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                 timestamp:
+ *                   type: string
+ *                 uptime:
+ *                   type: number
+ *                 version:
+ *                   type: string
+ *                 environment:
+ *                   type: string
  */
 router.get('/health', (req, res) => {
   res.json({
@@ -18,8 +39,27 @@ router.get('/health', (req, res) => {
 });
 
 /**
- * Database Health Check
- * GET /health/db
+ * @swagger
+ * /health/db:
+ *   get:
+ *     summary: 데이터베이스 헬스체크
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: 데이터베이스 정상
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                 service:
+ *                   type: string
+ *                 responseTime:
+ *                   type: string
+ *       503:
+ *         description: 데이터베이스 오류
  */
 router.get('/health/db', async (req, res) => {
   try {
@@ -43,8 +83,27 @@ router.get('/health/db', async (req, res) => {
 });
 
 /**
- * Redis Health Check
- * GET /health/redis
+ * @swagger
+ * /health/redis:
+ *   get:
+ *     summary: Redis 헬스체크
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: Redis 정상
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                 service:
+ *                   type: string
+ *                 responseTime:
+ *                   type: string
+ *       503:
+ *         description: Redis 오류
  */
 router.get('/health/redis', async (req, res) => {
   try {
@@ -68,8 +127,27 @@ router.get('/health/redis', async (req, res) => {
 });
 
 /**
- * 전체 시스템 Health Check
- * GET /health/all
+ * @swagger
+ * /health/all:
+ *   get:
+ *     summary: 전체 시스템 헬스체크
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: 모든 시스템 정상
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                 checks:
+ *                   type: object
+ *                 timestamp:
+ *                   type: string
+ *       503:
+ *         description: 일부 시스템 오류
  */
 router.get('/health/all', async (req, res) => {
   const checks = {
