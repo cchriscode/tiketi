@@ -78,8 +78,30 @@ router.get('/status/:eventId', authenticate, async (req, res, next) => {
 });
 
 /**
- * 대기열에서 나가기
- * POST /api/queue/leave/:eventId
+ * @swagger
+ * /api/queue/leave/{eventId}:
+ *   post:
+ *     summary: 대기열에서 나가기
+ *     tags: [Queue]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 이벤트 ID
+ *     responses:
+ *       200:
+ *         description: 대기열 나가기 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  */
 router.post('/leave/:eventId', authenticate, async (req, res, next) => {
   try {
@@ -99,8 +121,38 @@ router.post('/leave/:eventId', authenticate, async (req, res, next) => {
 });
 
 /**
- * 관리자: 대기열 정보 조회
- * GET /api/queue/admin/:eventId
+ * @swagger
+ * /api/queue/admin/{eventId}:
+ *   get:
+ *     summary: 대기열 정보 조회 (관리자)
+ *     tags: [Queue]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 이벤트 ID
+ *     responses:
+ *       200:
+ *         description: 대기열 정보
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 eventId:
+ *                   type: integer
+ *                 queueSize:
+ *                   type: integer
+ *                 currentUsers:
+ *                   type: integer
+ *                 threshold:
+ *                   type: integer
+ *                 available:
+ *                   type: integer
  */
 router.get('/admin/:eventId', authenticate, async (req, res, next) => {
   try {
@@ -126,8 +178,30 @@ router.get('/admin/:eventId', authenticate, async (req, res, next) => {
 });
 
 /**
- * 관리자: 대기열 초기화
- * POST /api/queue/admin/clear/:eventId
+ * @swagger
+ * /api/queue/admin/clear/{eventId}:
+ *   post:
+ *     summary: 대기열 초기화 (관리자)
+ *     tags: [Queue]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 이벤트 ID
+ *     responses:
+ *       200:
+ *         description: 대기열 초기화 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  */
 router.post('/admin/clear/:eventId', authenticate, async (req, res, next) => {
   try {

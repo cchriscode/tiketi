@@ -68,8 +68,27 @@ router.get('/health/redis', async (req, res) => {
 });
 
 /**
- * 전체 시스템 Health Check
- * GET /health/all
+ * @swagger
+ * /health/all:
+ *   get:
+ *     summary: 전체 시스템 헬스체크
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: 모든 시스템 정상
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                 checks:
+ *                   type: object
+ *                 timestamp:
+ *                   type: string
+ *       503:
+ *         description: 일부 시스템 오류
  */
 router.get('/health/all', async (req, res) => {
   const checks = {

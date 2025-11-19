@@ -178,7 +178,47 @@ router.post('/', authenticateToken, async (req, res, next) => {
   }
 });
 
-// Update news (requires authentication and ownership)
+/**
+ * @swagger
+ * /api/news/{id}:
+ *   put:
+ *     summary: 뉴스 수정
+ *     tags: [News]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 뉴스 ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - content
+ *             properties:
+ *               title:
+ *                 type: string
+ *               content:
+ *                 type: string
+ *               is_pinned:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: 뉴스 수정 성공
+ *       400:
+ *         description: 잘못된 요청
+ *       403:
+ *         description: 권한 없음
+ *       404:
+ *         description: 뉴스를 찾을 수 없음
+ */
 router.put('/:id', authenticateToken, async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -229,7 +269,29 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
   }
 });
 
-// Delete news (requires authentication and ownership)
+/**
+ * @swagger
+ * /api/news/{id}:
+ *   delete:
+ *     summary: 뉴스 삭제
+ *     tags: [News]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 뉴스 ID
+ *     responses:
+ *       200:
+ *         description: 뉴스 삭제 성공
+ *       403:
+ *         description: 권한 없음
+ *       404:
+ *         description: 뉴스를 찾을 수 없음
+ */
 router.delete('/:id', authenticateToken, async (req, res, next) => {
   try {
     const { id } = req.params;
