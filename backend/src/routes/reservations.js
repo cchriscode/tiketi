@@ -23,7 +23,58 @@ const {
 
 const router = express.Router();
 
-// 예매하기 (분산 락 사용)
+/**
+ * @swagger
+ * /api/reservations:
+ *   post:
+ *     summary: 예매하기
+ *     tags: [Reservations]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - eventId
+ *               - items
+ *             properties:
+ *               eventId:
+ *                 type: integer
+ *                 description: 이벤트 ID
+ *               items:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     ticketTypeId:
+ *                       type: integer
+ *                     quantity:
+ *                       type: integer
+ *     responses:
+ *       201:
+ *         description: 예매 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 reservation:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     reservationNumber:
+ *                       type: string
+ *                     totalAmount:
+ *                       type: integer
+ *       400:
+ *         description: 잘못된 요청
+ */
 router.post('/', authenticateToken, async (req, res, next) => {
   const client = await db.getClient();
 
@@ -193,7 +244,27 @@ router.post('/', authenticateToken, async (req, res, next) => {
   }
 });
 
-// 내 예매 목록 조회
+/**
+ * @swagger
+ * /api/reservations/my:
+ *   get:
+ *     summary: 내 예매 목록 조회
+ *     tags: [Reservations]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 예매 목록
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 reservations:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Reservation'
+ */
 router.get('/my', authenticateToken, async (req, res, next) => {
   try {
     const userId = req.user.userId;
@@ -228,7 +299,34 @@ router.get('/my', authenticateToken, async (req, res, next) => {
   }
 });
 
-// 예매 상세 조회
+/**
+ * @swagger
+ * /api/reservations/{id}:
+ *   get:
+ *     summary: 예매 상세 조회
+ *     tags: [Reservations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 예매 ID
+ *     responses:
+ *       200:
+ *         description: 예매 상세 정보
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 reservation:
+ *                   $ref: '#/components/schemas/Reservation'
+ *       404:
+ *         description: 예매 내역을 찾을 수 없음
+ */
 router.get('/:id', authenticateToken, async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -269,7 +367,34 @@ router.get('/:id', authenticateToken, async (req, res, next) => {
   }
 });
 
-// 예매 취소
+/**
+ * @swagger
+ * /api/reservations/{id}/cancel:
+ *   post:
+ *     summary: 예매 취소
+ *     tags: [Reservations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 예매 ID
+ *     responses:
+ *       200:
+ *         description: 예매 취소 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: 잘못된 요청
+ */
 router.post('/:id/cancel', authenticateToken, async (req, res, next) => {
   try {
     const { id } = req.params;

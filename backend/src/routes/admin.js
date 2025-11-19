@@ -21,7 +21,27 @@ const router = express.Router();
 router.use(authenticateToken);
 router.use(requireAdmin);
 
-// 대시보드 통계
+/**
+ * @swagger
+ * /api/admin/dashboard/stats:
+ *   get:
+ *     summary: 대시보드 통계 (관리자)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 통계 정보
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 stats:
+ *                   type: object
+ *                 recentReservations:
+ *                   type: array
+ */
 router.get('/dashboard/stats', async (req, res, next) => {
   try {
     // Total events
@@ -78,7 +98,18 @@ router.get('/dashboard/stats', async (req, res, next) => {
   }
 });
 
-// 좌석 레이아웃 목록 조회
+/**
+ * @swagger
+ * /api/admin/seat-layouts:
+ *   get:
+ *     summary: 좌석 레이아웃 목록 조회 (관리자)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 좌석 레이아웃 목록
+ */
 router.get('/seat-layouts', async (req, res, next) => {
   try {
     const result = await db.query(
@@ -91,7 +122,58 @@ router.get('/seat-layouts', async (req, res, next) => {
   }
 });
 
-// 이벤트 생성 (좌석 선택 기능 포함)
+/**
+ * @swagger
+ * /api/admin/events:
+ *   post:
+ *     summary: 이벤트 생성 (관리자)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - venue
+ *               - eventDate
+ *               - saleStartDate
+ *               - saleEndDate
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               venue:
+ *                 type: string
+ *               address:
+ *                 type: string
+ *               eventDate:
+ *                 type: string
+ *                 format: date-time
+ *               saleStartDate:
+ *                 type: string
+ *                 format: date-time
+ *               saleEndDate:
+ *                 type: string
+ *                 format: date-time
+ *               posterImageUrl:
+ *                 type: string
+ *               artistName:
+ *                 type: string
+ *               seatLayoutId:
+ *                 type: integer
+ *               ticketTypes:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *     responses:
+ *       201:
+ *         description: 이벤트 생성 성공
+ */
 router.post('/events', async (req, res, next) => {
   const client = await db.getClient();
 

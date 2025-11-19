@@ -2,6 +2,8 @@ const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 const { initializeAdmin } = require('./config/init-admin');
 const initSeats = require('./config/init-seats');
 const reservationCleaner = require('./services/reservation-cleaner');
@@ -25,6 +27,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(requestLogger)
 app.use(metricsMiddleware);
+
+// Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Tiketi API Documentation',
+}));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -72,6 +81,7 @@ server.listen(PORT, async () => {
   logger.info(`🚀 Server running on port ${PORT}`);
   logger.info(`📡 Health check: http://localhost:${PORT}/health`);
   logger.info(`📊 Metrics: http://localhost:${PORT}/metrics`);
+  logger.info(`📚 API Docs: http://localhost:${PORT}/api-docs`);
   logger.info(`🔌 WebSocket ready on port ${PORT}`);
 
   // Initialize admin account (with retry on database connection failure)
