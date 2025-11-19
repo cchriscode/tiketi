@@ -52,156 +52,155 @@
 
 ## 🏗️ 아키텍처
 
-### 현재 아키텍처 (로컬 개발)
-
-```
-┌─────────────────┐
-│   Frontend      │  React (Port 3000)
-│   (React)       │  - WebSocket Client (Socket.IO)
-└────────┬────────┘
-         │
-┌────────▼────────┐
-│   Backend       │  Node.js + Express (Port 3001)
-│   (Express)     │  - Socket.IO Server + Redis Adapter
-└────────┬────────┘  - REST API
-         │
-         ├──────────────┬──────────────┐
-         │              │              │
-┌────────▼─────┐ ┌─────▼──────┐ ┌─────▼──────┐
-│ PostgreSQL   │ │ DragonflyDB│ │ Redis      │
-│   (5432)     │ │   (6379)   │ │ (Adapter)  │
-│              │ │ 분산 락     │ │ 대기열/캐싱│
-└──────────────┘ └────────────┘ └────────────┘
-```
+### 로컬 아키텍처
 
 ```mermaid
 graph TB
-  Browser[("브라우저")]
-  Frontend["Frontend\nReact (Port 3000)\nSocket.IO Client"]
-  Backend["Backend\nNode.js + Express (Port 3001)\nREST API + Socket.IO Server"]
-  Postgres["PostgreSQL\n5432"]
-  Dragonfly["DragonflyDB\nRedis 호환 6379\n분산 락/대기열/캐시"]
-
-  Browser --> Frontend --> Backend
-  Backend --> Postgres
-  Backend --> Dragonfly
+    subgraph Frontend["Frontend (React)"]
+        FE["React Application<br/>Port: 3000<br/>- WebSocket Client<br/>- Socket.IO"]
+    end
+    
+    subgraph Backend["Backend (Express)"]
+        BE["Node.js + Express<br/>Port: 3001<br/>- Socket.IO Server<br/>- Redis Adapter<br/>- REST API"]
+    end
+    
+    subgraph Databases["Data Layer"]
+        PG["PostgreSQL<br/>Port: 5432"]
+        DF["DragonflyDB<br/>Port: 6379<br/>분산 락"]
+        RD["Redis<br/>Adapter<br/>대기열/캐싱"]
+    end
+    
+    FE -->|WebSocket Connection| BE
+    BE --> PG
+    BE --> DF
+    BE --> RD
+    
+    style Frontend fill:#e1f5ff
+    style Backend fill:#fff4e1
+    style Databases fill:#f0f0f0
 ```
 
 ---
 
-### AWS 프로덕션 구성 (현재: EC2 + Docker Compose)
-
-```text
-사용자 브라우저
-   │
-Route 53 (tiketi.store)
-   │
-CloudFront ── S3 (React 정적 파일)
-   │
-   ▼
-ALB (HTTPS /api)
-   │
-Target Group (Port 3001)
-   │
-   ▼
-EC2 (Docker Compose)
-  ├─ backend (Node.js API + WebSocket)
-  ├─ postgres (PostgreSQL)
-  ├─ dragonfly (Redis 기반 캐시/락/대기열)
-  ├─ loki + promtail (로그 수집)
-  ├─ prometheus + grafana (메트릭/대시보드)
-  └─ github actions runner (자동 배포)
-```
-
-### AWS 목표 아키텍처 (큐 기반 Auto Scaling)
-
-```
-                       ┌───────────────┐
-                       │  Route 53     │  DNS
-                       │  (tiketi.gg)  │
-                       └───────┬───────┘
-                               │
-                       ┌───────▼───────┐
-                       │  CloudFront   │  CDN (정적 파일)
-                       └───────┬───────┘
-                               │
-          ┌────────────────────┼────────────────────┐
-          │                    │                    │
-   ┌──────▼──────┐     ┌───────▼───────┐   ┌───────▼──────┐
-   │     S3      │     │      ALB      │   │  CloudWatch  │
-   │ (React 빌드)│     │ (Load Balancer)│   │  (모니터링)  │
-   └─────────────┘     │ - Sticky Sess.│   └──────┬───────┘
-                       └───────┬───────┘          │
-                               │                  │
-                ┌──────────────┴─────────┐        │
-                │                        │        │
-         ┌──────▼────┐            ┌──────▼────┐  │
-         │ Target    │            │   Auto    │  │
-         │ Group     │◄───────────┤  Scaling  │◄─┘
-         │           │            │   Group   │
-         └──────┬────┘            └───────────┘
-                │                      ▲
-    ┌───────────┼───────────┐         │
-    │           │           │         │ 큐 크기 기반
-┌───▼────┐ ┌───▼────┐ ┌───▼────┐    │ 스케일링
-│ EC2-1  │ │ EC2-2  │ │ EC2-3  │    │
-│Backend │ │Backend │ │Backend │    │
-│Socket  │ │Socket  │ │Socket  │    │
-└───┬────┘ └───┬────┘ └───┬────┘    │
-    └──────────┼──────────┘          │
-               │                     │
-    ┌──────────┼─────────────────────┼────────┐
-    │          │                     │        │
-┌───▼──────────▼───┐         ┌───────▼──────┐ │
-│ ElastiCache      │         │   Lambda     │ │
-│    (Redis)       │◄────────┤ Queue Monitor│ │
-│ - Pub/Sub        │         │              │ │
-│ - Queue (대기열) │         │ 큐 크기 측정  │ │
-│ - Cache (세션)   │         │ → CloudWatch │ │
-└──────────┬───────┘         └──────────────┘ │
-           │                                   │
-    ┌──────▼────────┐                ┌────────▼──┐
-    │ RDS (Aurora)  │                │ S3 Bucket │
-    │  PostgreSQL   │                │ (이미지)  │
-    │   Multi-AZ    │                │ (로그)    │
-    └───────────────┘                └───────────┘
-```
+### Docker Compose 아키텍처
 
 ```mermaid
 graph TB
-  Users[("브라우저")]
-  Route53["Route 53\n(tiketi.gg)"]
-  CloudFront["CloudFront\nCDN (정적 파일)"]
-  S3React["S3\nReact 빌드"]
-  ALB["ALB\nLoad Balancer\nSticky Session"]
-  CloudWatch["CloudWatch\n모니터링"]
-  TG["Target Group"]
-  ASG["Auto Scaling Group"]
-  EC2_1["EC2-1\nBackend/Socket"]
-  EC2_2["EC2-2\nBackend/Socket"]
-  EC2_3["EC2-3\nBackend/Socket"]
-  ElastiCache["ElastiCache\nRedis\nPub/Sub, Queue, Cache"]
-  Lambda["Lambda\nQueue Monitor"]
-  RDS["RDS Aurora\nPostgreSQL\nMulti-AZ"]
-  S3Bucket["S3 Bucket\n이미지/로그"]
+    %% 사용자
+    Browser[("🌐 Browser")]
+    
+    %% Docker Compose 환경
+    subgraph "Docker Compose"
+        subgraph "Frontend"
+            React["React<br/>Port 3000<br/>좌석선택 UI<br/>WebSocket 클라이언트"]
+        end
+        
+        subgraph "Backend"  
+            NodeJS["Node.js Express<br/>Port 3001<br/>REST API + WebSocket<br/>비즈니스로직 + 분산락"]
+        end
+        
+        subgraph "Database"
+            PostgreSQL["PostgreSQL<br/>Port 5432<br/>티켓데이터<br/>예약정보<br/>사용자정보"]
+            
+            Dragonfly["Dragonfly Redis<br/>Port 6379<br/>캐싱<br/>분산락<br/>세션관리"]
+        end
+        
+        subgraph "Volume"
+            PostgresVol["postgres-data<br/>영속적 데이터"]
+            DragonflyVol["dragonfly-data<br/>캐시 데이터"]
+        end
+    end
+    
+    %% 연결
+    Browser -->|"HTTP/WebSocket"| React
+    React -->|"API 요청"| NodeJS
+    
+    NodeJS -->|"데이터 저장/조회"| PostgreSQL
+    NodeJS -->|"캐시/락/세션"| Dragonfly
+    
+    PostgreSQL -.->|"데이터 영속화"| PostgresVol
+    Dragonfly -.->|"캐시 영속화"| DragonflyVol
+    
+    React -.->|"실시간 업데이트"| Browser
+    
+    %% 스타일링
+    classDef frontend fill:#61DAFB,stroke:#fff,stroke-width:2px,color:#000
+    classDef backend fill:#68A063,stroke:#fff,stroke-width:2px,color:#fff
+    classDef database fill:#336791,stroke:#fff,stroke-width:2px,color:#fff
+    classDef cache fill:#DC382D,stroke:#fff,stroke-width:2px,color:#fff
+    classDef volume fill:#FFA500,stroke:#fff,stroke-width:1px,color:#000
+    
+    class React frontend
+    class NodeJS backend
+    class PostgreSQL database
+    class Dragonfly cache
+    class PostgresVol,DragonflyVol volume
+```
 
-  Users --> Route53 --> CloudFront
-  CloudFront -->|정적 파일| S3React
-  Route53 --> ALB
-  ALB --> TG
-  TG --> EC2_1
-  TG --> EC2_2
-  TG --> EC2_3
-  ASG --> TG
-  Lambda -->|QueueSize 메트릭| CloudWatch
-  CloudWatch --> ASG
-  EC2_1 -->|세션/대기열/캐시| ElastiCache
-  EC2_2 -->|세션/대기열/캐시| ElastiCache
-  EC2_3 -->|세션/대기열/캐시| ElastiCache
-  EC2_1 -->|DB 연결| RDS
-  EC2_2 -->|DB 연결| RDS
-  EC2_3 -->|DB 연결| RDS
-  EC2_1 -->|이미지/로그| S3Bucket
+### AWS 아키텍처 (큐 기반 Auto Scaling)
+
+
+```mermaid
+graph TB
+    %% 외부 영역
+    Users[("🌐 Browser")]
+    
+    %% AWS 클라우드 영역
+    Route53["Route 53<br/>tiketi.store"]
+    
+    %% 프론트엔드
+    CloudFront["CloudFront<br/>CDN"]
+    S3["S3<br/>정적 파일"]
+    
+    %% 백엔드
+    ALB["ALB<br/>로드밸런서"]
+    TG_Back["백엔드 타겟그룹<br/>Port 3001"]
+    
+    %% EC2 인스턴스
+    subgraph "EC2 - 🐳 Docker Compose"
+        NodeJS["Node.js API<br/>Port: 3001"]
+        PostgreSQL["PostgreSQL<br/>Port: 5432"]
+        Redis["Redis<br/>Port: 7379"]
+        Loki["Loki<br/>로그수집"]
+        Grafana["Grafana<br/>모니터링"]
+        Runner["GitHub Actions Runner<br/>자동배포"]
+    end
+    
+    GitHub["GitHub<br/>저장소"]
+    
+    %% 연결
+    Users -->|"HTTPS 요청"| Route53
+    Route53 -->|"정적파일 요청"| CloudFront
+    Route53 -->|"API 요청"| ALB
+    
+    CloudFront -->|"파일 조회"| S3
+    ALB -->|"트래픽 분산"| TG_Back
+    TG_Back -->|"헬스체크 후 전달"| NodeJS
+    
+    NodeJS -.->|"DB 쿼리"| PostgreSQL
+    NodeJS -.->|"캐시/세션"| Redis
+    NodeJS -.->|"로그 전송"| Loki
+    Grafana -.->|"로그 수집"| Loki
+    
+    GitHub -->|"웹훅 트리거"| Runner
+    Runner -.->|"프론트엔드 배포"| S3
+    Runner -.->|"서비스 배포"| NodeJS
+    
+    S3 -.->|"React 앱 제공"| Users
+    NodeJS -.->|"API 응답"| Users
+    
+    %% 스타일링
+    classDef aws fill:#FF9900,stroke:#232F3E,stroke-width:2px,color:#fff
+    classDef docker fill:#2496ED,stroke:#fff,stroke-width:2px,color:#fff
+    classDef database fill:#336791,stroke:#fff,stroke-width:2px,color:#fff
+    classDef monitoring fill:#F46800,stroke:#fff,stroke-width:2px,color:#fff
+    classDef frontend fill:#61DAFB,stroke:#fff,stroke-width:2px,color:#000
+    
+    class Route53,ALB,TG_Back aws
+    class CloudFront,S3 frontend
+    class NodeJS,Runner docker
+    class PostgreSQL,Redis database
+    class Loki,Grafana monitoring
 ```
 
 **핵심 포인트**:
