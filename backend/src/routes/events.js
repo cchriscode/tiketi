@@ -12,7 +12,51 @@ const { eventViews, conversionFunnel } = require('../metrics');
 
 const router = express.Router();
 
-// 이벤트 목록 조회 (캐싱 적용)
+/**
+ * @swagger
+ * /api/events:
+ *   get:
+ *     summary: 이벤트 목록 조회
+ *     tags: [Events]
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [upcoming, on_sale, sold_out, ended, cancelled]
+ *         description: 이벤트 상태 필터
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *         description: 검색어
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: 페이지 번호
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: 페이지당 항목 수
+ *     responses:
+ *       200:
+ *         description: 이벤트 목록
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 events:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Event'
+ *                 pagination:
+ *                   $ref: '#/components/schemas/Pagination'
+ */
 router.get('/', async (req, res, next) => {
   try {
     const {
@@ -164,7 +208,40 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// 이벤트 상세 조회 (티켓 타입 포함)
+/**
+ * @swagger
+ * /api/events/{id}:
+ *   get:
+ *     summary: 이벤트 상세 조회
+ *     tags: [Events]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 이벤트 ID
+ *     responses:
+ *       200:
+ *         description: 이벤트 상세 정보
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 event:
+ *                   $ref: '#/components/schemas/Event'
+ *                 ticketTypes:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/TicketType'
+ *       404:
+ *         description: 이벤트를 찾을 수 없음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.get('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
