@@ -258,8 +258,32 @@ router.post('/reserve', authenticateToken, async (req, res, next) => {
 });
 
 /**
- * GET /api/seats/reservation/:reservationId
- * Get reservation details with seats
+ * @swagger
+ * /api/seats/reservation/{reservationId}:
+ *   get:
+ *     summary: 좌석 예약 상세 조회
+ *     tags: [Seats]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: reservationId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 예약 ID
+ *     responses:
+ *       200:
+ *         description: 예약 상세 정보
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 reservation:
+ *                   $ref: '#/components/schemas/Reservation'
+ *       404:
+ *         description: 예약을 찾을 수 없음
  */
 router.get('/reservation/:reservationId', authenticateToken, async (req, res, next) => {
   try {

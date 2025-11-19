@@ -275,7 +275,55 @@ router.post('/events', async (req, res, next) => {
   }
 });
 
-// 이벤트 수정
+/**
+ * @swagger
+ * /api/admin/events/{id}:
+ *   put:
+ *     summary: 이벤트 수정 (관리자)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 이벤트 ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               venue:
+ *                 type: string
+ *               address:
+ *                 type: string
+ *               eventDate:
+ *                 type: string
+ *                 format: date-time
+ *               saleStartDate:
+ *                 type: string
+ *                 format: date-time
+ *               saleEndDate:
+ *                 type: string
+ *                 format: date-time
+ *               posterImageUrl:
+ *                 type: string
+ *               artistName:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: 이벤트 수정 성공
+ *       404:
+ *         description: 이벤트를 찾을 수 없음
+ */
 router.put('/events/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -378,7 +426,27 @@ router.put('/events/:id', async (req, res, next) => {
   }
 });
 
-// 이벤트 취소
+/**
+ * @swagger
+ * /api/admin/events/{id}/cancel:
+ *   post:
+ *     summary: 이벤트 취소 (관리자)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 이벤트 ID
+ *     responses:
+ *       200:
+ *         description: 이벤트 취소 성공
+ *       404:
+ *         description: 이벤트를 찾을 수 없음
+ */
 router.post('/events/:id/cancel', async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -467,7 +535,27 @@ router.post('/events/:id/cancel', async (req, res, next) => {
   }
 });
 
-// 이벤트 삭제
+/**
+ * @swagger
+ * /api/admin/events/{id}:
+ *   delete:
+ *     summary: 이벤트 삭제 (관리자)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 이벤트 ID
+ *     responses:
+ *       200:
+ *         description: 이벤트 삭제 성공
+ *       400:
+ *         description: 예매가 존재하는 이벤트는 삭제 불가
+ */
 router.delete('/events/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -496,7 +584,29 @@ router.delete('/events/:id', async (req, res, next) => {
   }
 });
 
-// 이벤트 좌석 생성
+/**
+ * @swagger
+ * /api/admin/events/{id}/generate-seats:
+ *   post:
+ *     summary: 이벤트 좌석 생성 (관리자)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 이벤트 ID
+ *     responses:
+ *       200:
+ *         description: 좌석 생성 성공
+ *       400:
+ *         description: 이미 좌석이 존재하거나 레이아웃 미설정
+ *       404:
+ *         description: 이벤트를 찾을 수 없음
+ */
 router.post('/events/:id/generate-seats', async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -546,7 +656,27 @@ router.post('/events/:id/generate-seats', async (req, res, next) => {
   }
 });
 
-// 이벤트 좌석 삭제 (재생성을 위해)
+/**
+ * @swagger
+ * /api/admin/events/{id}/seats:
+ *   delete:
+ *     summary: 이벤트 좌석 삭제 (관리자)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 이벤트 ID
+ *     responses:
+ *       200:
+ *         description: 좌석 삭제 성공
+ *       400:
+ *         description: 예약된 좌석이 있어 삭제 불가
+ */
 router.delete('/events/:id/seats', async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -580,7 +710,44 @@ router.delete('/events/:id/seats', async (req, res, next) => {
   }
 });
 
-// 티켓 타입 생성
+/**
+ * @swagger
+ * /api/admin/events/{eventId}/tickets:
+ *   post:
+ *     summary: 티켓 타입 생성 (관리자)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 이벤트 ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - price
+ *               - totalQuantity
+ *             properties:
+ *               name:
+ *                 type: string
+ *               price:
+ *                 type: integer
+ *               totalQuantity:
+ *                 type: integer
+ *               description:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: 티켓 타입 생성 성공
+ */
 router.post('/events/:eventId/tickets', async (req, res, next) => {
   try {
     const { eventId } = req.params;
@@ -606,7 +773,44 @@ router.post('/events/:eventId/tickets', async (req, res, next) => {
   }
 });
 
-// 티켓 타입 수정
+/**
+ * @swagger
+ * /api/admin/tickets/{id}:
+ *   put:
+ *     summary: 티켓 타입 수정 (관리자)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 티켓 타입 ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               price:
+ *                 type: integer
+ *               totalQuantity:
+ *                 type: integer
+ *               description:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: 티켓 타입 수정 성공
+ *       400:
+ *         description: 판매된 티켓보다 적은 수량으로 변경 불가
+ *       404:
+ *         description: 티켓을 찾을 수 없음
+ */
 router.put('/tickets/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -650,7 +854,34 @@ router.put('/tickets/:id', async (req, res, next) => {
   }
 });
 
-// 모든 예매 내역 조회 (관리자)
+/**
+ * @swagger
+ * /api/admin/reservations:
+ *   get:
+ *     summary: 모든 예매 내역 조회 (관리자)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, confirmed, cancelled]
+ *     responses:
+ *       200:
+ *         description: 예매 내역 목록
+ */
 router.get('/reservations', async (req, res, next) => {
   try {
     const {
@@ -706,7 +937,42 @@ router.get('/reservations', async (req, res, next) => {
   }
 });
 
-// 예매 상태 변경 (관리자)
+/**
+ * @swagger
+ * /api/admin/reservations/{id}/status:
+ *   patch:
+ *     summary: 예매 상태 변경 (관리자)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 예매 ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [pending, confirmed, cancelled]
+ *               paymentStatus:
+ *                 type: string
+ *                 enum: [pending, completed, failed, refunded]
+ *     responses:
+ *       200:
+ *         description: 예매 상태 변경 성공
+ *       400:
+ *         description: 변경할 상태 미지정
+ *       404:
+ *         description: 예매를 찾을 수 없음
+ */
 router.patch('/reservations/:id/status', async (req, res, next) => {
   try {
     const { id } = req.params;
