@@ -1,150 +1,127 @@
-TIKETI 플랫폼 종합 분석 보고서
-<div align="center">
+# 🎟️ TIKETI Ticketing Platform – Production Readiness Review
 
-🎟️ TIKETI Ticketing Platform – Production Readiness Review
+> **프로덕션 직전 단계에서 점검해야 할 아키텍처 · 보안 · 성능 · DevOps 종합 리포트**
 
-“프로덕션 직전 단계에서 점검해야 할 아키텍처 · 보안 · 성능 · DevOps 종합 리포트”
+**전체 점수: ⭐ 4.2 / 5.0 · 프로덕션 준비도: 85%**
 
-전체 점수: ⭐ 4.2 / 5.0 · 프로덕션 준비도: 85%
+---
 
-</div>
-📊 Executive Summary
-<div align="center">
-항목	평가
-전체 평가	⭐⭐⭐⭐☆ (4.2 / 5.0)
-프로덕션 준비도	85%
-보안 수준	강함 (소규모 하드닝 필요)
-아키텍처 성숙도	Advanced (고급)
-</div>
+## 📊 Executive Summary
 
-핵심 메시지:
-현재 아키텍처, 성능, DevOps 파이프라인은 프로덕션 기준에 매우 근접해 있으며, 남은 과제는 보안 하드닝과 테스트/검증 체계 보강입니다.
+| 항목 | 평가 |
+|------|------|
+| **전체 평가** | ⭐⭐⭐⭐☆ (4.2 / 5.0) |
+| **프로덕션 준비도** | 85% |
+| **보안 수준** | 강함 (소규모 하드닝 필요) |
+| **아키텍처 성숙도** | Advanced (고급) |
 
-🏗️ Architecture Analysis (아키텍처 분석)
-<div align="center">
+### 🎯 핵심 메시지
+현재 아키텍처, 성능, DevOps 파이프라인은 **프로덕션 기준에 매우 근접**해 있으며, 남은 과제는 **보안 하드닝**과 **테스트/검증 체계 보강**입니다.
 
-“AWS 상에서 잘 구조화된 멀티 티어 · 멀티 AZ 기반의 현대적인 티켓팅 플랫폼”
+---
 
-</div>
-✅ 강점 요약
+## 🏗️ Architecture Analysis (아키텍처 분석)
 
-Multi-AZ VPC 아키텍처
+> **AWS 상에서 잘 구조화된 멀티 티어 · 멀티 AZ 기반의 현대적인 티켓팅 플랫폼**
 
-리전: ap-northeast-2 (서울)
+### ✅ 강점 요약
 
-AZ: ap-northeast-2a, ap-northeast-2b
+- ✨ **Multi-AZ VPC 아키텍처**
+  - 리전: `ap-northeast-2` (서울)
+  - AZ: `ap-northeast-2a`, `ap-northeast-2b`
+  - 3계층 서브넷 구조: Public → Private → DB
 
-3계층 서브넷 구조
+- 🚀 **CloudFront + S3** 기반 정적 콘텐츠 전송
 
-Public → Private → DB
+- 🔄 **ALB + Sticky Session** 기반 WebSocket 세션 유지
 
-CloudFront + S3 기반 정적 콘텐츠 전송
+- 📊 **관측성(Observability)** 을 고려한 설계 (Prometheus, Loki, Grafana 등)
 
-ALB + Sticky Session 기반 WebSocket 세션 유지
+---
 
-관측성(Observability)을 고려한 설계 (Prometheus, Loki, Grafana 등)
+### 1️⃣ AWS 멀티 티어 아키텍처
 
-1️⃣ AWS 멀티 티어 아키텍처
+- VPC 내부에 **Public / Private / DB 서브넷**이 명확히 분리
+- Security Group 레벨에서 **레이어드 보안** 적용
+- CloudFront + S3로 글로벌 정적 콘텐츠 캐싱 및 전송
+- ALB에서 WebSocket 트래픽을 처리하며 **Sticky Session**으로 세션 유지
 
-VPC 내부에 Public / Private / DB 서브넷이 명확히 분리
+---
 
-Security Group 레벨에서 레이어드 보안 적용
+### 2️⃣ 프로덕션용 Docker 구성 (`docker-compose.prod.yml`)
 
-CloudFront + S3로 글로벌 정적 콘텐츠 캐싱 및 전송
+- 멀티 스테이지 빌드를 통한 **경량 이미지** (베이스: `node:18-alpine`)
+- 컨테이너 **비 root 유저** 실행 (예: `nodejs:1001`)
+- 30초 간격 **헬스 체크** 설정
+- **Loki + Promtail + Grafana** 로깅 스택 구축
+- PostgreSQL / Dragonfly / Node Exporter 기반 **메트릭 수집**
 
-ALB에서 WebSocket 트래픽을 처리하며 Sticky Session으로 세션 유지
+---
 
-2️⃣ 프로덕션용 Docker 구성 (docker-compose.prod.yml)
+### 3️⃣ 실시간 인프라 (Real-Time Infra)
 
-멀티 스테이지 빌드를 통한 경량 이미지 (베이스: node:18-alpine)
+- **Socket.IO + Redis Adapter** → 멀티 인스턴스 간 실시간 이벤트 동기화
+- **JWT 기반 WebSocket 인증**
+- Redis를 이용한 **세션 복구** 메커니즘
+- 클라이언트 **Auto-reconnect** 처리
 
-컨테이너 비 root 유저 실행 (예: nodejs:1001)
+---
 
-30초 간격 헬스 체크 설정
+### 4️⃣ Observability 스택
 
-Loki + Promtail + Grafana 로깅 스택 구축
+- **Prometheus**: 5초 스크랩 주기로 메트릭 수집
+- **Loki**: 중앙 집중 로그 수집
+- **Grafana**: 대시보드 시각화
+- `/metrics` 커스텀 엔드포인트
+- Node / DB / Cache 전 구간 Exporter 구성
 
-PostgreSQL / Dragonfly / Node Exporter 기반 메트릭 수집
+---
 
-3️⃣ 실시간 인프라 (Real-Time Infra)
+## 🔒 Security Assessment (보안 평가)
 
-Socket.IO + Redis Adapter → 멀티 인스턴스 간 실시간 이벤트 동기화
+> **기본 기반은 탄탄하지만, 프로덕션 보안 하드닝을 위한 마지막 단계 필요**
 
-JWT 기반 WebSocket 인증
+### ✅ 현재 보안 강점
 
-Redis를 이용한 세션 복구 메커니즘
+#### 1. Authentication & Authorization
+- ✅ **JWT 기반 인증** + 토큰 검증
+- ✅ 모든 요청 시 DB에서 사용자 검증
+- ✅ **Role-Based Access Control**: `admin`, `user`
+- ✅ WebSocket 연결 시 인증 절차 수행
+- ✅ **bcrypt** 기반 비밀번호 해시 처리
 
-클라이언트 Auto-reconnect 처리
+#### 2. Input Validation
+- ✅ `express-validator` 기반 요청 검증
+- ✅ 이메일 Normalization
+- ✅ **SQL 파라미터 바인딩** 쿼리 사용
+  - 122개 쿼리에서 문자열 결합 방식 미사용 → **SQL 인젝션 리스크 없음**
 
-4️⃣ Observability 스택
+#### 3. Dependency Security
+- ✅ `npm audit` 결과, **취약점 0건**
+- ✅ 운영 환경 의존성 359개 → 최신 상태 유지
 
-Prometheus: 5초 스크랩 주기로 메트릭 수집
+#### 4. Infrastructure Security
+- ✅ Docker 컨테이너 **비 root 계정**으로 실행
+- ✅ **Multi-AZ** 기반 고가용성
+- ✅ Security Group 레이어드 설계
+- ✅ Credentials 포함 CORS 설정 (`withCredentials`)
 
-Loki: 중앙 집중 로그 수집
+---
 
-Grafana: 대시보드 시각화
+### ⚠️ 보안 갭 & 권장 사항
 
-/metrics 커스텀 엔드포인트
+#### 🔴 CRITICAL – 보안 미들웨어 미적용
 
-Node / DB / Cache 전 구간 Exporter 구성
+**현재**: 기본 CORS 외 별도의 보안 하드닝 미적용  
+**위험**: XSS, Clickjacking, 브루트 포스 등 일반적인 웹 공격에 노출 가능
 
-🔒 Security Assessment (보안 평가)
-<div align="center">
-
-“기본 기반은 탄탄하지만, 프로덕션 보안 하드닝을 위한 마지막 단계 필요”
-
-</div>
-✅ 현재 보안 강점
-1. Authentication & Authorization
-
-JWT 기반 인증 + 토큰 검증
-
-모든 요청 시 DB에서 사용자 검증
-
-Role-Based Access Control: admin, user
-
-WebSocket 연결 시 인증 절차 수행
-
-bcrypt 기반 비밀번호 해시 처리
-
-2. Input Validation
-
-express-validator 기반 요청 검증
-
-이메일 Normalization
-
-SQL 파라미터 바인딩 쿼리 사용 →
-122개 쿼리에서 문자열 결합 방식 미사용 → SQL 인젝션 리스크 없음
-
-3. Dependency Security
-
-npm audit 결과, 취약점 0건
-
-운영 환경 의존성 359개 → 최신 상태 유지
-
-4. Infrastructure Security
-
-Docker 컨테이너 비 root 계정으로 실행
-
-Multi-AZ 기반 고가용성
-
-Security Group 레이어드 설계
-
-Credentials 포함 CORS 설정 (withCredentials)
-
-⚠️ 보안 갭 & 권장 사항
-🔴 CRITICAL – 보안 미들웨어 미적용
-
-현재: 기본 CORS 외 별도의 보안 하드닝 미적용
-위험: XSS, Clickjacking, 브루트 포스 등 일반적인 웹 공격에 노출 가능
-
-즉시 실행 명령:
-
+**즉시 실행 명령:**
+```bash
 npm install helmet express-rate-limit hpp xss-clean express-mongo-sanitize
+```
 
-
-backend/src/server.js 적용 예시:
-
+**`backend/src/server.js` 적용 예시:**
+```javascript
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const hpp = require('hpp');
@@ -187,20 +164,25 @@ app.use('/api/auth/login', authLimiter);
 
 // Parameter pollution 방지
 app.use(hpp());
+```
 
-🟠 HIGH – 환경 변수 보안 (.env / Secrets)
+---
 
-.env에 플레이스홀더 시크릿이 그대로 존재
+#### 🟠 HIGH – 환경 변수 보안 (`.env` / Secrets)
+
+**문제**: `.env`에 플레이스홀더 시크릿이 그대로 존재  
 프로덕션에 잘못 반영될 경우, 치명적인 보안 이슈로 이어질 수 있음
 
-문제 예시:
-
+**문제 예시:**
+```bash
 # ❌ CRITICAL: Change these in production!
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 ADMIN_PASSWORD=admin123
 AWS_ACCESS_KEY_ID=dummy
+```
 
-✅ 권장 1 – AWS Secrets Manager 사용
+**✅ 권장 1 – AWS Secrets Manager 사용**
+```javascript
 // backend/src/config/secrets.js
 const { SecretsManagerClient, GetSecretValueCommand } = require("@aws-sdk/client-secrets-manager");
 
@@ -219,8 +201,10 @@ async function getSecret(secretName) {
 }
 
 module.exports = { getSecret };
+```
 
-✅ 권장 2 – 강력한 시크릿 생성 & 저장
+**✅ 권장 2 – 강력한 시크릿 생성 & 저장**
+```bash
 # 강력한 JWT 시크릿 생성 (64바이트 랜덤, hex 인코딩)
 node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 
@@ -228,11 +212,14 @@ node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 aws secretsmanager create-secret \
   --name tiketi/production/jwt-secret \
   --secret-string "$(openssl rand -hex 64)"
+```
 
-🟡 MEDIUM – 분산 락 구현 개선 (Redis Lock)
+---
 
-현재 코드 (backend/src/config/redis.js:29-43):
+#### 🟡 MEDIUM – 분산 락 구현 개선 (Redis Lock)
 
+**현재 코드** (`backend/src/config/redis.js:29-43`):
+```javascript
 const acquireLock = async (key, ttl = 5000) => {
   const lockKey = `lock:${key}`;
   const lockValue = Date.now() + ttl;  // ❌ 값이 예측 가능
@@ -244,16 +231,14 @@ const acquireLock = async (key, ttl = 5000) => {
 
   return result === 'OK';
 };
+```
 
+**문제:**
+- `lockValue`가 예측 가능
+- 락 소유권 검증 로직 없음
 
-문제:
-
-lockValue가 예측 가능
-
-락 소유권 검증 로직 없음
-
-개선안 – UUID + Lua 스크립트로 소유권 검증:
-
+**개선안 – UUID + Lua 스크립트로 소유권 검증:**
+```javascript
 const { v4: uuidv4 } = require('uuid');
 
 const acquireLock = async (key, ttl = 5000) => {
@@ -288,67 +273,61 @@ const releaseLock = async (key, lockValue) => {
     arguments: [lockValue],
   });
 };
+```
 
-🟢 LOW – HTTPS 강제 (HTTPS Enforcement)
+---
+
+#### 🟢 LOW – HTTPS 강제 (HTTPS Enforcement)
 
 프로덕션에서 HTTP 접근 시 HTTPS로 강제 리다이렉트 권장:
 
+```javascript
 app.use((req, res, next) => {
   if (process.env.NODE_ENV === 'production' && req.headers['x-forwarded-proto'] !== 'https') {
     return res.redirect(301, `https://${req.headers.host}${req.url}`);
   }
   next();
 });
+```
 
-⚡ Performance & Scalability (성능 & 확장성)
-<div align="center">
+---
 
-“큐 기반 예측 스케일링으로 티켓팅 트래픽 폭주에 대응하는 구조”
+## ⚡ Performance & Scalability (성능 & 확장성)
 
-</div>
-✅ 주요 강점
-1. 큐 기반 Auto-Scaling 아키텍처
+> **큐 기반 예측 스케일링으로 티켓팅 트래픽 폭주에 대응하는 구조**
 
-Lambda 함수가 1분마다 큐 길이 모니터링
+### ✅ 주요 강점
 
-CloudWatch 알람 → EC2 스케일링 트리거
+#### 1. 큐 기반 Auto-Scaling 아키텍처
+- Lambda 함수가 **1분마다 큐 길이 모니터링**
+- CloudWatch 알람 → EC2 스케일링 트리거
+  - `Queue > 5,000` → 인스턴스 +2
+  - `Queue > 20,000` → 인스턴스 +5 (공격적 스케일 아웃)
+  - `Queue < 1,000` → 인스턴스 -1 (보수적 스케일 인)
+- 상시 24/7 운영 대비 약 **62% 비용 절감**
+  - 기존 가정: 약 ₩660,000 / 월
+  - 현 구조: 약 ₩250,000 / 월
 
-Queue > 5,000 → 인스턴스 +2
+#### 2. Connection Draining
+- WebSocket 연결에 대해 **300초 그레이스 기간**
+- 스케일 인 시 갑작스러운 연결 끊김 방지
 
-Queue > 20,000 → 인스턴스 +5 (공격적 스케일 아웃)
+#### 3. Database 최적화
+- PostgreSQL **커넥션 풀** 활용
+- 모든 쿼리를 **파라미터 바인딩** 방식으로 구현
+- RDS Aurora Multi-AZ → 약 **30초 이내 Failover**
 
-Queue < 1,000 → 인스턴스 -1 (보수적 스케일 인)
+#### 4. Caching 전략
+- Redis 기반 **세션 관리** (TTL: 30분)
+- Queue의 **FIFO 보장**
+- 분산 락을 통한 **동시성 제어**
 
-상시 24/7 운영 대비 약 62% 비용 절감
+---
 
-기존 가정: 약 ₩660,000 / 월
+### 🎯 성능 개선 제안
 
-현 구조: 약 ₩250,000 / 월
-
-2. Connection Draining
-
-WebSocket 연결에 대해 300초 그레이스 기간
-
-스케일 인 시 갑작스러운 연결 끊김 방지
-
-3. Database 최적화
-
-PostgreSQL 커넥션 풀 활용
-
-모든 쿼리를 파라미터 바인딩 방식으로 구현
-
-RDS Aurora Multi-AZ → 약 30초 이내 Failover
-
-4. Caching 전략
-
-Redis 기반 세션 관리 (TTL: 30분)
-
-Queue의 FIFO 보장
-
-분산 락을 통한 동시성 제어
-
-🎯 성능 개선 제안
-1. DB 인덱스 추가 (Hot Path 중심)
+#### 1. DB 인덱스 추가 (Hot Path 중심)
+```sql
 -- 예약 쿼리 (backend/src/routes/reservations.js)
 CREATE INDEX CONCURRENTLY idx_reservations_user_id_created
   ON reservations (user_id, created_at DESC);
@@ -366,8 +345,10 @@ CREATE INDEX CONCURRENTLY idx_events_status_start_date
 CREATE INDEX CONCURRENTLY idx_seats_event_status
   ON seats (event_id, status)
   WHERE status IN ('available', 'temp_reserved');
+```
 
-2. PostgreSQL 커넥션 풀 튜닝
+#### 2. PostgreSQL 커넥션 풀 튜닝
+```javascript
 // backend/src/config/database.js
 const pool = new Pool({
   max: 20,
@@ -389,60 +370,56 @@ pool.on('error', (err, client) => {
 pool.on('connect', (client) => {
   logger.debug('New DB client connected');
 });
+```
 
-3. Redis 메모리 관리 (monitoring/redis-config.yaml)
+#### 3. Redis 메모리 관리
+```yaml
+# monitoring/redis-config.yaml
 maxmemory: 1gb
 maxmemory-policy: allkeys-lru
 timeout: 300        # idle 5분
 tcp-keepalive: 60
+```
 
-4. ALB 설정 권장값
+#### 4. ALB 설정 권장값
 
-Target Group
+**Target Group**
+- Deregistration delay: `300s`
+- Stickiness: ALB cookie, `86400s` (24h)
+- Health check interval: `30s`
+- Healthy threshold: `2`
+- Unhealthy threshold: `3`
+- Timeout: `5s`
+- Success codes: `200`
 
-Deregistration delay: 300s
+**Listener**
+- Idle timeout: `65s`
+- HTTP/2: `Enabled`
+- Compression(gzip): `Enabled`
 
-Stickiness: ALB cookie, 86400s (24h)
+---
 
-Health check interval: 30s
+## 🏛️ Code Quality & Architecture (코드 품질 & 구조)
 
-Healthy threshold: 2
+### ✅ 강점
+- 📁 계층 구조: `routes` → `services` → `database`
+- 🎯 관심사 분리 명확 (백엔드 파일 33개)
+- 📋 `shared/constants.js` 에 상수 중앙 관리
+- ⚠️ 커스텀 에러 핸들링 미들웨어
+- 🔄 트랜잭션 헬퍼를 통한 DB 트랜잭션 관리
 
-Unhealthy threshold: 3
+---
 
-Timeout: 5s
+### 🎯 코드 품질 개선 – 테스트 & 에러 처리
 
-Success codes: 200
-
-Listener
-
-Idle timeout: 65s
-
-HTTP/2: Enabled
-
-Compression(gzip): Enabled
-
-🏛️ Code Quality & Architecture (코드 품질 & 구조)
-✅ 강점
-
-계층 구조: routes → services → database
-
-관심사 분리 명확 (백엔드 파일 33개)
-
-shared/constants.js 에 상수 중앙 관리
-
-커스텀 에러 핸들링 미들웨어
-
-트랜잭션 헬퍼를 통한 DB 트랜잭션 관리
-
-🎯 코드 품질 개선 – 테스트 & 에러 처리
-1. 테스트 추가 (Jest + Supertest)
+#### 1. 테스트 추가 (Jest + Supertest)
+```bash
 cd backend
 npm install --save-dev jest supertest @shelf/jest-mongodb
+```
 
-
-테스트 구조 예시:
-
+**테스트 구조 예시:**
+```
 backend/
 ├── tests/
 │   ├── unit/
@@ -456,10 +433,10 @@ backend/
 │   │   ├── events.test.js
 │   │   └── reservations.test.js
 │   └── setup.js
+```
 
-
-예시 – tests/integration/auth.test.js:
-
+**예시 – `tests/integration/auth.test.js`:**
+```javascript
 const request = require('supertest');
 const app = require('../src/server');
 
@@ -489,10 +466,10 @@ describe('Auth API', () => {
     expect(res.statusCode).toBe(400);
   });
 });
+```
 
-
-package.json 스크립트:
-
+**`package.json` 스크립트:**
+```json
 {
   "scripts": {
     "test": "jest --coverage",
@@ -506,14 +483,18 @@ package.json 스크립트:
     "testMatch": ["**/*.test.js"]
   }
 }
+```
 
-2. 부하 테스트 (k6)
+---
+
+#### 2. 부하 테스트 (k6)
+```bash
 cd backend
 npm install -g k6
+```
 
-
-tests/load/ticket-purchase.js:
-
+**`tests/load/ticket-purchase.js`:**
+```javascript
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 
@@ -537,10 +518,16 @@ export default function () {
   });
   sleep(1);
 }
+```
 
+```bash
 k6 run tests/load/ticket-purchase.js
+```
 
-3. 에러 코드 표준화
+---
+
+#### 3. 에러 코드 표준화
+```javascript
 // backend/src/shared/error-codes.js
 module.exports = {
   // Authentication
@@ -561,34 +548,36 @@ module.exports = {
   DB_CONNECTION_FAILED: 'DB001',
   DB_QUERY_TIMEOUT: 'DB002',
 };
+```
 
-
-응답 예시:
-
+**응답 예시:**
+```javascript
 res.status(400).json({
   error: '이미 예약된 좌석입니다',
   code: 'RES001',
   seatId: 'A-12',
   timestamp: new Date().toISOString()
 });
+```
 
-🚀 Deployment & CI/CD
-✅ 현재 워크플로 강점 (.github/workflows/deploy.yml)
+---
 
-프론트/백엔드 병렬 빌드
+## 🚀 Deployment & CI/CD
 
-OIDC 기반 인증 (Static Credentials 미사용)
+### ✅ 현재 워크플로 강점 (`.github/workflows/deploy.yml`)
+- ✅ 프론트/백엔드 병렬 빌드
+- ✅ **OIDC 기반 인증** (Static Credentials 미사용)
+- ✅ 멀티 스테이지 Docker 빌드
+- ✅ 헬스 체크 기반 배포 검증
+- ✅ 실패 시 자동 롤백
+- ✅ 상세 로깅
 
-멀티 스테이지 Docker 빌드
+---
 
-헬스 체크 기반 배포 검증
+### 🎯 개선 제안
 
-실패 시 자동 롤백
-
-상세 로깅
-
-🎯 개선 제안
-1. Pre-Deployment Checks
+#### 1. Pre-Deployment Checks
+```yaml
 pre-deploy-checks:
   name: Pre-Deployment Validation
   runs-on: ubuntu-latest
@@ -617,8 +606,12 @@ pre-deploy-checks:
           echo "❌ JWT_SECRET not set"
           exit 1
         fi
+```
 
-2. Blue-Green Deployment 전략
+---
+
+#### 2. Blue-Green Deployment 전략
+```yaml
 deploy:
   steps:
     # ... existing steps ...
@@ -647,8 +640,12 @@ deploy:
 
         # Blue 환경 종료
         docker compose -f docker-compose.prod.yml stop backend-blue
+```
 
-3. 별도 DB 마이그레이션 워크플로
+---
+
+#### 3. 별도 DB 마이그레이션 워크플로
+```yaml
 # .github/workflows/migrate.yml
 name: Database Migrations
 
@@ -671,19 +668,23 @@ jobs:
         run: |
           cd /home/ubuntu/tiketi
           docker exec tiketi-backend node src/migrations/${{ inputs.direction }}.js
+```
 
-📈 Monitoring & Observability
-✅ 현재 구성
+---
 
-Prometheus (Metrics)
+## 📈 Monitoring & Observability
 
-Loki (Logs)
+### ✅ 현재 구성
+- ✅ **Prometheus** (Metrics)
+- ✅ **Loki** (Logs)
+- ✅ **Grafana** (Dashboards)
+- ✅ Node Exporter, PostgreSQL Exporter, Dragonfly Exporter
 
-Grafana (Dashboards)
+---
 
-Node Exporter, PostgreSQL Exporter, Dragonfly Exporter
+### 🎯 비즈니스 메트릭 추가
 
-🎯 비즈니스 메트릭 추가
+```javascript
 // backend/src/metrics/business.js
 const { Counter, Histogram, Gauge } = require('prom-client');
 
@@ -720,10 +721,10 @@ module.exports = {
   websocketConnections,
   reservationDuration
 };
+```
 
-
-사용 예시 (backend/src/routes/reservations.js):
-
+**사용 예시** (`backend/src/routes/reservations.js`):
+```javascript
 const { ticketsSold, reservationDuration } = require('../metrics/business');
 
 router.post('/', async (req, res) => {
@@ -742,8 +743,13 @@ router.post('/', async (req, res) => {
     end({ status: 'failed' });
   }
 });
+```
 
-🎯 CloudWatch 대시보드 예시
+---
+
+### 🎯 CloudWatch 대시보드 예시
+
+```json
 {
   "widgets": [
     {
@@ -762,92 +768,77 @@ router.post('/', async (req, res) => {
     }
   ]
 }
+```
 
-💰 Cost Optimization (비용 최적화)
-<div align="center">
+---
 
-현재 추정 비용: 약 ₩250,000 / 월 (~$190)
+## 💰 Cost Optimization (비용 최적화)
 
-</div>
-추가 절감 포인트
+**현재 추정 비용: 약 ₩250,000 / 월 (~$190)**
 
-EC2 Reserved Instances (Baseline 2대)
+### 추가 절감 포인트
 
-약 40% 절감
+| 항목 | 예상 절감 | 설명 |
+|------|----------|------|
+| **EC2 Reserved Instances** | ₩36,000 / 월 | Baseline 2대, 약 40% 절감 |
+| **Auto Scaling Spot Instances** | ₩5,600 / 월 | 피크 시 추가 인스턴스, 약 70% 절감 |
+| **S3 Intelligent-Tiering** | ₩1,000 / 월 | 저빈도 접근 파일 자동 이동 |
+| **CloudWatch Logs 보존 기간 조정** | ₩3,000 / 월 | Debug: 7일, Application: 30일 |
 
-≒ ₩36,000 / 월 절감
+**총 잠재 절감액: ≒ ₩45,600 / 월 (약 18% 절감)**  
+**최적화 후 비용: ≒ ₩204,400 / 월 (~$155)**
 
-Auto Scaling용 Spot Instances
+---
 
-피크 시 추가 인스턴스를 Spot으로 운영
+## 🎯 Priority Action Items (우선순위 액션 아이템)
 
-약 70% 절감
+| 우선순위 | 기간 | 할 일 |
+|---------|------|------|
+| **🔴 Critical** | 이번 주 | 보안 미들웨어, 시크릿 교체, Secrets Manager, 락 수정 |
+| **🟠 High** | 2주 이내 | 테스트, 인덱스, 알람, Blue-Green 배포 |
+| **🟡 Medium** | 다음 달 | k6 부하 테스트, RDS 백업, WAF, 에러 코드 표준화 |
+| **🟢 Low** | 장기적 개선 | APM, Chaos 테스트, GraphQL, 멀티 리전 계획 |
 
-≒ ₩5,600 / 월 절감
+---
 
-S3 Intelligent-Tiering
+## 📊 Final Scorecard (최종 평가표)
 
-저빈도 접근 파일 자동 이동
+| 카테고리 | 점수 | 코멘트 |
+|---------|------|--------|
+| **Architecture** | ⭐⭐⭐⭐⭐ 5/5 | 훌륭한 멀티 티어 AWS 설계 |
+| **Security** | ⭐⭐⭐⭐☆ 4/5 | 기반은 탄탄, 미들웨어·시크릿 하드닝 필요 |
+| **Performance** | ⭐⭐⭐⭐☆ 4/5 | 큐 기반 스케일링 우수, 인덱스/튜닝 여지 있음 |
+| **Code Quality** | ⭐⭐⭐⭐☆ 4/5 | 구조는 좋으나 테스트 부족 |
+| **DevOps** | ⭐⭐⭐⭐⭐ 5/5 | 성숙한 CI/CD 및 Observability 스택 |
+| **Documentation** | ⭐⭐⭐⭐⭐ 5/5 | 아키텍처 및 구성 문서가 충실 |
 
-≒ ₩1,000 / 월 절감
+### Overall: ⭐⭐⭐⭐☆ 4.2 / 5.0
 
-CloudWatch Logs 보존 기간 조정
+> **"보안 하드닝 + 테스트 커버리지 보강 완료 시, 프로덕션 런칭 충분히 가능"**
 
-Debug: 7일, Application: 30일
+---
 
-≒ ₩3,000 / 월 절감
+## 🎉 Conclusion (결론)
 
-총 잠재 절감액: ≒ ₩45,600 / 월 (약 18% 절감)
-최적화 후 비용: ≒ ₩204,400 / 월 (~$155)
+### "현재 85% 수준의 프로덕션 준비도. 남은 15%는 보안과 품질(테스트)이라는 마지막 퍼즐 조각입니다."
 
-🎯 Priority Action Items (우선순위 액션 아이템)
-<div align="center">
-우선순위	기간	할 일
-Critical	이번 주	보안 미들웨어, 시크릿 교체, Secrets Manager, 락 수정
-High	2주 이내	테스트, 인덱스, 알람, Blue-Green 배포
-Medium	다음 달	k6 부하 테스트, RDS 백업, WAF, 에러 코드 표준화
-Low	장기적 개선	APM, Chaos 테스트, GraphQL, 멀티 리전 계획
-</div>
+#### TIKETI 플랫폼의 강점:
+- ✅ CPU 기반이 아닌 **큐 사이즈 기반 예측 스케일링**
+- ✅ Redis 기반 **WebSocket 세션 복구**
+- ✅ **Multi-AZ 고가용성** + 비용 효율적인 AWS 아키텍처
+- ✅ Prometheus / Loki / Grafana를 활용한 강력한 **Observability**
 
-(체크는 실제 진행 사항에 따라 Git에서 ✅ / ⏳ / ❌ 등으로 관리 가능)
+#### 다음 단계 요약:
 
-📊 Final Scorecard (최종 평가표)
-<div align="center">
-카테고리	점수	코멘트
-Architecture	⭐⭐⭐⭐⭐ 5/5	훌륭한 멀티 티어 AWS 설계
-Security	⭐⭐⭐⭐☆ 4/5	기반은 탄탄, 미들웨어·시크릿 하드닝 필요
-Performance	⭐⭐⭐⭐☆ 4/5	큐 기반 스케일링 우수, 인덱스/튜닝 여지 있음
-Code Quality	⭐⭐⭐⭐☆ 4/5	구조는 좋으나 테스트 부족
-DevOps	⭐⭐⭐⭐⭐ 5/5	성숙한 CI/CD 및 Observability 스택
-Documentation	⭐⭐⭐⭐⭐ 5/5	아키텍처 및 구성 문서가 충실
+**1. 보안 하드닝**
+- `helmet`, Rate Limiting, HTTPS 강제
+- 시크릿 교체, Secrets Manager 도입
 
-Overall: ⭐⭐⭐⭐☆ 4.2 / 5.0
-→ “보안 하드닝 + 테스트 커버리지 보강 완료 시, 프로덕션 런칭 충분히 가능”
+**2. 테스트 & 검증 체계**
+- Jest + Supertest 기반 통합 테스트
+- k6 부하 테스트
+- CI/CD에 Pre-Deployment Checks 추가
 
-</div>
-🎉 Conclusion (결론)
+---
 
-“현재 85% 수준의 프로덕션 준비도.
-남은 15%는 보안과 품질(테스트)이라는 마지막 퍼즐 조각입니다.”
-
-TIKETI 플랫폼의 강점:
-
-CPU 기반이 아닌 큐 사이즈 기반 예측 스케일링
-
-Redis 기반 WebSocket 세션 복구
-
-Multi-AZ 고가용성 + 비용 효율적인 AWS 아키텍처
-
-Prometheus / Loki / Grafana를 활용한 강력한 Observability
-
-다음 단계 요약:
-
-보안 하드닝
-
-helmet, Rate Limiting, HTTPS 강제, 시크릿 교체, Secrets Manager 도입
-
-테스트 & 검증 체계
-
-Jest + Supertest 기반 통합 테스트, k6 부하 테스트
-
-CI/CD에 Pre-Deployment Checks 추가
+**Made with ❤️ for Production-Ready Deployment**
