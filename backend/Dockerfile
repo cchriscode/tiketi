@@ -21,6 +21,8 @@ RUN echo '#!/bin/sh' > /start.sh && \
     echo '  sleep 2' >> /start.sh && \
     echo 'done' >> /start.sh && \
     echo 'echo "PostgreSQL is ready!"' >> /start.sh && \
+    echo 'echo "Installing/updating dependencies..."' >> /start.sh && \
+    echo 'npm install' >> /start.sh && \
     echo 'echo "Starting application..."' >> /start.sh && \
     echo 'npm run dev' >> /start.sh && \
     chmod +x /start.sh
