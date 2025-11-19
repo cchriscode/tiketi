@@ -74,9 +74,46 @@
 └──────────────┘ └────────────┘ └────────────┘
 ```
 
+```mermaid
+graph TB
+  Browser[("브라우저")]
+  Frontend["Frontend\nReact (Port 3000)\nSocket.IO Client"]
+  Backend["Backend\nNode.js + Express (Port 3001)\nREST API + Socket.IO Server"]
+  Postgres["PostgreSQL\n5432"]
+  Dragonfly["DragonflyDB\nRedis 호환 6379\n분산 락/대기열/캐시"]
+
+  Browser --> Frontend --> Backend
+  Backend --> Postgres
+  Backend --> Dragonfly
+```
+
 ---
 
-### AWS 프로덕션 아키텍처 (큐 기반 Auto Scaling)
+### AWS 프로덕션 구성 (현재: EC2 + Docker Compose)
+
+```text
+사용자 브라우저
+   │
+Route 53 (tiketi.store)
+   │
+CloudFront ── S3 (React 정적 파일)
+   │
+   ▼
+ALB (HTTPS /api)
+   │
+Target Group (Port 3001)
+   │
+   ▼
+EC2 (Docker Compose)
+  ├─ backend (Node.js API + WebSocket)
+  ├─ postgres (PostgreSQL)
+  ├─ dragonfly (Redis 기반 캐시/락/대기열)
+  ├─ loki + promtail (로그 수집)
+  ├─ prometheus + grafana (메트릭/대시보드)
+  └─ github actions runner (자동 배포)
+```
+
+### AWS 목표 아키텍처 (큐 기반 Auto Scaling)
 
 ```
                        ┌───────────────┐
@@ -128,6 +165,43 @@
     │  PostgreSQL   │                │ (이미지)  │
     │   Multi-AZ    │                │ (로그)    │
     └───────────────┘                └───────────┘
+```
+
+```mermaid
+graph TB
+  Users[("브라우저")]
+  Route53["Route 53\n(tiketi.gg)"]
+  CloudFront["CloudFront\nCDN (정적 파일)"]
+  S3React["S3\nReact 빌드"]
+  ALB["ALB\nLoad Balancer\nSticky Session"]
+  CloudWatch["CloudWatch\n모니터링"]
+  TG["Target Group"]
+  ASG["Auto Scaling Group"]
+  EC2_1["EC2-1\nBackend/Socket"]
+  EC2_2["EC2-2\nBackend/Socket"]
+  EC2_3["EC2-3\nBackend/Socket"]
+  ElastiCache["ElastiCache\nRedis\nPub/Sub, Queue, Cache"]
+  Lambda["Lambda\nQueue Monitor"]
+  RDS["RDS Aurora\nPostgreSQL\nMulti-AZ"]
+  S3Bucket["S3 Bucket\n이미지/로그"]
+
+  Users --> Route53 --> CloudFront
+  CloudFront -->|정적 파일| S3React
+  Route53 --> ALB
+  ALB --> TG
+  TG --> EC2_1
+  TG --> EC2_2
+  TG --> EC2_3
+  ASG --> TG
+  Lambda -->|QueueSize 메트릭| CloudWatch
+  CloudWatch --> ASG
+  EC2_1 -->|세션/대기열/캐시| ElastiCache
+  EC2_2 -->|세션/대기열/캐시| ElastiCache
+  EC2_3 -->|세션/대기열/캐시| ElastiCache
+  EC2_1 -->|DB 연결| RDS
+  EC2_2 -->|DB 연결| RDS
+  EC2_3 -->|DB 연결| RDS
+  EC2_1 -->|이미지/로그| S3Bucket
 ```
 
 **핵심 포인트**:
@@ -401,6 +475,9 @@ socket.emit('session-restored', previousSession);
 
 ## ☁️ AWS 배포 준비 (큐 기반 Auto Scaling)
 
+> 이 섹션은 **선택적인 심화 구성**인 “큐 기반 Auto Scaling” 설계를 정리한 것입니다.  
+> 현재 저장소에는 Lambda 함수 소스가 포함되어 있지 않고, 아래 코드는 `docs/deployment/AWS_DEPLOYMENT_STEP_BY_STEP.md` 를 따라 AWS 콘솔/Lambda에 직접 적용하는 **예시 코드**입니다.
+
 ### Lambda Queue Monitor 구현
 
 **목적**: Redis 대기열 크기를 CloudWatch Metrics로 전송
@@ -554,7 +631,8 @@ aws autoscaling put-scaling-policy \
 
 ### 인프라
 - **Docker** & **Docker Compose**
-- **AWS**: VPC, EC2, ALB (Sticky Session), RDS, ElastiCache, S3, CloudFront
+- **모니터링/로그**: Prometheus, Grafana, Loki, Promtail
+- **AWS**: VPC, EC2, ALB (Sticky Session), S3, CloudFront (현재는 EC2 내부 PostgreSQL/Dragonfly 컨테이너 사용, 필요 시 RDS/ElastiCache로 확장 가능)
 - **Auto Scaling**: 큐 기반 Target Tracking
 - **Lambda**: Queue Monitor (CloudWatch Metrics 전송)
 - **CloudWatch**: Alarms, Logs, Custom Metrics
