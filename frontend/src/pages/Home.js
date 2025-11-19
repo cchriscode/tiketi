@@ -18,11 +18,14 @@ function Home() {
   const [filter, setFilter] = useState('on_sale');
   const [current, setCurrent] = useState(0);
 
-  const fetchEvents = useCallback(async () => {
-    const params = filter ? { status: filter } : {};
-    const response = await eventsAPI.getAll(params);
-    setEvents(response.data.events);
-  }, [filter]);
+  // 중복 호출 방지를 위해 debounce 처리
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const fetchEvents = useCallback(debounce(async () => {
+      console.log('fetch Event!');
+      const params = filter ? { status: filter } : {};
+      const response = await eventsAPI.getAll(params);
+      setEvents(response.data.events);
+  }, 500), [filter]);
 
   const fetchEventsWithSpinner = useCallback(async () => {
     try {
@@ -38,8 +41,7 @@ function Home() {
   }, [fetchEvents])
 
   // 자동 새로고침용 (로딩 스피너 없이 조용히 업데이트)
-  // 여러 EventCard에서 호출하는 경우가 있어 debounce 처리
-  const fetchEventsQuietly = useCallback(debounce(async () => {
+  const fetchEventsQuietly = useCallback(async () => {
     
     // 종료된 이벤트만 호출하는 경우 onCountdownExpired를 통해 재요청할 필요 없으므로 무시
     if(filter === 'ended') return;
@@ -50,7 +52,7 @@ function Home() {
     } catch (err) {
       console.error('자동 새로고침 실패:', err);
     }
-  }, 500), [fetchEvents]);
+  }, [fetchEvents, filter]);
 
   const go = (dir) => {
     setCurrent((c) => (c + dir + slides.length) % slides.length);
@@ -61,7 +63,7 @@ function Home() {
       setCurrent((c) => (c + 1) % slides.length);
     }, 4000);
     return () => clearInterval(timer);
-  }, [slides.length]);
+  }, []);
 
 
   useEffect(() => {
