@@ -7,6 +7,11 @@
 const db = require('../config/database');
 const { logger } = require('../utils/logger');
 const { RESERVATION_STATUS, SEAT_STATUS, PAYMENT_STATUS, RESERVATION_SETTINGS } = require('../shared/constants');
+const { 
+  reservationsExpired,
+  seatsReserved,
+  seatsAvailable
+} = require('../metrics');
 
 class ReservationCleaner {
   constructor() {
@@ -104,6 +109,9 @@ class ReservationCleaner {
             [SEAT_STATUS.AVAILABLE, seatIds, SEAT_STATUS.LOCKED]
           );
 
+          // 메트릭 추가: 좌석 해제
+          seatsReserved.labels(reservation.event_id).dec(seatIds.length);
+          seatsAvailable.labels(reservation.event_id).inc(seatIds.length);
           // 실시간 좌석 해제 알림 (WebSocket)
           if (this.io) {
             try {
@@ -128,6 +136,8 @@ class ReservationCleaner {
            WHERE id = $2`,
           [RESERVATION_STATUS.CANCELLED, reservation.id]
         );
+        // 메트릭 추가: 예약 만료
+        reservationsExpired.labels(reservation.event_id).inc();
       }
 
       await client.query('COMMIT');

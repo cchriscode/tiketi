@@ -17,17 +17,45 @@ router.post('/check/:eventId', authenticate, async (req, res, next) => {
   try {
     const { eventId } = req.params;
     const userId = req.user.id || req.user.userId;
+    // 이벤트 정보 조회 (캐싱 권장)
+    const eventInfo = await getEventInfo(eventId);
+
     const result = await queueManager.checkQueueEntry(eventId, userId);
     
-    // 메트릭 업데이트
+    // 메트릭 업데이트 (이벤트 정보 포함)
     const queueSize = await queueManager.getQueueSize(eventId);
-    queueUsers.labels(eventId).set(queueSize);
+    queueUsers.labels(
+      eventId, 
+      eventInfo.title || 'Unknown',
+      eventInfo.artist || 'Unknown'
+    ).set(queueSize);
     
     res.json(result);
   } catch (error) {
     next(new CustomError(500, '대기열 확인에 실패했습니다.', error));
   }
 });
+
+// 이벤트 정보 캐싱 함수
+const eventCache = new Map();
+async function getEventInfo(eventId) {
+  if (eventCache.has(eventId)) {
+    return eventCache.get(eventId);
+  }
+  
+  const result = await db.query(
+    'SELECT title, artist FROM events WHERE id = $1',
+    [eventId]
+  );
+  
+  const info = result.rows[0] || { title: 'Unknown', artist: 'Unknown' };
+  eventCache.set(eventId, info);
+  
+  // 5분 후 캐시 만료
+  setTimeout(() => eventCache.delete(eventId), 5 * 60 * 1000);
+  
+  return info;
+}
 
 /**
  * 대기열 상태 조회

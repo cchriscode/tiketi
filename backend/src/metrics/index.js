@@ -44,7 +44,7 @@ const activeRequests = new client.Gauge({
 const queueUsers = new client.Gauge({
   name: 'tiketi_queue_users_total',
   help: 'Number of users in queue',
-  labelNames: ['event_id'], // 이벤트별로 분리하여 수집
+  labelNames: ['event_id', 'event_title', 'artist'], // 이벤트별로 분리하여 수집
   registers: [register]
 });
 
@@ -52,7 +52,7 @@ const queueUsers = new client.Gauge({
 const queueWaitTime = new client.Histogram({
   name: 'tiketi_queue_wait_seconds',
   help: 'Queue waiting time in seconds',
-  labelNames: ['event_id'],
+  labelNames: ['event_id', 'event_title', 'artist'],
   buckets: [1, 5, 10, 30, 60, 120, 300],
   registers: [register]
 });
@@ -126,6 +126,22 @@ const authAttempts = new client.Counter({
   registers: [register]
 });
 
+// 이벤트 조회수
+const eventViews = new client.Counter({
+  name: 'tiketi_event_views_total',
+  help: 'Total event page views',
+  labelNames: ['event_id', 'event_title'],
+  registers: [register]
+});
+
+// 전환 퍼널
+const conversionFunnel = new client.Counter({
+  name: 'tiketi_conversion_funnel_total',
+  help: 'Conversion funnel stages',
+  labelNames: ['stage', 'event_id'],
+  registers: [register]
+});
+
 // ==========================================
 // 🗄️ 데이터베이스 메트릭
 // ==========================================
@@ -168,6 +184,8 @@ module.exports = {
   seatsReserved,
   seatsAvailable,
   authAttempts,
+  eventViews,
+  conversionFunnel,
   
   // DB
   dbQueryDuration,
