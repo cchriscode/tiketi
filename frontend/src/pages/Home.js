@@ -1,25 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import debounce from 'lodash.debounce';
 import { eventsAPI } from '../services/api';
 import EventCard from '../components/EventCard';
 import './Home.css';
+
+// 간단한 슬라이드 데이터
+const slides = [
+  { id: 1, title: '티켓 오픈 알림', subtitle: '인기 공연을 가장 먼저 예매하세요', theme: 'sky' },
+  { id: 2, title: '실시간 좌석 선택', subtitle: '남아있는 좌석을 지금 즉시 잡으세요', theme: 'mint' },
+  { id: 3, title: '얼리버드 · 패키지 혜택', subtitle: '티케티 단독 할인으로 더 알뜰하게', theme: 'lemon' }
+];
 
 function Home() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('on_sale');
+  const [current, setCurrent] = useState(0);
 
-  useEffect(() => {
-    fetchEvents();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  const fetchEvents = useCallback(async () => {
+    const params = filter ? { status: filter } : {};
+    const response = await eventsAPI.getAll(params);
+    setEvents(response.data.events);
   }, [filter]);
 
-  const fetchEvents = async () => {
+  const fetchEventsWithSpinner = useCallback(async () => {
     try {
       setLoading(true);
-      const params = filter ? { status: filter } : {};
-      const response = await eventsAPI.getAll(params);
-      setEvents(response.data.events);
+      await fetchEvents();
       setError(null);
     } catch (err) {
       setError('이벤트를 불러오는데 실패했습니다.');
@@ -27,29 +35,26 @@ function Home() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchEvents])
 
   // 자동 새로고침용 (로딩 스피너 없이 조용히 업데이트)
-  const fetchEventsQuietly = async () => {
+  // 여러 EventCard에서 호출하는 경우가 있어 debounce 처리
+  const fetchEventsQuietly = useCallback(debounce(async () => {
+    
+    // 종료된 이벤트만 호출하는 경우 onCountdownExpired를 통해 재요청할 필요 없으므로 무시
+    if(filter === 'ended') return;
+
     try {
-      const params = filter ? { status: filter } : {};
-      const response = await eventsAPI.getAll(params);
-      setEvents(response.data.events);
+      await fetchEvents();
       console.log('🔄 이벤트 목록 자동 새로고침 완료');
     } catch (err) {
       console.error('자동 새로고침 실패:', err);
     }
+  }, 500), [fetchEvents]);
+
+  const go = (dir) => {
+    setCurrent((c) => (c + dir + slides.length) % slides.length);
   };
-
-
-  // 간단한 슬라이드 데이터
-  const slides = [
-    { id: 1, title: '티켓 오픈 알림', subtitle: '인기 공연을 가장 먼저 예매하세요', theme: 'sky' },
-    { id: 2, title: '실시간 좌석 선택', subtitle: '남아있는 좌석을 지금 즉시 잡으세요', theme: 'mint' },
-    { id: 3, title: '얼리버드 · 패키지 혜택', subtitle: '티케티 단독 할인으로 더 알뜰하게', theme: 'lemon' }
-  ];
-
-  const [current, setCurrent] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -58,37 +63,38 @@ function Home() {
     return () => clearInterval(timer);
   }, [slides.length]);
 
-  const go = (dir) => {
-    setCurrent((c) => (c + dir + slides.length) % slides.length);
-  };
+
+  useEffect(() => {
+    fetchEventsWithSpinner();
+  }, [fetchEventsWithSpinner]);
 
   return (
     <div className="home-page">
       <div className="hero-slider">
         <div className="container">
           <div className="slider-frame">
-        <button className="slider-arrow left" onClick={() => go(-1)} aria-label="이전 배너">‹</button>
-        <div className="slides" style={{ transform: `translateX(-${current * 100}%)` }}>
-          {slides.map((s) => (
-            <div className={`slide theme-${s.theme}`} key={s.id}>
-              <div className="slide-inner">
-                <h1 className="hero-title">{s.title}</h1>
-                <p className="hero-subtitle">{s.subtitle}</p>
-              </div>
+            <button className="slider-arrow left" onClick={() => go(-1)} aria-label="이전 배너">‹</button>
+            <div className="slides" style={{ transform: `translateX(-${current * 100}%)` }}>
+              {slides.map((s) => (
+                <div className={`slide theme-${s.theme}`} key={s.id}>
+                  <div className="slide-inner">
+                    <h1 className="hero-title">{s.title}</h1>
+                    <p className="hero-subtitle">{s.subtitle}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <button className="slider-arrow right" onClick={() => go(1)} aria-label="다음 배너">›</button>
-        <div className="slider-dots">
-          {slides.map((_, idx) => (
-            <button
-              key={idx}
-              className={`dot ${idx === current ? 'active' : ''}`}
-              onClick={() => setCurrent(idx)}
-              aria-label={`배너 ${idx + 1}`}
-            />
-          ))}
-        </div>
+            <button className="slider-arrow right" onClick={() => go(1)} aria-label="다음 배너">›</button>
+            <div className="slider-dots">
+              {slides.map((_, idx) => (
+                <button
+                  key={idx}
+                  className={`dot ${idx === current ? 'active' : ''}`}
+                  onClick={() => setCurrent(idx)}
+                  aria-label={`배너 ${idx + 1}`}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -138,10 +144,10 @@ function Home() {
         ) : (
           <div className="events-grid">
             {events.map((event) => (
-              <EventCard 
-                key={event.id} 
-                event={event} 
-                onCountdownExpire={() => fetchEventsQuietly()}
+              <EventCard
+                key={event.id}
+                event={event}
+                onCountdownExpire={fetchEventsQuietly}
               />
             ))}
           </div>

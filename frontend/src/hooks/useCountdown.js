@@ -57,7 +57,7 @@ const calculateTimeLeft = (targetDate) => {
   const minutes = Math.floor((difference / 1000 / 60) % 60);
   const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
   const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-  
+
   // 월 계산 (대략적으로 30일 = 1개월)
   const months = Math.floor(days / 30);
   const remainingDays = days % 30;
@@ -80,7 +80,7 @@ const calculateTimeLeft = (targetDate) => {
  * @returns {Object} 남은 시간 객체
  */
 export const useCountdown = (targetDate, onExpire) => {
-  const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(targetDate));
+  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft(targetDate));
   const onExpireRef = useRef(onExpire);
   const hasExpiredRef = useRef(false); // state 대신 ref 사용
 
