@@ -25,7 +25,7 @@ function Home() {
       const params = filter ? { status: filter } : {};
       const response = await eventsAPI.getAll(params);
       setEvents(response.data.events);
-  }, 500), [filter]);
+  }, 100), [filter]);
 
   const fetchEventsWithSpinner = useCallback(async () => {
     try {
