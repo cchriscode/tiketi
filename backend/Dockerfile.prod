@@ -10,7 +10,7 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies (including swagger packages)
+# Install dependencies (production only)
 RUN npm install --only=production
 
 # Copy source code
@@ -32,25 +32,10 @@ COPY --from=builder /app/node_modules ./node_modules
 # Copy source code
 COPY . .
 
-# Create startup script with PostgreSQL wait and npm install
-RUN echo '#!/bin/sh' > /start.sh && \
-    echo 'echo "Waiting for PostgreSQL to be ready..."' >> /start.sh && \
-    echo 'until PGPASSWORD=$DB_PASSWORD psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -c "\\q" 2>/dev/null; do' >> /start.sh && \
-    echo '  echo "PostgreSQL is unavailable - waiting..."' >> /start.sh && \
-    echo '  sleep 2' >> /start.sh && \
-    echo 'done' >> /start.sh && \
-    echo 'echo "PostgreSQL is ready!"' >> /start.sh && \
-    echo 'echo "Checking dependencies..."' >> /start.sh && \
-    echo 'npm install --only=production 2>/dev/null || true' >> /start.sh && \
-    echo 'echo "Starting application..."' >> /start.sh && \
-    echo 'node src/server.js' >> /start.sh && \
-    chmod +x /start.sh
-
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001 && \
-    chown -R nodejs:nodejs /app && \
-    chown nodejs:nodejs /start.sh
+    chown -R nodejs:nodejs /app
 
 USER nodejs
 
@@ -61,4 +46,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD curl -f http://localhost:3001/health || exit 1
 
 # Start application
-CMD ["/start.sh"]
+CMD ["node", "src/server.js"]
