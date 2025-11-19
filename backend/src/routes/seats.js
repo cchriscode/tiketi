@@ -31,8 +31,23 @@ const {
 const router = express.Router();
 
 /**
- * GET /api/seats/layouts
- * Get all available seat layouts
+ * @swagger
+ * /api/seats/layouts:
+ *   get:
+ *     summary: 좌석 레이아웃 목록 조회
+ *     tags: [Seats]
+ *     responses:
+ *       200:
+ *         description: 좌석 레이아웃 목록
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 layouts:
+ *                   type: array
+ *                   items:
+ *                     type: object
  */
 router.get('/layouts', async (req, res, next) => {
   try {
@@ -51,8 +66,34 @@ router.get('/layouts', async (req, res, next) => {
 });
 
 /**
- * GET /api/seats/events/:eventId
- * Get all seats for an event with real-time status
+ * @swagger
+ * /api/seats/events/{eventId}:
+ *   get:
+ *     summary: 이벤트 좌석 정보 조회
+ *     tags: [Seats]
+ *     parameters:
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 이벤트 ID
+ *     responses:
+ *       200:
+ *         description: 좌석 정보
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 event:
+ *                   type: object
+ *                 layout:
+ *                   type: object
+ *                 seats:
+ *                   type: array
+ *       404:
+ *         description: 이벤트를 찾을 수 없음
  */
 router.get('/events/:eventId', async (req, res, next) => {
   try {
@@ -101,8 +142,45 @@ router.get('/events/:eventId', async (req, res, next) => {
 });
 
 /**
- * POST /api/seats/reserve
- * Reserve seats (temporary reservation with 5 min expiry)
+ * @swagger
+ * /api/seats/reserve:
+ *   post:
+ *     summary: 좌석 예약 (임시, 5분 만료)
+ *     tags: [Seats]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - eventId
+ *               - seatIds
+ *             properties:
+ *               eventId:
+ *                 type: integer
+ *                 description: 이벤트 ID
+ *               seatIds:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *                 description: 좌석 ID 목록
+ *     responses:
+ *       201:
+ *         description: 좌석 예약 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 reservation:
+ *                   type: object
+ *       400:
+ *         description: 잘못된 요청
  */
 router.post('/reserve', authenticateToken, async (req, res, next) => {
   try {

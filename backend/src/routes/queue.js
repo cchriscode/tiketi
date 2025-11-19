@@ -10,8 +10,27 @@ const CustomError = require('../utils/custom-error');
 const { queueUsers } = require('../metrics');
 
 /**
- * 대기열 진입 확인
- * POST /api/queue/check/:eventId
+ * @swagger
+ * /api/queue/check/{eventId}:
+ *   post:
+ *     summary: 대기열 진입 확인
+ *     tags: [Queue]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 이벤트 ID
+ *     responses:
+ *       200:
+ *         description: 대기열 진입 결과
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
  */
 router.post('/check/:eventId', authenticate, async (req, res, next) => {
   try {
@@ -58,8 +77,27 @@ async function getEventInfo(eventId) {
 }
 
 /**
- * 대기열 상태 조회
- * GET /api/queue/status/:eventId
+ * @swagger
+ * /api/queue/status/{eventId}:
+ *   get:
+ *     summary: 대기열 상태 조회
+ *     tags: [Queue]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 이벤트 ID
+ *     responses:
+ *       200:
+ *         description: 대기열 상태
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
  */
 router.get('/status/:eventId', authenticate, async (req, res, next) => {
   try {
