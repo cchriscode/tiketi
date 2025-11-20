@@ -1,9 +1,7 @@
 
 # TIKETI UI 설계/기술 문서 (Dev & Interview)
 
-> WebSocket 기반 실시간 티켓팅 서비스 **TIKETI**의  
-> 프론트엔드(UI) 관점 설계·구현 내용을 정리한 **개발팀/면접용 기술 문서**입니다.  
-> 실제 코드 기준(React + React Router + Socket.IO + Axios)으로 작성되었습니다.
+> WebSocket 기반 실시간 티켓팅 서비스 **TIKETI**
 
 ---
 
