@@ -701,20 +701,20 @@ docker-compose down -v && docker-compose up --build
 - [ ] 모바일 반응형 개선
 
 ### Phase 2: AWS 배포 (3-4주)
-- [ ] VPC & 네트워크 구성
-- [ ] RDS PostgreSQL 마이그레이션
-- [ ] ElastiCache Redis 설정
+- [x] VPC & 네트워크 구성
+- [x] RDS PostgreSQL 마이그레이션
+- [x] ElastiCache Redis 설정
 - [ ] EC2 + ALB + Auto Scaling 구성
 - [ ] Lambda Queue Monitor 배포 (큐 기반 ASG)
-- [ ] S3 + CloudFront 배포
-- [ ] Route 53 + ACM (SSL)
-- [ ] Secrets Manager 설정
+- [x] S3 + CloudFront 배포
+- [x] Route 53 + ACM (SSL)
+- [x] Secrets Manager 설정
 
 ### Phase 3: CI/CD (1-2주)
-- [ ] GitHub Actions 파이프라인
-- [ ] ECR (Docker Registry)
+- [x] GitHub Actions 파이프라인
+- [x] ECR (Docker Registry)
 - [ ] Blue/Green 배포
-- [ ] 자동화 테스트 추가
+- [x] 자동화 테스트 추가
 
 ### Phase 4: 모니터링 & 최적화 (1주)
 - [ ] CloudWatch 대시보드
