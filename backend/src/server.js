@@ -183,8 +183,8 @@ process.on('uncaughtException', (error) => {
   gracefulShutdown('uncaughtException');
 });
 
+// Log unhandled rejections but keep process alive to avoid unnecessary downtime
 process.on('unhandledRejection', (reason, promise) => {
-  logger.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
-  gracefulShutdown('unhandledRejection');
+  logger.error('💥 Unhandled Rejection:', reason);
 });
 

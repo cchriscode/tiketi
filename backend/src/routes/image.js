@@ -3,6 +3,7 @@ const { S3Client } = require('@aws-sdk/client-s3');
 const multer = require('multer');
 const multerS3 = require('multer-s3');
 const path = require('path');
+const { logger } = require('../utils/logger');
 
 const router = express.Router();
 
@@ -60,15 +61,34 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }
 });
 
-router.post('/upload', upload.single('image'), async (req, res, next) => {
-  const { logger } = require('../utils/logger');
-  logger.info('File uploaded:', req.file); // 업로드된 파일 정보 로깅
+router.post('/upload', (req, res, next) => {
+  // 필수 설정 누락 시 안전하게 차단
+  if (!process.env.AWS_S3_BUCKET || !process.env.AWS_REGION) {
+    return res.status(500).json({ error: 'S3 configuration is missing' });
+  }
 
-  // S3에 저장된 파일의 위치(URL)를 프론트엔드에 돌려줍니다.
-  return res.status(200).json({
-    url: req.file.location, // S3 접근 URL
-    key: req.file.key       // S3 저장 경로
+  upload.single('image')(req, res, (err) => {
+    if (err) {
+      logger.error('S3 upload error:', err.message);
+      return res.status(500).json({ error: '이미지 업로드에 실패했습니다.' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: '이미지 파일이 필요합니다.' });
+    }
+
+    try {
+      logger.info('File uploaded:', req.file); // 업로드된 파일 정보 로깅
+
+      return res.status(200).json({
+        url: req.file.location, // S3 접근 URL
+        key: req.file.key       // S3 저장 경로
+      });
+    } catch (e) {
+      logger.error('S3 upload response error:', e.message);
+      return res.status(500).json({ error: '이미지 업로드에 실패했습니다.' });
+    }
   });
-})
+});
 
 module.exports = router;
