@@ -86,7 +86,8 @@ const ensureUUIDArray = (values, res, field = 'id') => {
  *                   type: object
  *                   properties:
  *                     id:
- *                       type: integer
+ *                       type: string
+ *                       format: uuid
  *                     reservationNumber:
  *                       type: string
  *                     totalAmount:
