@@ -9,8 +9,17 @@ const {
 const { logger } = require('../utils/logger');
 const CustomError = require('../utils/custom-error');
 const { eventViews, conversionFunnel } = require('../metrics');
+const { validate: isUUID } = require('uuid');
 
 const router = express.Router();
+
+const ensureUUID = (value, res, field = 'id') => {
+  if (!isUUID(value)) {
+    res.status(400).json({ error: `Invalid ${field} format` });
+    return false;
+  }
+  return true;
+};
 
 /**
  * @swagger
@@ -219,7 +228,8 @@ router.get('/', async (req, res, next) => {
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *         description: 이벤트 ID
  *     responses:
  *       200:
@@ -245,6 +255,7 @@ router.get('/', async (req, res, next) => {
 router.get('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
+    if (!ensureUUID(id, res)) return;
 
     // Try cache first
     const cacheKey = CACHE_KEYS.EVENT(id);

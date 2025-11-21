@@ -14,8 +14,17 @@ const {
   PAGINATION_DEFAULTS,
 } = require('../shared/constants');
 const { invalidateCachePatterns, withTransaction } = require('../utils/transaction-helpers');
+const { validate: isUUID } = require('uuid');
 
 const router = express.Router();
+
+const ensureUUID = (value, res, field = 'id') => {
+  if (!isUUID(value)) {
+    res.status(400).json({ error: `Invalid ${field} format` });
+    return false;
+  }
+  return true;
+};
 
 // All admin routes require authentication and admin role
 router.use(authenticateToken);
@@ -165,7 +174,8 @@ router.get('/seat-layouts', async (req, res, next) => {
  *               artistName:
  *                 type: string
  *               seatLayoutId:
- *                 type: integer
+ *                 type: string
+ *                 format: uuid
  *               ticketTypes:
  *                 type: array
  *                 items:
@@ -191,6 +201,10 @@ router.post('/events', async (req, res, next) => {
       seatLayoutId, // 좌석 레이아웃 ID (좌석 선택 방식)
       ticketTypes, // 티켓 등급 배열 (티켓 등급 방식)
     } = req.body;
+
+    if (seatLayoutId && !isUUID(seatLayoutId)) {
+      return res.status(400).json({ error: 'Invalid seatLayoutId format' });
+    }
 
     await client.query('BEGIN');
 
@@ -288,7 +302,8 @@ router.post('/events', async (req, res, next) => {
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *         description: 이벤트 ID
  *     requestBody:
  *       required: true
@@ -327,6 +342,8 @@ router.post('/events', async (req, res, next) => {
 router.put('/events/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
+    if (!ensureUUID(id, res)) return;
+
     const {
       title,
       description,
@@ -439,7 +456,8 @@ router.put('/events/:id', async (req, res, next) => {
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *         description: 이벤트 ID
  *     responses:
  *       200:
@@ -450,6 +468,7 @@ router.put('/events/:id', async (req, res, next) => {
 router.post('/events/:id/cancel', async (req, res, next) => {
   try {
     const { id } = req.params;
+    if (!ensureUUID(id, res)) return;
 
     const result = await withTransaction(async (client) => {
       // 이벤트 상태를 취소로 변경
@@ -548,7 +567,8 @@ router.post('/events/:id/cancel', async (req, res, next) => {
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *         description: 이벤트 ID
  *     responses:
  *       200:
@@ -559,6 +579,7 @@ router.post('/events/:id/cancel', async (req, res, next) => {
 router.delete('/events/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
+    if (!ensureUUID(id, res)) return;
 
     // Check if there are any reservations
     const reservationsResult = await db.query(
@@ -597,7 +618,8 @@ router.delete('/events/:id', async (req, res, next) => {
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *         description: 이벤트 ID
  *     responses:
  *       200:
@@ -610,6 +632,7 @@ router.delete('/events/:id', async (req, res, next) => {
 router.post('/events/:id/generate-seats', async (req, res, next) => {
   try {
     const { id } = req.params;
+    if (!ensureUUID(id, res)) return;
 
     // Get event with seat layout
     const eventResult = await db.query(
@@ -669,7 +692,8 @@ router.post('/events/:id/generate-seats', async (req, res, next) => {
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *         description: 이벤트 ID
  *     responses:
  *       200:
@@ -680,6 +704,7 @@ router.post('/events/:id/generate-seats', async (req, res, next) => {
 router.delete('/events/:id/seats', async (req, res, next) => {
   try {
     const { id } = req.params;
+    if (!ensureUUID(id, res)) return;
 
     // Check if there are any reservations with seats
     const reservationsResult = await db.query(
@@ -723,7 +748,8 @@ router.delete('/events/:id/seats', async (req, res, next) => {
  *         name: eventId
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *         description: 이벤트 ID
  *     requestBody:
  *       required: true
@@ -751,6 +777,8 @@ router.delete('/events/:id/seats', async (req, res, next) => {
 router.post('/events/:eventId/tickets', async (req, res, next) => {
   try {
     const { eventId } = req.params;
+    if (!ensureUUID(eventId, res, 'eventId')) return;
+
     const { name, price, totalQuantity, description } = req.body;
 
     const result = await db.query(
@@ -786,7 +814,8 @@ router.post('/events/:eventId/tickets', async (req, res, next) => {
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *         description: 티켓 타입 ID
  *     requestBody:
  *       required: true
@@ -814,6 +843,8 @@ router.post('/events/:eventId/tickets', async (req, res, next) => {
 router.put('/tickets/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
+    if (!ensureUUID(id, res)) return;
+
     const { name, price, totalQuantity, description } = req.body;
 
     // Get current ticket type
