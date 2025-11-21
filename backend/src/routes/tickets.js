@@ -2,8 +2,17 @@ const express = require('express');
 const db = require('../config/database');
 const { logger } = require('../utils/logger');
 const CustomError = require('../utils/custom-error');
+const { validate: isUUID } = require('uuid');
 
 const router = express.Router();
+
+const ensureUUID = (value, res, field = 'id') => {
+  if (!isUUID(value)) {
+    res.status(400).json({ error: `Invalid ${field} format` });
+    return false;
+  }
+  return true;
+};
 
 /**
  * @swagger
@@ -16,7 +25,8 @@ const router = express.Router();
  *         name: eventId
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *         description: 이벤트 ID
  *     responses:
  *       200:
@@ -34,6 +44,7 @@ const router = express.Router();
 router.get('/event/:eventId', async (req, res, next) => {
   try {
     const { eventId } = req.params;
+    if (!ensureUUID(eventId, res, 'eventId')) return;
 
     const result = await db.query(
       `SELECT 
@@ -61,7 +72,8 @@ router.get('/event/:eventId', async (req, res, next) => {
  *         name: ticketTypeId
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *         description: 티켓 타입 ID
  *     responses:
  *       200:
@@ -81,6 +93,7 @@ router.get('/event/:eventId', async (req, res, next) => {
 router.get('/availability/:ticketTypeId', async (req, res, next) => {
   try {
     const { ticketTypeId } = req.params;
+    if (!ensureUUID(ticketTypeId, res, 'ticketTypeId')) return;
 
     const result = await db.query(
       'SELECT available_quantity, total_quantity FROM ticket_types WHERE id = $1',

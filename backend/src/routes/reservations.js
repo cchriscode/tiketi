@@ -20,8 +20,25 @@ const {
   reservationsCancelled,
   conversionFunnel
 } = require('../metrics');
+const { validate: isUUID } = require('uuid');
 
 const router = express.Router();
+
+const ensureUUID = (value, res, field = 'id') => {
+  if (!isUUID(value)) {
+    res.status(400).json({ error: `Invalid ${field} format` });
+    return false;
+  }
+  return true;
+};
+
+const ensureUUIDArray = (values, res, field = 'id') => {
+  if (!Array.isArray(values) || !values.every(v => isUUID(v))) {
+    res.status(400).json({ error: `Invalid ${field} list` });
+    return false;
+  }
+  return true;
+};
 
 /**
  * @swagger
@@ -42,7 +59,8 @@ const router = express.Router();
  *               - items
  *             properties:
  *               eventId:
- *                 type: integer
+ *                 type: string
+ *                 format: uuid
  *                 description: 이벤트 ID
  *               items:
  *                 type: array
@@ -50,7 +68,8 @@ const router = express.Router();
  *                   type: object
  *                   properties:
  *                     ticketTypeId:
- *                       type: integer
+ *                       type: string
+ *                       format: uuid
  *                     quantity:
  *                       type: integer
  *     responses:
@@ -83,8 +102,17 @@ router.post('/', authenticateToken, async (req, res, next) => {
     const userId = req.user.userId;
 
     // Validate input
+    if (!eventId || !ensureUUID(eventId, res, 'eventId')) {
+      return;
+    }
+
     if (!items || items.length === 0) {
       return res.status(400).json({ error: '티켓을 선택해주세요.' });
+    }
+
+    const ticketIds = items.map(item => item.ticketTypeId).filter(Boolean);
+    if (ticketIds.length !== items.length || !ensureUUIDArray(ticketIds, res, 'ticketTypeId')) {
+      return;
     }
 
     // Generate reservation number
@@ -312,7 +340,8 @@ router.get('/my', authenticateToken, async (req, res, next) => {
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *         description: 예매 ID
  *     responses:
  *       200:
@@ -330,6 +359,8 @@ router.get('/my', authenticateToken, async (req, res, next) => {
 router.get('/:id', authenticateToken, async (req, res, next) => {
   try {
     const { id } = req.params;
+    if (!ensureUUID(id, res)) return;
+
     const userId = req.user.userId;
 
     const result = await db.query(
@@ -380,7 +411,8 @@ router.get('/:id', authenticateToken, async (req, res, next) => {
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *         description: 예매 ID
  *     responses:
  *       200:
@@ -398,6 +430,8 @@ router.get('/:id', authenticateToken, async (req, res, next) => {
 router.post('/:id/cancel', authenticateToken, async (req, res, next) => {
   try {
     const { id } = req.params;
+    if (!ensureUUID(id, res)) return;
+
     const userId = req.user.userId;
 
     const result = await withTransaction(async (client) => {
