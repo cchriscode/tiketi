@@ -3,8 +3,17 @@ const db = require('../config/database');
 const { logger } = require('../utils/logger');
 const CustomError = require('../utils/custom-error');
 const { authenticateToken } = require('../middleware/auth');
+const { validate: isUUID } = require('uuid');
 
 const router = express.Router();
+
+const ensureUUID = (value, res, field = 'id') => {
+  if (!isUUID(value)) {
+    res.status(400).json({ error: `Invalid ${field} format` });
+    return false;
+  }
+  return true;
+};
 
 /**
  * @swagger
@@ -79,7 +88,8 @@ router.get('/', async (req, res, next) => {
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *         description: 뉴스 ID
  *     responses:
  *       200:
@@ -97,6 +107,7 @@ router.get('/', async (req, res, next) => {
 router.get('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
+    if (!ensureUUID(id, res)) return;
 
     // Increment views
     await db.query(
@@ -148,7 +159,8 @@ router.get('/:id', async (req, res, next) => {
  *               author:
  *                 type: string
  *               author_id:
- *                 type: integer
+ *                 type: string
+ *                 format: uuid
  *               is_pinned:
  *                 type: boolean
  *     responses:
@@ -163,6 +175,10 @@ router.post('/', authenticateToken, async (req, res, next) => {
 
     if (!title || !content || !author) {
       return res.status(400).json({ error: '제목, 내용, 작성자는 필수입니다.' });
+    }
+
+    if (author_id && !isUUID(author_id)) {
+      return res.status(400).json({ error: 'Invalid author_id format' });
     }
 
     const result = await db.query(
@@ -191,7 +207,8 @@ router.post('/', authenticateToken, async (req, res, next) => {
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *         description: 뉴스 ID
  *     requestBody:
  *       required: true
@@ -222,6 +239,8 @@ router.post('/', authenticateToken, async (req, res, next) => {
 router.put('/:id', authenticateToken, async (req, res, next) => {
   try {
     const { id } = req.params;
+    if (!ensureUUID(id, res)) return;
+
     const { title, content, is_pinned } = req.body;
 
     if (!title || !content) {
@@ -282,7 +301,8 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *         description: 뉴스 ID
  *     responses:
  *       200:
@@ -295,6 +315,7 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
 router.delete('/:id', authenticateToken, async (req, res, next) => {
   try {
     const { id } = req.params;
+    if (!ensureUUID(id, res)) return;
 
     // Check if news exists and verify ownership
     const newsCheck = await db.query(

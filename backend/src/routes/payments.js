@@ -23,8 +23,17 @@ const {
   paymentAmount,
   conversionFunnel 
 } = require('../metrics');
+const { validate: isUUID } = require('uuid');
 
 const router = express.Router();
+
+const ensureUUID = (value, res, field = 'id') => {
+  if (!isUUID(value)) {
+    res.status(400).json({ error: `Invalid ${field} format` });
+    return false;
+  }
+  return true;
+};
 
 /**
  * @swagger
@@ -45,7 +54,8 @@ const router = express.Router();
  *               - paymentMethod
  *             properties:
  *               reservationId:
- *                 type: integer
+ *                 type: string
+ *                 format: uuid
  *                 description: 예약 ID
  *               paymentMethod:
  *                 type: string
@@ -76,6 +86,10 @@ router.post('/process', authenticateToken, async (req, res, next) => {
     // Validation
     if (!reservationId || !paymentMethod) {
       return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    if (!ensureUUID(reservationId, res, 'reservationId')) {
+      return;
     }
 
     const validMethods = Object.values(PAYMENT_METHODS);
