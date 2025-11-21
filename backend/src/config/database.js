@@ -1,6 +1,7 @@
 const { Pool } = require('pg');
 const { CONFIG } = require('../shared/constants');
 const { logger } = require('../utils/logger');
+const { wrapPoolWithMetrics } = require('../metrics/db');
 
 const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
@@ -21,6 +22,11 @@ pool.on('error', (err) => {
   logger.error('❌ Unexpected error on idle client', err.message);
   // Don't exit process, just log the error
 });
+
+// 메트릭 수집 기능 추가
+wrapPoolWithMetrics(pool);
+
+logger.info('📊 Database query metrics enabled');
 
 module.exports = {
   query: (text, params) => pool.query(text, params),

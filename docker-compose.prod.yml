@@ -153,6 +153,7 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin # 초기 비번 설정 (나중에 바꾸세요)
+      - GF_SERVER_ROOT_URL=https://grafana.tiketi.store
     networks:
       - tiketi-network
     depends_on:
