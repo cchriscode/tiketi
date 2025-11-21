@@ -177,8 +177,15 @@ router.post('/', authenticateToken, async (req, res, next) => {
       return res.status(400).json({ error: '제목, 내용, 작성자는 필수입니다.' });
     }
 
-    if (author_id && !isUUID(author_id)) {
-      return res.status(400).json({ error: 'Invalid author_id format' });
+    if (author_id) {
+      if (!isUUID(author_id)) {
+        return res.status(400).json({ error: 'Invalid author_id format' });
+      }
+      // Ensure author exists to avoid FK violation
+      const userCheck = await db.query('SELECT 1 FROM users WHERE id = $1', [author_id]);
+      if (userCheck.rows.length === 0) {
+        return res.status(400).json({ error: '존재하지 않는 작성자입니다.' });
+      }
     }
 
     const result = await db.query(
