@@ -52,82 +52,155 @@
 
 ## 🏗️ 아키텍처
 
-### 현재 아키텍처 (로컬 개발)
+### 로컬 아키텍처
 
-```
-┌─────────────────┐
-│   Frontend      │  React (Port 3000)
-│   (React)       │  - WebSocket Client (Socket.IO)
-└────────┬────────┘
-         │
-┌────────▼────────┐
-│   Backend       │  Node.js + Express (Port 3001)
-│   (Express)     │  - Socket.IO Server + Redis Adapter
-└────────┬────────┘  - REST API
-         │
-         ├──────────────┬──────────────┐
-         │              │              │
-┌────────▼─────┐ ┌─────▼──────┐ ┌─────▼──────┐
-│ PostgreSQL   │ │ DragonflyDB│ │ Redis      │
-│   (5432)     │ │   (6379)   │ │ (Adapter)  │
-│              │ │ 분산 락     │ │ 대기열/캐싱│
-└──────────────┘ └────────────┘ └────────────┘
+```mermaid
+graph TB
+    subgraph Frontend["Frontend (React)"]
+        FE["React Application<br/>Port: 3000<br/>- WebSocket Client<br/>- Socket.IO"]
+    end
+    
+    subgraph Backend["Backend (Express)"]
+        BE["Node.js + Express<br/>Port: 3001<br/>- Socket.IO Server<br/>- Redis Adapter<br/>- REST API"]
+    end
+    
+    subgraph Databases["Data Layer"]
+        PG["PostgreSQL<br/>Port: 5432"]
+        DF["DragonflyDB<br/>Port: 6379<br/>분산 락"]
+        RD["Redis<br/>Adapter<br/>대기열/캐싱"]
+    end
+    
+    FE -->|WebSocket Connection| BE
+    BE --> PG
+    BE --> DF
+    BE --> RD
+    
+    style Frontend fill:#e1f5ff
+    style Backend fill:#fff4e1
+    style Databases fill:#f0f0f0
 ```
 
 ---
 
-### AWS 프로덕션 아키텍처 (큐 기반 Auto Scaling)
+### Docker Compose 아키텍처
 
+```mermaid
+graph TB
+    %% 사용자
+    Browser[("🌐 Browser")]
+    
+    %% Docker Compose 환경
+    subgraph "Docker Compose"
+        subgraph "Frontend"
+            React["React<br/>Port 3000<br/>좌석선택 UI<br/>WebSocket 클라이언트"]
+        end
+        
+        subgraph "Backend"  
+            NodeJS["Node.js Express<br/>Port 3001<br/>REST API + WebSocket<br/>비즈니스로직 + 분산락"]
+        end
+        
+        subgraph "Database"
+            PostgreSQL["PostgreSQL<br/>Port 5432<br/>티켓데이터<br/>예약정보<br/>사용자정보"]
+            
+            Dragonfly["Dragonfly Redis<br/>Port 6379<br/>캐싱<br/>분산락<br/>세션관리"]
+        end
+        
+        subgraph "Volume"
+            PostgresVol["postgres-data<br/>영속적 데이터"]
+            DragonflyVol["dragonfly-data<br/>캐시 데이터"]
+        end
+    end
+    
+    %% 연결
+    Browser -->|"HTTP/WebSocket"| React
+    React -->|"API 요청"| NodeJS
+    
+    NodeJS -->|"데이터 저장/조회"| PostgreSQL
+    NodeJS -->|"캐시/락/세션"| Dragonfly
+    
+    PostgreSQL -.->|"데이터 영속화"| PostgresVol
+    Dragonfly -.->|"캐시 영속화"| DragonflyVol
+    
+    React -.->|"실시간 업데이트"| Browser
+    
+    %% 스타일링
+    classDef frontend fill:#61DAFB,stroke:#fff,stroke-width:2px,color:#000
+    classDef backend fill:#68A063,stroke:#fff,stroke-width:2px,color:#fff
+    classDef database fill:#336791,stroke:#fff,stroke-width:2px,color:#fff
+    classDef cache fill:#DC382D,stroke:#fff,stroke-width:2px,color:#fff
+    classDef volume fill:#FFA500,stroke:#fff,stroke-width:1px,color:#000
+    
+    class React frontend
+    class NodeJS backend
+    class PostgreSQL database
+    class Dragonfly cache
+    class PostgresVol,DragonflyVol volume
 ```
-                       ┌───────────────┐
-                       │  Route 53     │  DNS
-                       │  (tiketi.gg)  │
-                       └───────┬───────┘
-                               │
-                       ┌───────▼───────┐
-                       │  CloudFront   │  CDN (정적 파일)
-                       └───────┬───────┘
-                               │
-          ┌────────────────────┼────────────────────┐
-          │                    │                    │
-   ┌──────▼──────┐     ┌───────▼───────┐   ┌───────▼──────┐
-   │     S3      │     │      ALB      │   │  CloudWatch  │
-   │ (React 빌드)│     │ (Load Balancer)│   │  (모니터링)  │
-   └─────────────┘     │ - Sticky Sess.│   └──────┬───────┘
-                       └───────┬───────┘          │
-                               │                  │
-                ┌──────────────┴─────────┐        │
-                │                        │        │
-         ┌──────▼────┐            ┌──────▼────┐  │
-         │ Target    │            │   Auto    │  │
-         │ Group     │◄───────────┤  Scaling  │◄─┘
-         │           │            │   Group   │
-         └──────┬────┘            └───────────┘
-                │                      ▲
-    ┌───────────┼───────────┐         │
-    │           │           │         │ 큐 크기 기반
-┌───▼────┐ ┌───▼────┐ ┌───▼────┐    │ 스케일링
-│ EC2-1  │ │ EC2-2  │ │ EC2-3  │    │
-│Backend │ │Backend │ │Backend │    │
-│Socket  │ │Socket  │ │Socket  │    │
-└───┬────┘ └───┬────┘ └───┬────┘    │
-    └──────────┼──────────┘          │
-               │                     │
-    ┌──────────┼─────────────────────┼────────┐
-    │          │                     │        │
-┌───▼──────────▼───┐         ┌───────▼──────┐ │
-│ ElastiCache      │         │   Lambda     │ │
-│    (Redis)       │◄────────┤ Queue Monitor│ │
-│ - Pub/Sub        │         │              │ │
-│ - Queue (대기열) │         │ 큐 크기 측정  │ │
-│ - Cache (세션)   │         │ → CloudWatch │ │
-└──────────┬───────┘         └──────────────┘ │
-           │                                   │
-    ┌──────▼────────┐                ┌────────▼──┐
-    │ RDS (Aurora)  │                │ S3 Bucket │
-    │  PostgreSQL   │                │ (이미지)  │
-    │   Multi-AZ    │                │ (로그)    │
-    └───────────────┘                └───────────┘
+
+### AWS 아키텍처 (큐 기반 Auto Scaling)
+
+
+```mermaid
+graph TB
+    %% 외부 영역
+    Users[("🌐 Browser")]
+    
+    %% AWS 클라우드 영역
+    Route53["Route 53<br/>tiketi.store"]
+    
+    %% 프론트엔드
+    CloudFront["CloudFront<br/>CDN"]
+    S3["S3<br/>정적 파일"]
+    
+    %% 백엔드
+    ALB["ALB<br/>로드밸런서"]
+    TG_Back["백엔드 타겟그룹<br/>Port 3001"]
+    
+    %% EC2 인스턴스
+    subgraph "EC2 - 🐳 Docker Compose"
+        NodeJS["Node.js API<br/>Port: 3001"]
+        PostgreSQL["PostgreSQL<br/>Port: 5432"]
+        Redis["Redis<br/>Port: 7379"]
+        Loki["Loki<br/>로그수집"]
+        Grafana["Grafana<br/>모니터링"]
+        Runner["GitHub Actions Runner<br/>자동배포"]
+    end
+    
+    GitHub["GitHub<br/>저장소"]
+    
+    %% 연결
+    Users -->|"HTTPS 요청"| Route53
+    Route53 -->|"정적파일 요청"| CloudFront
+    Route53 -->|"API 요청"| ALB
+    
+    CloudFront -->|"파일 조회"| S3
+    ALB -->|"트래픽 분산"| TG_Back
+    TG_Back -->|"헬스체크 후 전달"| NodeJS
+    
+    NodeJS -.->|"DB 쿼리"| PostgreSQL
+    NodeJS -.->|"캐시/세션"| Redis
+    NodeJS -.->|"로그 전송"| Loki
+    Grafana -.->|"로그 수집"| Loki
+    
+    GitHub -->|"웹훅 트리거"| Runner
+    Runner -.->|"프론트엔드 배포"| S3
+    Runner -.->|"서비스 배포"| NodeJS
+    
+    S3 -.->|"React 앱 제공"| Users
+    NodeJS -.->|"API 응답"| Users
+    
+    %% 스타일링
+    classDef aws fill:#FF9900,stroke:#232F3E,stroke-width:2px,color:#fff
+    classDef docker fill:#2496ED,stroke:#fff,stroke-width:2px,color:#fff
+    classDef database fill:#336791,stroke:#fff,stroke-width:2px,color:#fff
+    classDef monitoring fill:#F46800,stroke:#fff,stroke-width:2px,color:#fff
+    classDef frontend fill:#61DAFB,stroke:#fff,stroke-width:2px,color:#000
+    
+    class Route53,ALB,TG_Back aws
+    class CloudFront,S3 frontend
+    class NodeJS,Runner docker
+    class PostgreSQL,Redis database
+    class Loki,Grafana monitoring
 ```
 
 **핵심 포인트**:
@@ -401,6 +474,9 @@ socket.emit('session-restored', previousSession);
 
 ## ☁️ AWS 배포 준비 (큐 기반 Auto Scaling)
 
+> 이 섹션은 **선택적인 심화 구성**인 “큐 기반 Auto Scaling” 설계를 정리한 것입니다.  
+> 현재 저장소에는 Lambda 함수 소스가 포함되어 있지 않고, 아래 코드는 `docs/deployment/AWS_DEPLOYMENT_STEP_BY_STEP.md` 를 따라 AWS 콘솔/Lambda에 직접 적용하는 **예시 코드**입니다.
+
 ### Lambda Queue Monitor 구현
 
 **목적**: Redis 대기열 크기를 CloudWatch Metrics로 전송
@@ -554,7 +630,8 @@ aws autoscaling put-scaling-policy \
 
 ### 인프라
 - **Docker** & **Docker Compose**
-- **AWS**: VPC, EC2, ALB (Sticky Session), RDS, ElastiCache, S3, CloudFront
+- **모니터링/로그**: Prometheus, Grafana, Loki, Promtail
+- **AWS**: VPC, EC2, ALB (Sticky Session), S3, CloudFront (현재는 EC2 내부 PostgreSQL/Dragonfly 컨테이너 사용, 필요 시 RDS/ElastiCache로 확장 가능)
 - **Auto Scaling**: 큐 기반 Target Tracking
 - **Lambda**: Queue Monitor (CloudWatch Metrics 전송)
 - **CloudWatch**: Alarms, Logs, Custom Metrics
@@ -624,20 +701,20 @@ docker-compose down -v && docker-compose up --build
 - [ ] 모바일 반응형 개선
 
 ### Phase 2: AWS 배포 (3-4주)
-- [ ] VPC & 네트워크 구성
-- [ ] RDS PostgreSQL 마이그레이션
-- [ ] ElastiCache Redis 설정
+- [x] VPC & 네트워크 구성
+- [x] RDS PostgreSQL 마이그레이션
+- [x] ElastiCache Redis 설정
 - [ ] EC2 + ALB + Auto Scaling 구성
 - [ ] Lambda Queue Monitor 배포 (큐 기반 ASG)
-- [ ] S3 + CloudFront 배포
-- [ ] Route 53 + ACM (SSL)
-- [ ] Secrets Manager 설정
+- [x] S3 + CloudFront 배포
+- [x] Route 53 + ACM (SSL)
+- [x] Secrets Manager 설정
 
 ### Phase 3: CI/CD (1-2주)
-- [ ] GitHub Actions 파이프라인
-- [ ] ECR (Docker Registry)
+- [x] GitHub Actions 파이프라인
+- [x] ECR (Docker Registry)
 - [ ] Blue/Green 배포
-- [ ] 자동화 테스트 추가
+- [x] 자동화 테스트 추가
 
 ### Phase 4: 모니터링 & 최적화 (1주)
 - [ ] CloudWatch 대시보드
