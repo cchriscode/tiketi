@@ -76,7 +76,7 @@ async function getEventInfo(eventId) {
   }
   
   const result = await db.query(
-    'SELECT title, artist FROM events WHERE id = $1',
+    'SELECT title, artist_name as artist FROM events WHERE id = $1',
     [eventId]
   );
   
