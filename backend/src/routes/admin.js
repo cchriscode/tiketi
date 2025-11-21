@@ -981,7 +981,8 @@ router.get('/reservations', async (req, res, next) => {
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *         description: 예매 ID
  *     requestBody:
  *       required: true
@@ -1007,6 +1008,8 @@ router.get('/reservations', async (req, res, next) => {
 router.patch('/reservations/:id/status', async (req, res, next) => {
   try {
     const { id } = req.params;
+    if (!ensureUUID(id, res)) return;
+
     const { status, paymentStatus } = req.body;
 
     const updates = [];
