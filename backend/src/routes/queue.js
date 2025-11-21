@@ -1,13 +1,23 @@
 const express = require('express');
 const queueManager = require('../services/queue-manager');
+const db = require('../config/database');
 const { authenticate } = require('../middleware/auth');
 const { emitToQueue } = require('../config/socket');
 const router = express.Router();
 const { logger } = require('../utils/logger');
 const CustomError = require('../utils/custom-error');
+const { validate: isUUID } = require('uuid');
 
 // 메트릭 import 추가
 const { queueUsers } = require('../metrics');
+
+const ensureValidEventId = (eventId, res) => {
+  if (!isUUID(eventId)) {
+    res.status(400).json({ error: 'Invalid event ID format' });
+    return false;
+  }
+  return true;
+};
 
 /**
  * @swagger
@@ -22,7 +32,8 @@ const { queueUsers } = require('../metrics');
  *         name: eventId
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *         description: 이벤트 ID
  *     responses:
  *       200:
@@ -35,6 +46,8 @@ const { queueUsers } = require('../metrics');
 router.post('/check/:eventId', authenticate, async (req, res, next) => {
   try {
     const { eventId } = req.params;
+    if (!ensureValidEventId(eventId, res)) return;
+
     const userId = req.user.id || req.user.userId;
     // 이벤트 정보 조회 (캐싱 권장)
     const eventInfo = await getEventInfo(eventId);
@@ -89,7 +102,8 @@ async function getEventInfo(eventId) {
  *         name: eventId
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *         description: 이벤트 ID
  *     responses:
  *       200:
@@ -102,6 +116,8 @@ async function getEventInfo(eventId) {
 router.get('/status/:eventId', authenticate, async (req, res, next) => {
   try {
     const { eventId } = req.params;
+    if (!ensureValidEventId(eventId, res)) return;
+
     const userId = req.user.id || req.user.userId;
     const status = await queueManager.getQueueStatus(eventId, userId);
     
@@ -128,7 +144,8 @@ router.get('/status/:eventId', authenticate, async (req, res, next) => {
  *         name: eventId
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *         description: 이벤트 ID
  *     responses:
  *       200:
@@ -144,6 +161,8 @@ router.get('/status/:eventId', authenticate, async (req, res, next) => {
 router.post('/leave/:eventId', authenticate, async (req, res, next) => {
   try {
     const { eventId } = req.params;
+    if (!ensureValidEventId(eventId, res)) return;
+
     const userId = req.user.id || req.user.userId;
     await queueManager.removeFromQueue(eventId, userId);
     await queueManager.removeActiveUser(eventId, userId);
@@ -171,7 +190,8 @@ router.post('/leave/:eventId', authenticate, async (req, res, next) => {
  *         name: eventId
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *         description: 이벤트 ID
  *     responses:
  *       200:
@@ -182,7 +202,8 @@ router.post('/leave/:eventId', authenticate, async (req, res, next) => {
  *               type: object
  *               properties:
  *                 eventId:
- *                   type: integer
+ *                   type: string
+ *                   format: uuid
  *                 queueSize:
  *                   type: integer
  *                 currentUsers:
@@ -196,6 +217,8 @@ router.get('/admin/:eventId', authenticate, async (req, res, next) => {
   try {
     // TODO: 관리자 권한 체크 추가
     const { eventId } = req.params;
+    if (!ensureValidEventId(eventId, res)) return;
+
     const queueSize = await queueManager.getQueueSize(eventId);
     const currentUsers = await queueManager.getCurrentUsers(eventId);
     const threshold = await queueManager.getThreshold(eventId);
@@ -228,7 +251,8 @@ router.get('/admin/:eventId', authenticate, async (req, res, next) => {
  *         name: eventId
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *         description: 이벤트 ID
  *     responses:
  *       200:
@@ -245,6 +269,8 @@ router.post('/admin/clear/:eventId', authenticate, async (req, res, next) => {
   try {
     // TODO: 관리자 권한 체크 추가
     const { eventId } = req.params;
+    if (!ensureValidEventId(eventId, res)) return;
+
     await queueManager.clearQueue(eventId);
     
     // 메트릭 초기화
