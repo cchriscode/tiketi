@@ -50,13 +50,13 @@ compactor:
 limits_config:
   retention_period: 24h # 하루마다 삭제
   # Loki가 초당 받아들일 수 있는 로그 용량을 4MB(기본) -> 20MB로 늘립니다.
-  ingestion_rate_mb: 20
+  # ingestion_rate_mb: 20
   # 순간적으로 몰리는 로그(Burst)도 40MB까지 허용합니다.
-  ingestion_burst_size_mb: 40
+  # ingestion_burst_size_mb: 40
   # 한 번의 쿼리가 쪼개질 수 있는 최대 병렬 작업 수 (기본 14 -> 50)
-  max_query_parallelism: 50
+  # max_query_parallelism: 50
   # 동시에 실행 대기열에 올릴 수 있는 최대 쿼리 수 (기본 20 -> 100)
-  max_outstanding_requests_per_tenant: 100
+  # max_outstanding_requests_per_tenant: 100
 
 ruler:
   alertmanager_url: http://localhost:9093
