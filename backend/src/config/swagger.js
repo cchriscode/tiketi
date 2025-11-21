@@ -11,16 +11,16 @@ const options = {
         name: 'Tiketi Team',
       },
     },
-    servers: [
-      {
-        url: 'http://localhost:3001',
-        description: '개발 서버',
-      },
-      {
-        url: 'https://api.tiketi.com',
-        description: '프로덕션 서버',
-      },
-    ],
+      servers: [
+        {
+          url: 'http://localhost:3001',
+          description: '개발 서버',
+        },
+        {
+          url: 'https://api.tiketi.store',
+          description: '프로덕션 서버',
+        },
+      ],
     components: {
       securitySchemes: {
         bearerAuth: {
@@ -44,11 +44,13 @@ const options = {
           type: 'object',
           properties: {
             id: {
-              type: 'integer',
+              type: 'string',
+              format: 'uuid',
               description: '사용자 ID',
             },
             userId: {
-              type: 'integer',
+              type: 'string',
+              format: 'uuid',
               description: '사용자 ID (중복)',
             },
             email: {
@@ -71,7 +73,8 @@ const options = {
           type: 'object',
           properties: {
             id: {
-              type: 'integer',
+              type: 'string',
+              format: 'uuid',
               description: '이벤트 ID',
             },
             title: {
@@ -124,7 +127,8 @@ const options = {
           type: 'object',
           properties: {
             id: {
-              type: 'integer',
+              type: 'string',
+              format: 'uuid',
               description: '티켓 타입 ID',
             },
             name: {
@@ -153,7 +157,8 @@ const options = {
           type: 'object',
           properties: {
             id: {
-              type: 'integer',
+              type: 'string',
+              format: 'uuid',
               description: '예매 ID',
             },
             reservation_number: {
@@ -195,7 +200,8 @@ const options = {
           type: 'object',
           properties: {
             id: {
-              type: 'integer',
+              type: 'string',
+              format: 'uuid',
               description: '좌석 ID',
             },
             section: {
@@ -229,7 +235,8 @@ const options = {
           type: 'object',
           properties: {
             id: {
-              type: 'integer',
+              type: 'string',
+              format: 'uuid',
               description: '뉴스 ID',
             },
             title: {
@@ -245,7 +252,8 @@ const options = {
               description: '작성자',
             },
             author_id: {
-              type: 'integer',
+              type: 'string',
+              format: 'uuid',
               description: '작성자 ID',
             },
             views: {
