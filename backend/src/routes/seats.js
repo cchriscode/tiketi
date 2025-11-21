@@ -27,8 +27,11 @@ const {
   seatsAvailable ,
   conversionFunnel
 } = require('../metrics');
+const { validate: isUUID } = require('uuid');
 
 const router = express.Router();
+
+const isValidUUID = (value) => typeof value === 'string' && isUUID(value);
 
 /**
  * @swagger
@@ -76,7 +79,8 @@ router.get('/layouts', async (req, res, next) => {
  *         name: eventId
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *         description: 이벤트 ID
  *     responses:
  *       200:
@@ -98,6 +102,9 @@ router.get('/layouts', async (req, res, next) => {
 router.get('/events/:eventId', async (req, res, next) => {
   try {
     const { eventId } = req.params;
+    if (!isValidUUID(eventId)) {
+      return res.status(400).json({ error: 'Invalid event ID format' });
+    }
 
     // Get event info and layout
     const eventResult = await db.query(
@@ -160,12 +167,14 @@ router.get('/events/:eventId', async (req, res, next) => {
  *               - seatIds
  *             properties:
  *               eventId:
- *                 type: integer
+ *                 type: string
+ *                 format: uuid
  *                 description: 이벤트 ID
  *               seatIds:
  *                 type: array
  *                 items:
- *                   type: integer
+ *                   type: string
+ *                   format: uuid
  *                 description: 좌석 ID 목록
  *     responses:
  *       201:
@@ -191,6 +200,10 @@ router.post('/reserve', authenticateToken, async (req, res, next) => {
     conversionFunnel.labels('seat_select', eventId).inc();
 
     // Validation
+    if (!eventId || !isValidUUID(eventId)) {
+      return res.status(400).json({ error: 'Invalid event ID format' });
+    }
+
     if (!seatIds || !Array.isArray(seatIds) || seatIds.length === 0) {
       return res.status(400).json({ error: 'Please select at least one seat' });
     }
@@ -199,6 +212,10 @@ router.post('/reserve', authenticateToken, async (req, res, next) => {
       return res.status(400).json({
         error: `최대 ${RESERVATION_SETTINGS.MAX_SEATS_PER_RESERVATION}석까지 선택 가능합니다.`
       });
+    }
+
+    if (!seatIds.every(isValidUUID)) {
+      return res.status(400).json({ error: 'Invalid seat ID format' });
     }
 
     // Generate all lock keys upfront
@@ -348,7 +365,8 @@ router.post('/reserve', authenticateToken, async (req, res, next) => {
  *         name: reservationId
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *         description: 예약 ID
  *     responses:
  *       200:
@@ -366,6 +384,10 @@ router.post('/reserve', authenticateToken, async (req, res, next) => {
 router.get('/reservation/:reservationId', authenticateToken, async (req, res, next) => {
   try {
     const { reservationId } = req.params;
+    if (!isValidUUID(reservationId)) {
+      return res.status(400).json({ error: 'Invalid reservation ID format' });
+    }
+
     const userId = req.user.userId;
 
     const result = await db.query(
