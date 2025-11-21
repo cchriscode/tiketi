@@ -9,15 +9,6 @@ const requestLogger = (req, res, next) => {
 
   const start = Date.now();
 
-  // [스파이 로직] res.send 함수를 가로챔
-  // 응답을 보내기 전에 내용을 변수에 몰래 저장해두는 원리입니다.
-  const originalSend = res.send;
-  let responseBody;
-
-  res.send = function (body) {
-    responseBody = body; // 내용을 훔쳐서 저장!
-    return originalSend.call(this, body); // 원래 하던 일(클라이언트 전송) 계속 진행
-  };
 
   // 응답이 끝날 때('finish') 실행될 리스너 등록
   // Node.js의 res 객체는 작업이 끝나면 'finish' 이벤트를 발생시킵니다.
@@ -26,10 +17,7 @@ const requestLogger = (req, res, next) => {
 
     const logData = logFormat(req, res, {
       type: 'request',
-      duration: `${duration}ms`,
-      response: {
-        body: responseBody
-      }
+      duration: `${duration}ms`
     });
 
     // 상태 코드에 따라 로그 레벨 다르게 찍기
