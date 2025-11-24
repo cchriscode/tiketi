@@ -1,5 +1,5 @@
 global:
-  scrape_interval: 5s
+  scrape_interval: 15s
 
 scrape_configs:
   # 1. Prometheus 자체 모니터링
