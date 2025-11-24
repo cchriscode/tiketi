@@ -312,7 +312,7 @@ router.get('/my', authenticateToken, async (req, res, next) => {
           )
         ) as items
       FROM reservations r
-      JOIN events e ON r.event_id = e.id
+      LEFT JOIN events e ON r.event_id = e.id
       JOIN reservation_items ri ON r.id = ri.reservation_id
       LEFT JOIN ticket_types tt ON ri.ticket_type_id = tt.id
       LEFT JOIN seats s ON ri.seat_id = s.id
@@ -380,7 +380,7 @@ router.get('/:id', authenticateToken, async (req, res, next) => {
           )
         ) as items
       FROM reservations r
-      JOIN events e ON r.event_id = e.id
+      LEFT JOIN events e ON r.event_id = e.id
       JOIN reservation_items ri ON r.id = ri.reservation_id
       LEFT JOIN ticket_types tt ON ri.ticket_type_id = tt.id
       LEFT JOIN seats s ON ri.seat_id = s.id
