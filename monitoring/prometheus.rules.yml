@@ -135,6 +135,21 @@ groups:
             (tiketi_seats_reserved_total + tiketi_seats_available_total + 0.0001)
           ) * 100
 
+      # 안전장치 적용 버전 (0~100% 범위 강제)
+      - record: tiketi:seats:occupancy_rate_safe
+        expr: |
+          clamp_min(
+            clamp_max(
+              (
+                tiketi_seats_reserved_total 
+                / 
+                (tiketi_seats_reserved_total + tiketi_seats_available_total + 0.0001)
+              ) * 100,
+              100
+            ),
+            0
+          )
+
       # 분당 예약 생성률
       - record: tiketi:reservations:per_minute
         expr: sum(rate(tiketi_reservations_created_total{status="success"}[5m])) * 60

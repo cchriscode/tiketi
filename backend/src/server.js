@@ -14,6 +14,7 @@ const requestLogger = require('./middleware/request-logger');
 const { logger } = require('./utils/logger');
 const metricsMiddleware = require('./metrics/middleware');
 const { register } = require('./metrics');
+const { initializeMetrics } = require('./metrics/initializer');
 
 dotenv.config();
 
@@ -96,6 +97,13 @@ server.listen(PORT, async () => {
     await initSeats();
   } catch (error) {
     logger.error('⚠️  Seat initialization will retry on database connection');
+  }
+
+  // 메트릭 초기화
+  try {
+    await initializeMetrics();
+  } catch (error) {
+    logger.error('⚠️  Metrics initialization failed:', error);
   }
 
   // Set Socket.IO for reservation cleaner (real-time seat release)
