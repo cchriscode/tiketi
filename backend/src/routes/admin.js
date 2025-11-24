@@ -581,25 +581,57 @@ router.delete('/events/:id', async (req, res, next) => {
     const { id } = req.params;
     if (!ensureUUID(id, res)) return;
 
-    // Check if there are any reservations
-    const reservationsResult = await db.query(
-      'SELECT COUNT(*) as count FROM reservations WHERE event_id = $1 AND status != $2',
-      [id, RESERVATION_STATUS.CANCELLED]
-    );
+    const client = await db.getClient();
+    try {
+      await client.query('BEGIN');
 
-    if (parseInt(reservationsResult.rows[0].count) > 0) {
-      return res.status(400).json({ error: '예매가 존재하는 이벤트는 삭제할 수 없습니다.' });
+      // 취소되지 않은 모든 예약을 취소/환불 처리
+      const cancelResult = await client.query(
+        `UPDATE reservations
+         SET status = $1,
+             payment_status = CASE
+               WHEN payment_status = $2 THEN $3
+               ELSE payment_status
+             END
+         WHERE event_id = $4 AND status != $1
+         RETURNING id`,
+        [
+          RESERVATION_STATUS.CANCELLED,
+          PAYMENT_STATUS.COMPLETED,
+          PAYMENT_STATUS.REFUNDED,
+          id
+        ]
+      );
+
+      // 이벤트 삭제 (ON DELETE SET NULL 로 참조는 null 처리)
+      const deleteResult = await client.query(
+        'DELETE FROM events WHERE id = $1 RETURNING id, title',
+        [id]
+      );
+
+      if (deleteResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: '이벤트를 찾을 수 없습니다.' });
+      }
+
+      await client.query('COMMIT');
+
+      // 캐시 무효화
+      await invalidateCachePatterns(redisClient, [
+        CACHE_KEYS.EVENT(id),
+        CACHE_KEYS.EVENTS_PATTERN
+      ]);
+
+      res.json({
+        message: '이벤트가 삭제되었습니다.',
+        cancelledReservations: cancelResult.rowCount,
+      });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
     }
-
-    await db.query('DELETE FROM events WHERE id = $1', [id]);
-
-    // Invalidate cache (즉시 반영)
-    await invalidateCachePatterns(redisClient, [
-      CACHE_KEYS.EVENT(id),
-      CACHE_KEYS.EVENTS_PATTERN
-    ]);
-
-    res.json({ message: '이벤트가 삭제되었습니다.' });
   } catch (error) {
     next(new CustomError(500, '이벤트 삭제에 실패했습니다.', error));
   }
@@ -930,7 +962,7 @@ router.get('/reservations', async (req, res, next) => {
         e.title as event_title, e.venue, e.event_date
       FROM reservations r
       JOIN users u ON r.user_id = u.id
-      JOIN events e ON r.event_id = e.id
+      LEFT JOIN events e ON r.event_id = e.id
     `;
 
     const params = [];

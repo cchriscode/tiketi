@@ -86,7 +86,7 @@ CREATE TABLE seats (
 CREATE TABLE reservations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES users(id),
-    event_id UUID REFERENCES events(id),
+    event_id UUID REFERENCES events(id) ON DELETE SET NULL,
     reservation_number VARCHAR(50) UNIQUE NOT NULL,
     total_amount INTEGER NOT NULL,
     status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'cancelled')),
