@@ -366,11 +366,17 @@ router.put('/events/:id', async (req, res, next) => {
     // 날짜를 한국 시간으로 변환해서 출력
     if (saleStartDate) {
       const kst = new Date(new Date(saleStartDate).getTime() + (9 * 60 * 60 * 1000));
-      logger.log('  saleStartDate (KST):', kst.toISOString().replace('T', ' ').slice(0, 16));
+      logger.info({
+        message: 'saleStartDate (KST)',
+        saleStartDate: kst.toISOString().replace('T', ' ').slice(0, 16)
+      });
     }
     if (saleEndDate) {
       const kst = new Date(new Date(saleEndDate).getTime() + (9 * 60 * 60 * 1000));
-      logger.log('  saleEndDate (KST):', kst.toISOString().replace('T', ' ').slice(0, 16));
+      logger.info({
+        message: 'saleEndDate (KST)',
+        saleEndDate: kst.toISOString().replace('T', ' ').slice(0, 16)
+      });
     }
 
     // 상태는 event-status-updater가 자동으로 관리하므로 수동 업데이트 제외
