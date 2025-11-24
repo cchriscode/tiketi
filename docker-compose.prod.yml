@@ -138,14 +138,16 @@ services:
       - "9090:9090"
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus.rules.yml:/etc/prometheus/prometheus.rules.yml
       - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'      # 15일 → 7일로 단축
+      - '--storage.tsdb.retention.size=5GB'     # 최대 5GB로 제한
+      - '--web.enable-lifecycle'                # 설정 reload 가능
     networks:
       - tiketi-network
-    deploy:
-      resources:
-        limits:
-          cpus: "1.5"
-          memory: "2G"
 
   # 4. Grafana (시각화 대시보드)
   grafana:
