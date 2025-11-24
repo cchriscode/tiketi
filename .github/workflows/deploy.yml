@@ -246,3 +246,58 @@ jobs:
           echo "❌ Deployment failed!"
           echo "📋 Check logs with: docker logs backend"
           echo "🔍 Debug: docker ps -a"
+
+  # ========================================
+  # Job 4: Discord 알림 (배포 결과)
+  # ========================================
+  notify:
+    name: Notify Discord
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Send Discord notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          STATUS: ${{ needs.deploy.result }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "DISCORD_WEBHOOK is not set; skipping notification."
+            exit 0
+          fi
+
+          if [ "$STATUS" = "success" ]; then
+            EMOJI="✅"
+            COLOR="3066993"
+            STATUS_TEXT="성공"
+          else
+            EMOJI="❌"
+            COLOR="15158332"
+            STATUS_TEXT="실패"
+          fi
+
+          curl -H "Content-Type: application/json" \
+               -X POST \
+               -d @- "$DISCORD_WEBHOOK" << 'EOF'
+          {
+            "username": "CI/CD Bot",
+            "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+            "embeds": [
+              {
+                "title": "'"$EMOJI"' 배포 '"$STATUS_TEXT"'",
+                "description": "AWS CI/CD 파이프라인 배포 결과",
+                "color": '"$COLOR"',
+                "fields": [
+                  { "name": "리포지토리", "value": "${{ github.repository }}", "inline": true },
+                  { "name": "브랜치", "value": "${{ github.ref_name }}", "inline": true },
+                  { "name": "커밋 메시지", "value": "${{ github.event.head_commit.message }}", "inline": false },
+                  { "name": "커밋 SHA", "value": "\`${{ github.sha }}\`", "inline": true },
+                  { "name": "푸시한 사람", "value": "${{ github.actor }}", "inline": true },
+                  { "name": "배포 환경", "value": "Production (AWS)", "inline": true },
+                  { "name": "로그 확인", "value": "[GitHub Actions 보기](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})", "inline": false }
+                ],
+                "timestamp": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+              }
+            ]
+          }
+          EOF
