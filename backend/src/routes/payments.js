@@ -81,6 +81,7 @@ const ensureUUID = (value, res, field = 'id') => {
 router.post('/process', authenticateToken, async (req, res, next) => {
   try {
     const { reservationId, paymentMethod } = req.body;
+    let eventId = null;
     const userId = req.user.userId;
 
     // Validation
@@ -114,6 +115,8 @@ router.post('/process', authenticateToken, async (req, res, next) => {
       }
 
       const reservation = reservationResult.rows[0];
+      // eventId 저장 (에러 핸들러에서 사용하기 위해)
+      eventId = reservation.event_id;
 
       // Check if already paid
       if (reservation.payment_status === PAYMENT_STATUS.COMPLETED) {
@@ -145,8 +148,12 @@ router.post('/process', authenticateToken, async (req, res, next) => {
         ]
       );
 
-      // ✅ 메트릭 추가: 결제 성공
-      paymentsTotal.labels('success', reservation.event_id).inc();
+      // 메트릭 추가: 결제 성공
+      paymentsTotal.labels({
+        status: 'success',
+        event_id: reservation.event_id,
+        payment_method: paymentMethod
+      }).inc();
       paymentAmount.labels(reservation.event_id).observe(reservation.total_amount);
       conversionFunnel.labels('payment_completed', reservation.event_id).inc();
 
@@ -200,19 +207,16 @@ router.post('/process', authenticateToken, async (req, res, next) => {
 
   } catch (error) {
     // 메트릭 추가: 결제 실패
-    // 예약 정보가 있다면 이벤트 ID 기록
-    try {
-      if (reservationId) {
-        const eventResult = await db.query(
-          'SELECT event_id FROM reservations WHERE id = $1',
-          [reservationId]
-        );
-        if (eventResult.rows.length > 0) {
-          paymentsTotal.labels('failed', eventResult.rows[0].event_id).inc();
-        }
+    if (eventId) {
+      try {
+        paymentsTotal.labels({
+          status: 'failed',
+          event_id: eventId,
+          payment_method: paymentMethod || 'unknown'
+        }).inc();
+      } catch (metricError) {
+        logger.error('⚠️  메트릭 기록 실패:', metricError);
       }
-    } catch (metricError) {
-      logger.error('⚠️  메트릭 기록 실패:', metricError);
     }
 
     next(new CustomError(400, 'Payment process error', error));
