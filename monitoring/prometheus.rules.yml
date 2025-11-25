@@ -106,19 +106,6 @@ groups:
   - name: business_metrics
     interval: 60s  # 비즈니스 메트릭은 1분마다만 계산
     rules:
-      # 24시간 예약 수 (성공)
-      - record: tiketi:reservations:total_24h
-        expr: sum(increase(tiketi_reservations_created_total{status="success"}[24h]))
-
-      # 결제 성공률
-      - record: tiketi:payments:success_rate
-        expr: |
-          (
-            sum(tiketi_payments_total{status="success"})
-            /
-            (sum(tiketi_payments_total) or vector(1))
-          ) * 100
-
       # 평균 대기 시간 (1시간)
       - record: tiketi:queue:avg_wait_time_1h
         expr: |
@@ -134,25 +121,6 @@ groups:
             / 
             (tiketi_seats_reserved_total + tiketi_seats_available_total + 0.0001)
           ) * 100
-
-      # 안전장치 적용 버전 (0~100% 범위 강제)
-      - record: tiketi:seats:occupancy_rate_safe
-        expr: |
-          clamp_min(
-            clamp_max(
-              (
-                tiketi_seats_reserved_total 
-                / 
-                (tiketi_seats_reserved_total + tiketi_seats_available_total + 0.0001)
-              ) * 100,
-              100
-            ),
-            0
-          )
-
-      # 분당 예약 생성률
-      - record: tiketi:reservations:per_minute
-        expr: sum(rate(tiketi_reservations_created_total{status="success"}[5m])) * 60
 
   # ==========================================
   # 대기열 메트릭 (추가)

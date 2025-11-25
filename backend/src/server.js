@@ -14,7 +14,7 @@ const requestLogger = require('./middleware/request-logger');
 const { logger } = require('./utils/logger');
 const metricsMiddleware = require('./metrics/middleware');
 const { register } = require('./metrics');
-const { initializeMetrics } = require('./metrics/initializer');
+const metricsAggregator = require('./metrics/aggregator');
 
 dotenv.config();
 
@@ -85,6 +85,9 @@ server.listen(PORT, async () => {
   logger.info(`📚 API Docs: http://localhost:${PORT}/api-docs`);
   logger.info(`🔌 WebSocket ready on port ${PORT}`);
 
+  // 메트릭 집계 시작
+  metricsAggregator.start();
+
   // Initialize admin account (with retry on database connection failure)
   try {
     await initializeAdmin();
@@ -97,13 +100,6 @@ server.listen(PORT, async () => {
     await initSeats();
   } catch (error) {
     logger.error('⚠️  Seat initialization will retry on database connection');
-  }
-
-  // 메트릭 초기화
-  try {
-    await initializeMetrics();
-  } catch (error) {
-    logger.error('⚠️  Metrics initialization failed:', error);
   }
 
   // Set Socket.IO for reservation cleaner (real-time seat release)
@@ -142,6 +138,10 @@ async function gracefulShutdown(signal) {
     reservationCleaner.stop();
     eventStatusUpdater.stop();
     logger.info('✅ Background services stopped');
+
+    // 메트릭 집계 중지
+    logger.info('⏸️  Stopping metrics aggregator...');
+    metricsAggregator.stop();
 
     // 3. Close Socket.IO connections
     logger.info('🔌 Closing WebSocket connections...');
