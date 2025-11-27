@@ -102,41 +102,44 @@ class ReservationCleaner {
         if (seatsResult.rows.length > 0) {
           const seatIds = seatsResult.rows.map(row => row.seat_id);
 
-          await client.query(
+          const releaseResult = await client.query(
             `UPDATE seats
              SET status = $1, updated_at = NOW()
-             WHERE id = ANY($2) AND status = $3`,
+             WHERE id = ANY($2) AND status = $3
+             RETURNING id`,
             [SEAT_STATUS.AVAILABLE, seatIds, SEAT_STATUS.LOCKED]
           );
 
-          // 메트릭 추가: 좌석 해제
-          seatsReserved.labels(reservation.event_id).dec(seatIds.length);
-          seatsAvailable.labels(reservation.event_id).inc(seatIds.length);
-          // 실시간 좌석 해제 알림 (WebSocket)
-          if (this.io) {
-            try {
-              for (const seatId of seatIds) {
-                this.io.to(`seats:${reservation.event_id}`).emit('seat-released', {
-                  seatId,
-                  status: SEAT_STATUS.AVAILABLE,
-                  timestamp: new Date(),
-                });
+          const releasedSeatIds = releaseResult.rows.map(row => row.id);
+
+          if (releasedSeatIds.length > 0) {
+            // Metrics: only update counts for seats actually released
+            seatsReserved.labels(reservation.event_id).dec(releasedSeatIds.length);
+            seatsAvailable.labels(reservation.event_id).inc(releasedSeatIds.length);
+            // Broadcast release only for seats whose status changed
+            if (this.io) {
+              try {
+                for (const seatId of releasedSeatIds) {
+                  this.io.to(`seats:${reservation.event_id}`).emit('seat-released', {
+                    seatId,
+                    status: SEAT_STATUS.AVAILABLE,
+                    timestamp: new Date(),
+                  });
+                }
+                logger.info(`🪑 Seats released: ${releasedSeatIds.join(', ')} (event: ${reservation.event_id})`);
+              } catch (socketError) {
+                logger.error('⚠️  WebSocket broadcast error:', socketError.message);
               }
-              logger.info(`🪑 Seats released: ${seatIds.join(', ')} (event: ${reservation.event_id})`);
-            } catch (socketError) {
-              logger.error('⚠️  WebSocket broadcast error:', socketError.message);
             }
           }
         }
-
-        // Update reservation status to cancelled (expired reservations are marked as cancelled)
+        // Mark as expired so the cleaner doesn't reprocess this reservation
         await client.query(
           `UPDATE reservations 
-           SET status = $1, updated_at = NOW()
-           WHERE id = $2`,
-          [RESERVATION_STATUS.CANCELLED, reservation.id]
+           SET status = $1, payment_status = $2, updated_at = NOW()
+           WHERE id = $3`,
+          [RESERVATION_STATUS.EXPIRED, PAYMENT_STATUS.FAILED, reservation.id]
         );
-        // 메트릭 추가: 예약 만료
         reservationsExpired.labels(reservation.event_id).inc();
       }
 
