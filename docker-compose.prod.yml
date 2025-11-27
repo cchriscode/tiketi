@@ -138,7 +138,14 @@ services:
       - "9090:9090"
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus.rules.yml:/etc/prometheus/prometheus.rules.yml:ro
       - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'      # 15일 → 7일로 단축
+      - '--storage.tsdb.retention.size=5GB'     # 최대 5GB로 제한
+      - '--web.enable-lifecycle'                # 설정 reload 가능
     networks:
       - tiketi-network
 
@@ -153,6 +160,7 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin # 초기 비번 설정 (나중에 바꾸세요)
+      - GF_SERVER_ROOT_URL=https://grafana.tiketi.store
     networks:
       - tiketi-network
     depends_on:

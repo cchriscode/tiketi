@@ -48,24 +48,6 @@ const queueUsers = new client.Gauge({
   registers: [register]
 });
 
-// 대기열에서 대기한 시간
-const queueWaitTime = new client.Histogram({
-  name: 'tiketi_queue_wait_seconds',
-  help: 'Queue waiting time in seconds',
-  labelNames: ['event_id', 'event_title', 'artist'],
-  buckets: [1, 5, 10, 30, 60, 120, 300],
-  registers: [register]
-});
-
-// 예약
-// 예약 생성 (성공/실패, 이벤트별)
-const reservationsCreated = new client.Counter({
-  name: 'tiketi_reservations_created_total',
-  help: 'Total reservations created',
-  labelNames: ['event_id', 'status'],
-  registers: [register]
-});
-
 // 예약 취소 횟수
 const reservationsCancelled = new client.Counter({
   name: 'tiketi_reservations_cancelled_total',
@@ -74,20 +56,12 @@ const reservationsCancelled = new client.Counter({
   registers: [register]
 });
 
-// 예약 만료 횟수
-const reservationsExpired = new client.Counter({
-  name: 'tiketi_reservations_expired_total',
-  help: 'Total reservations expired',
-  labelNames: ['event_id'],
-  registers: [register]
-});
-
 // 결제(Payments)
-// 결제 시도 횟수
+// 결제 시도 횟수-
 const paymentsTotal = new client.Counter({
   name: 'tiketi_payments_total',
   help: 'Total payment attempts',
-  labelNames: ['status', 'event_id'], // status: success, failed
+  labelNames: ['status', 'event_id', 'payment_method'], // status: success, failed
   registers: [register]
 });
 
@@ -97,23 +71,6 @@ const paymentAmount = new client.Histogram({
   help: 'Payment amount distribution',
   labelNames: ['event_id'],
   buckets: [10000, 50000, 100000, 150000, 200000, 300000],
-  registers: [register]
-});
-
-// 좌석(Seat)
-// 예약된 좌석 수
-const seatsReserved = new client.Gauge({
-  name: 'tiketi_seats_reserved_total',
-  help: 'Number of reserved seats',
-  labelNames: ['event_id'],
-  registers: [register]
-});
-
-// 남은 좌석 수
-const seatsAvailable = new client.Gauge({
-  name: 'tiketi_seats_available_total',
-  help: 'Number of available seats',
-  labelNames: ['event_id'],
   registers: [register]
 });
 
@@ -134,11 +91,64 @@ const eventViews = new client.Counter({
   registers: [register]
 });
 
-// 전환 퍼널
-const conversionFunnel = new client.Counter({
-  name: 'tiketi_conversion_funnel_total',
-  help: 'Conversion funnel stages',
-  labelNames: ['stage', 'event_id'],
+// 오늘 총 매출 (Gauge - 주기적으로 업데이트)
+const dailyRevenue = new client.Gauge({
+  name: 'tiketi_daily_revenue_total',
+  help: 'Total revenue today (pre-calculated)',
+  registers: [register]
+});
+
+// 오늘 결제 완료 건수
+const dailyPayments = new client.Gauge({
+  name: 'tiketi_daily_payments_total',
+  help: 'Total successful payments today',
+  registers: [register]
+});
+
+// 예약→결제 전환율
+const reservationConversionRate = new client.Gauge({
+  name: 'tiketi_reservation_conversion_rate',
+  help: 'Reservation to payment conversion rate (%)',
+  registers: [register]
+});
+
+// 이벤트별 예약 건수 (24시간)
+const eventReservations24h = new client.Gauge({
+  name: 'tiketi_event_reservations_24h',
+  help: 'Reservations per event in last 24h',
+  labelNames: ['event_id', 'event_title'],
+  registers: [register]
+});
+
+// 이벤트별 매출 (24시간)
+const eventRevenue24h = new client.Gauge({
+  name: 'tiketi_event_revenue_24h',
+  help: 'Revenue per event in last 24h',
+  labelNames: ['event_id', 'event_title'],
+  registers: [register]
+});
+
+// 이벤트별 평균 단가
+const eventAvgPrice = new client.Gauge({
+  name: 'tiketi_event_avg_price',
+  help: 'Average price per event',
+  labelNames: ['event_id', 'event_title'],
+  registers: [register]
+});
+
+// 결제 수단별 건수 (24시간)
+const paymentMethodCount = new client.Gauge({
+  name: 'tiketi_payment_method_count_24h',
+  help: 'Payment count by method in last 24h',
+  labelNames: ['payment_method'],
+  registers: [register]
+});
+
+// 전환 퍼널 비율
+const conversionFunnelRate = new client.Gauge({
+  name: 'tiketi_conversion_funnel_rate',
+  help: 'Conversion funnel rate (%)',
+  labelNames: ['stage'], // view, queue, reservation, payment
   registers: [register]
 });
 
@@ -175,17 +185,19 @@ module.exports = {
   
   // 비즈니스
   queueUsers,
-  queueWaitTime,
-  reservationsCreated,
   reservationsCancelled,
-  reservationsExpired,
   paymentsTotal,
   paymentAmount,
-  seatsReserved,
-  seatsAvailable,
   authAttempts,
   eventViews,
-  conversionFunnel,
+  dailyRevenue,
+  dailyPayments,
+  reservationConversionRate,
+  eventReservations24h,
+  eventRevenue24h,
+  eventAvgPrice,
+  paymentMethodCount,
+  conversionFunnelRate,
   
   // DB
   dbQueryDuration,

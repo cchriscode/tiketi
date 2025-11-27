@@ -348,7 +348,8 @@ router.post('/reserve', authenticateToken, async (req, res, next) => {
     });
 
   } catch (error) {
-    next(new CustomError(400, 'Reverse seats error', error));
+    // 실제 에러 메시지 전달 (커스텀 에러 메시지 보존)
+    next(new CustomError(400, error.message || 'Failed to reserve seats', error));
   }
 });
 

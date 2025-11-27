@@ -14,6 +14,7 @@ const requestLogger = require('./middleware/request-logger');
 const { logger } = require('./utils/logger');
 const metricsMiddleware = require('./metrics/middleware');
 const { register } = require('./metrics');
+const metricsAggregator = require('./metrics/aggregator');
 
 dotenv.config();
 
@@ -84,6 +85,9 @@ server.listen(PORT, async () => {
   logger.info(`📚 API Docs: http://localhost:${PORT}/api-docs`);
   logger.info(`🔌 WebSocket ready on port ${PORT}`);
 
+  // 메트릭 집계 시작
+  metricsAggregator.start();
+
   // Initialize admin account (with retry on database connection failure)
   try {
     await initializeAdmin();
@@ -134,6 +138,10 @@ async function gracefulShutdown(signal) {
     reservationCleaner.stop();
     eventStatusUpdater.stop();
     logger.info('✅ Background services stopped');
+
+    // 메트릭 집계 중지
+    logger.info('⏸️  Stopping metrics aggregator...');
+    metricsAggregator.stop();
 
     // 3. Close Socket.IO connections
     logger.info('🔌 Closing WebSocket connections...');

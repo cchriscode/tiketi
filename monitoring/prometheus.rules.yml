@@ -1,0 +1,133 @@
+groups:
+  # ==========================================
+  # HTTP 메트릭 (대시보드 1)
+  # ==========================================
+  - name: http_metrics
+    interval: 15s  # 15초마다 미리 계산
+    rules:
+      # HTTP 요청 속도 (초당 요청 수)
+      - record: tiketi:http_requests:rate1m
+        expr: sum(rate(http_requests_total[1m]))
+
+      # HTTP 에러율 (5분 평균)
+      - record: tiketi:http_errors:rate5m
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"[45].."}[5m])) or vector(0)
+          )
+          /
+          (
+            sum(rate(http_requests_total[5m])) or vector(0.0001)
+          )
+          * 100
+
+      # 경로별 평균 응답 시간
+      - record: tiketi:http_duration:avg_by_path
+        expr: |
+          sum by (path) (rate(http_request_duration_seconds_sum[5m]))
+          /
+          (sum by (path) (rate(http_request_duration_seconds_count[5m])) + 0.0001)
+
+      # P50 (중앙값)
+      - record: tiketi:http_duration:p50
+        expr: histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
+
+      # P90 (상위 10%)
+      - record: tiketi:http_duration:p90
+        expr: histogram_quantile(0.90, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
+
+      # P99 (상위 1%)
+      - record: tiketi:http_duration:p99
+        expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
+
+      # 상태 코드별 에러 발생률
+      - record: tiketi:http_errors:rate_by_status
+        expr: sum by (status) (rate(http_requests_total{status=~"[45].."}[5m]))
+
+  # ==========================================
+  # 시스템 메트릭 (대시보드 1)
+  # ==========================================
+  - name: system_metrics
+    interval: 30s  # 30초마다 계산 (시스템 메트릭은 덜 중요)
+    rules:
+      # CPU 사용률
+      - record: tiketi:system:cpu_usage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[1m])) * 100)
+
+      # 메모리 사용률
+      - record: tiketi:system:memory_usage
+        expr: |
+          (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) 
+          / 
+          node_memory_MemTotal_bytes * 100
+
+  # ==========================================
+  # 데이터베이스 메트릭 (대시보드 2)
+  # ==========================================
+  - name: database_metrics
+    interval: 30s
+    rules:
+      # PostgreSQL 캐시 히트율
+      - record: tiketi:postgres:cache_hit_ratio
+        expr: |
+          (
+            sum(rate(pg_stat_database_blks_hit{datname="tiketi"}[5m]))
+            /
+            (sum(rate(pg_stat_database_blks_hit{datname="tiketi"}[5m])) + sum(rate(pg_stat_database_blks_read{datname="tiketi"}[5m])) + 0.0001)
+          ) * 100
+
+      # Redis 메모리 사용률
+      - record: tiketi:redis:memory_usage
+        expr: (redis_memory_used_bytes / redis_memory_max_bytes) * 100
+
+      # Redis 캐시 히트율
+      - record: tiketi:redis:cache_hit_ratio
+        expr: |
+          (
+            rate(redis_keyspace_hits_total[5m])
+            /
+            (rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m]) + 0.0001)
+          ) * 100
+
+      # Redis 초당 명령 처리
+      - record: tiketi:redis:commands_per_sec
+        expr: rate(redis_commands_processed_total[1m])
+
+      # DB 쿼리 평균 시간 (테이블/작업별)
+      - record: tiketi:db:query_duration_avg
+        expr: |
+          sum by (table, operation) (rate(tiketi_db_query_duration_seconds_sum[5m]))
+          /
+          (sum by (table, operation) (rate(tiketi_db_query_duration_seconds_count[5m])) + 0.0001)
+
+  # ==========================================
+  # 비즈니스 메트릭 (대시보드 3)
+  # ==========================================
+  - name: business_metrics
+    interval: 60s  # 비즈니스 메트릭은 1분마다만 계산
+    rules:
+      # 평균 대기 시간 (1시간)
+      - record: tiketi:queue:avg_wait_time_1h
+        expr: |
+          rate(tiketi_queue_wait_seconds_sum[1h])
+          /
+          (rate(tiketi_queue_wait_seconds_count[1h]) or vector(0.0001))
+
+      # 좌석 점유율
+      - record: tiketi:seats:occupancy_rate
+        expr: |
+          (
+            tiketi_seats_reserved_total 
+            / 
+            (tiketi_seats_reserved_total + tiketi_seats_available_total + 0.0001)
+          ) * 100
+
+  # ==========================================
+  # 대기열 메트릭 (추가)
+  # ==========================================
+  - name: queue_metrics
+    interval: 15s
+    rules:
+      # 전체 대기열 사용자 수
+      - record: tiketi:queue:total_users
+        expr: sum(tiketi_queue_users_total)
