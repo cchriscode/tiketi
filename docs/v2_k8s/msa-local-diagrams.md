@@ -14,12 +14,18 @@ graph TB
         end
 
         subgraph "Backend Namespace (tiketi)"
-            subgraph "Microservices"
+            subgraph "API Gateway Layer"
                 Auth["🔐 Auth Service<br/>Port: 3001<br/>────────<br/>• 이메일 로그인<br/>• 구글 OAuth ✨<br/>• JWT 발급"]
                 Event["📅 Event Service<br/>Port: 3002<br/>────────<br/>• 이벤트 조회<br/>• 공지사항<br/>• 이미지 업로드"]
+            end
+
+            subgraph "Core Business Services"
                 Queue["⏳ Queue Service<br/>Port: 3003<br/>────────<br/>• 대기열 관리<br/>• WebSocket<br/>• 실시간 알림"]
                 Reservation["🎫 Reservation Service<br/>Port: 3004<br/>────────<br/>• 예매 처리<br/>• 좌석 관리<br/>• 분산 락"]
                 Payment["💳 Payment Service ✨<br/>Port: 3005<br/>────────<br/>• 결제 처리<br/>• 포인트 충전<br/>• 포인트 사용"]
+            end
+
+            subgraph "Support Services"
                 Notification["🔔 Notification Service<br/>Port: 3006<br/>────────<br/>• 이메일 발송<br/>• 푸시 알림<br/>• SQS 소비"]
             end
 
@@ -28,7 +34,7 @@ graph TB
                 Redis[("🔴 Redis<br/>Port: 6379<br/>────────<br/>• 대기열 (Sorted Set)<br/>• 세션 (Socket.IO)<br/>• 분산 락")]
             end
 
-            subgraph "Monitoring"
+            subgraph "Monitoring Stack"
                 Prometheus["📊 Prometheus<br/>Port: 9090"]
                 Grafana["📈 Grafana<br/>Port: 3002"]
                 Loki["📋 Loki<br/>Port: 3100"]
@@ -43,52 +49,61 @@ graph TB
         SES["📧 AWS SES"]
     end
 
-    %% Frontend connections
-    Browser --> Frontend
-    Frontend --> Auth
-    Frontend --> Event
-    Frontend --> Queue
-    Frontend --> Reservation
-    Frontend --> Payment
+    %% User to Frontend
+    Browser ==> Frontend
 
-    %% Service to Service
-    Queue -.->|입장 허가 확인| Reservation
-    Reservation -->|결제 요청| Payment
-    Payment -.->|결제 완료| Reservation
-    Reservation -->|알림 발행| Notification
-    Payment -->|알림 발행| Notification
+    %% Frontend to Services (thick lines for main flows)
+    Frontend ==> Auth
+    Frontend ==> Event
+    Frontend ==> Queue
+    Frontend ==> Reservation
+    Frontend ==> Payment
 
-    %% Data Layer connections
+    %% Service to Service Communication (main business flow)
+    Queue ==>|입장 허가| Reservation
+    Reservation ==>|결제 요청| Payment
+    Payment ==>|결제 완료| Reservation
+    Reservation -.->|알림 발행| Notification
+    Payment -.->|알림 발행| Notification
+
+    %% Data Layer - PostgreSQL connections
     Auth --> Postgres
     Event --> Postgres
     Reservation --> Postgres
     Payment --> Postgres
 
+    %% Data Layer - Redis connections
     Queue --> Redis
     Reservation --> Redis
     Payment --> Redis
 
-    %% External connections
-    Auth -.->|OAuth| Google
-    Event -.->|이미지| S3
-    Payment -.->|결제| PG
-    Notification -.->|이메일| SES
+    %% External Services connections
+    Auth -.->|OAuth 2.0| Google
+    Event -.->|이미지 업로드| S3
+    Payment -.->|결제 API| PG
+    Notification -.->|이메일 발송| SES
 
-    %% Monitoring connections
-    Auth -.-> Prometheus
-    Event -.-> Prometheus
-    Queue -.-> Prometheus
-    Reservation -.-> Prometheus
-    Payment -.-> Prometheus
-    Notification -.-> Prometheus
+    %% Monitoring - Metrics collection (grouped)
+    Auth & Event & Queue & Reservation & Payment & Notification -.-> Prometheus
+    Prometheus ==> Grafana
 
-    Prometheus --> Grafana
-    Auth -.-> Loki
-    Event -.-> Loki
-    Queue -.-> Loki
-    Reservation -.-> Loki
-    Payment -.-> Loki
-    Notification -.-> Loki
+    %% Monitoring - Log collection (grouped)
+    Auth & Event & Queue & Reservation & Payment & Notification -.-> Loki
+
+    %% Styling
+    classDef apiLayer fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef coreService fill:#FFF3E0,stroke:#F57C00,stroke-width:2px
+    classDef supportService fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px
+    classDef dataLayer fill:#E8F5E9,stroke:#43A047,stroke-width:2px
+    classDef monitoring fill:#FFF9C4,stroke:#F9A825,stroke-width:2px
+    classDef external fill:#FFEBEE,stroke:#D32F2F,stroke-width:2px
+
+    class Auth,Event apiLayer
+    class Queue,Reservation,Payment coreService
+    class Notification supportService
+    class Postgres,Redis dataLayer
+    class Prometheus,Grafana,Loki monitoring
+    class Google,S3,PG,SES external
 ```
 
 ---
