@@ -54,9 +54,9 @@ graph TB
     %% Service to Service
     Queue -.->|입장 허가 확인| Reservation
     Reservation -->|결제 요청| Payment
-    Payment -.->|결제 완료 이벤트| Reservation
-    Reservation -->|알림 발행 (SQS)| Notification
-    Payment -->|알림 발행 (SQS)| Notification
+    Payment -.->|결제 완료| Reservation
+    Reservation -->|알림 발행| Notification
+    Payment -->|알림 발행| Notification
 
     %% Data Layer connections
     Auth --> Postgres
@@ -69,10 +69,10 @@ graph TB
     Payment --> Redis
 
     %% External connections
-    Auth -.->|OAuth 2.0| Google
-    Event -.->|이미지 업로드| S3
-    Payment -.->|결제 요청| PG
-    Notification -.->|이메일 발송| SES
+    Auth -.->|OAuth| Google
+    Event -.->|이미지| S3
+    Payment -.->|결제| PG
+    Notification -.->|이메일| SES
 
     %% Monitoring connections
     Auth -.-> Prometheus
@@ -89,16 +89,6 @@ graph TB
     Reservation -.-> Loki
     Payment -.-> Loki
     Notification -.-> Loki
-
-    style Auth fill:#FFE5B4,stroke:#FF8C00,stroke-width:3px
-    style Event fill:#E0F7FA,stroke:#00ACC1,stroke-width:3px
-    style Queue fill:#FFF9C4,stroke:#FBC02D,stroke-width:3px
-    style Reservation fill:#F3E5F5,stroke:#8E24AA,stroke-width:3px
-    style Payment fill:#E8F5E9,stroke:#43A047,stroke-width:3px
-    style Notification fill:#FCE4EC,stroke:#D81B60,stroke-width:3px
-    style Postgres fill:#336791,stroke:#336791,stroke-width:3px,color:#fff
-    style Redis fill:#DC382D,stroke:#DC382D,stroke-width:3px,color:#fff
-    style Google fill:#4285F4,stroke:#4285F4,stroke-width:3px,color:#fff
 ```
 
 ---
@@ -128,65 +118,58 @@ sequenceDiagram
     %% 2. 대기열 진입
     User->>FE: 2. 이벤트 페이지 접속
     FE->>Queue: POST /api/queue/enter
-    Queue->>Redis: ZADD queue:event_id (timestamp)
+    Queue->>Redis: ZADD queue event_id
     Redis-->>Queue: OK
-    Queue-->>FE: 대기열 순번: 1523
+    Queue-->>FE: 대기열 순번 1523
 
-    Note over Queue,Redis: 1초마다 processQueue()<br/>입장 가능한 만큼 꺼내기
+    Note over Queue,Redis: 1초마다 processQueue 실행
 
-    Queue->>Redis: ZRANGE queue:event_id 0 99
-    Redis-->>Queue: [user1, user2, ...]
-    Queue->>FE: WebSocket: "입장 가능!"
+    Queue->>Redis: ZRANGE queue
+    Redis-->>Queue: users list
+    Queue->>FE: WebSocket 입장 가능
     FE-->>User: 입장 화면 표시
 
     %% 3. 좌석 선택
-    User->>FE: 3. 좌석 선택 (A1)
+    User->>FE: 3. 좌석 선택
     FE->>Rsv: POST /api/reservations
-    Rsv->>Redis: SET lock:seat:A1 (Distributed Lock)
-    Redis-->>Rsv: OK (락 획득)
-    Rsv->>DB: INSERT reservations (status=PENDING)
+    Rsv->>Redis: SET lock
+    Redis-->>Rsv: OK
+    Rsv->>DB: INSERT reservations PENDING
     DB-->>Rsv: reservation_id=456
-    Rsv-->>FE: 예매 임시 생성 (10분 타이머)
+    Rsv-->>FE: 예매 임시 생성
     FE-->>User: 결제 대기 화면
 
     %% 4. 포인트 사용 + 결제
-    User->>FE: 4. 결제 (포인트 1만원 + 카드 4만원)
-    FE->>Pay: POST /api/payments<br/>{point_used: 10000, card_amount: 40000}
+    User->>FE: 4. 결제 진행
+    FE->>Pay: POST /api/payments
 
     Pay->>DB: SELECT balance FROM points WHERE user_id=1
     DB-->>Pay: balance=25000
 
     alt 포인트 잔액 충분
         Pay->>DB: BEGIN TRANSACTION
-        Pay->>DB: UPDATE points SET balance=15000
-        Pay->>DB: INSERT point_histories (type=USE, amount=-10000)
+        Pay->>DB: UPDATE points balance
+        Pay->>DB: INSERT point_histories
         Pay->>DB: COMMIT
 
-        Pay->>Pay: 외부 PG사 API 호출 (카드 4만원)
-        Pay->>DB: INSERT payments (status=SUCCESS)
+        Pay->>Pay: 외부 PG사 API 호출
+        Pay->>DB: INSERT payments
         DB-->>Pay: payment_id=789
 
-        Pay->>Rsv: 이벤트 발행: payment_completed
-        Rsv->>DB: UPDATE reservations SET status=CONFIRMED
-        Rsv->>Redis: DEL lock:seat:A1 (락 해제)
+        Pay->>Rsv: payment_completed 이벤트
+        Rsv->>DB: UPDATE reservations CONFIRMED
+        Rsv->>Redis: DEL lock
 
         Pay-->>FE: 결제 성공
         FE-->>User: 예매 완료!
 
-        %% 5. 알림 발송
-        Pay->>Noti: SQS: payment_success_event
-        Noti->>Noti: 이메일 발송 (티켓 정보)
-        Noti-->>User: 📧 예매 완료 메일 전송
+        Pay->>Noti: SQS 이벤트 발행
+        Noti->>Noti: 이메일 발송
+        Noti-->>User: 예매 완료 메일
     else 포인트 잔액 부족
-        Pay-->>FE: 400 Bad Request: 포인트 부족
+        Pay-->>FE: 포인트 부족 에러
         FE-->>User: 포인트 충전 필요
     end
-
-    style Auth fill:#FFE5B4
-    style Queue fill:#FFF9C4
-    style Rsv fill:#F3E5F5
-    style Pay fill:#E8F5E9
-    style Noti fill:#FCE4EC
 ```
 
 ---
@@ -196,47 +179,37 @@ sequenceDiagram
 ```mermaid
 graph TB
     subgraph "포인트 충전 플로우"
-        A1[사용자: 포인트 충전 요청<br/>금액: 10,000원] --> B1[Payment Service]
+        A1[포인트 충전 요청] --> B1[Payment Service]
         B1 --> C1{PG사 결제}
-        C1 -->|성공| D1[DB: points 테이블<br/>balance += 10000]
-        C1 -->|실패| E1[충전 실패 응답]
-        D1 --> F1[DB: point_histories<br/>type=CHARGE, amount=+10000]
-        F1 --> G1[충전 성공 응답]
+        C1 -->|성공| D1[points balance 증가]
+        C1 -->|실패| E1[충전 실패]
+        D1 --> F1[point_histories 기록]
+        F1 --> G1[충전 성공]
     end
 
-    subgraph "포인트 사용 플로우 (예매 시)"
-        A2[사용자: 예매 + 포인트 사용<br/>총 50,000원 중 10,000P 사용] --> B2[Payment Service]
+    subgraph "포인트 사용 플로우"
+        A2[예매 + 포인트 사용] --> B2[Payment Service]
         B2 --> C2{포인트 잔액 확인}
-        C2 -->|잔액 충분<br/>balance >= 10000| D2[DB Transaction 시작]
-        C2 -->|잔액 부족| E2[포인트 부족 에러]
+        C2 -->|충분| D2[Transaction 시작]
+        C2 -->|부족| E2[에러 응답]
 
-        D2 --> F2[points.balance -= 10000]
-        F2 --> G2[point_histories<br/>type=USE, amount=-10000]
-        G2 --> H2{카드 결제<br/>40,000원}
-        H2 -->|성공| I2[COMMIT Transaction]
-        H2 -->|실패| J2[ROLLBACK<br/>포인트 복구]
+        D2 --> F2[balance 차감]
+        F2 --> G2[histories 기록]
+        G2 --> H2{카드 결제}
+        H2 -->|성공| I2[COMMIT]
+        H2 -->|실패| J2[ROLLBACK]
 
-        I2 --> K2[Reservation Service<br/>예매 확정]
-        J2 --> L2[결제 실패 응답]
+        I2 --> K2[예매 확정]
+        J2 --> L2[결제 실패]
     end
 
     subgraph "포인트 환불 플로우"
-        A3[사용자: 예매 취소] --> B3[Reservation Service]
-        B3 --> C3[Payment Service<br/>환불 요청]
-        C3 --> D3[points.balance += 10000]
-        D3 --> E3[point_histories<br/>type=REFUND, amount=+10000]
+        A3[예매 취소] --> B3[Reservation Service]
+        B3 --> C3[Payment 환불 요청]
+        C3 --> D3[balance 증가]
+        D3 --> E3[histories 기록]
         E3 --> F3[환불 완료]
     end
-
-    style B1 fill:#E8F5E9,stroke:#43A047,stroke-width:3px
-    style B2 fill:#E8F5E9,stroke:#43A047,stroke-width:3px
-    style C3 fill:#E8F5E9,stroke:#43A047,stroke-width:3px
-    style D1 fill:#336791,color:#fff
-    style F1 fill:#336791,color:#fff
-    style F2 fill:#336791,color:#fff
-    style G2 fill:#336791,color:#fff
-    style D3 fill:#336791,color:#fff
-    style E3 fill:#336791,color:#fff
 ```
 
 ---
@@ -251,26 +224,26 @@ sequenceDiagram
     participant Auth as Auth Service
     participant DB as PostgreSQL
 
-    User->>FE: 1. "구글 로그인" 버튼 클릭
-    FE->>Google: 2. 리다이렉트<br/>https://accounts.google.com/o/oauth2/v2/auth?<br/>client_id=XXX&redirect_uri=YYY
+    User->>FE: 1. 구글 로그인 버튼 클릭
+    FE->>Google: 2. OAuth 페이지 리다이렉트
 
     User->>Google: 3. 구글 계정 로그인
-    User->>Google: 4. 권한 동의 (이메일, 프로필)
+    User->>Google: 4. 권한 동의
 
-    Google->>FE: 5. 리다이렉트 콜백<br/>http://localhost:3000/auth/google/callback?code=ABC123
+    Google->>FE: 5. 콜백 리다이렉트
 
-    FE->>Auth: 6. POST /api/auth/google<br/>{code: "ABC123"}
+    FE->>Auth: 6. POST /api/auth/google
 
-    Auth->>Google: 7. 토큰 교환 요청<br/>POST https://oauth2.googleapis.com/token
+    Auth->>Google: 7. 토큰 교환 요청
     Google-->>Auth: 8. access_token 반환
 
-    Auth->>Google: 9. 사용자 정보 조회<br/>GET https://www.googleapis.com/oauth2/v2/userinfo<br/>Header: Authorization: Bearer {access_token}
-    Google-->>Auth: 10. {email, name, picture}
+    Auth->>Google: 9. 사용자 정보 조회
+    Google-->>Auth: 10. email, name, picture
 
-    Auth->>DB: 11. SELECT * FROM users WHERE email=?
+    Auth->>DB: 11. SELECT * FROM users WHERE email
 
     alt 신규 사용자
-        Auth->>DB: 12a. INSERT INTO users<br/>(email, name, provider='GOOGLE', profile_image)
+        Auth->>DB: 12a. INSERT INTO users
         DB-->>Auth: user_id=123
         Note over Auth,DB: 자동 회원가입
     else 기존 사용자
@@ -278,19 +251,15 @@ sequenceDiagram
         Note over Auth,DB: 기존 계정 로그인
     end
 
-    Auth->>Auth: 13. JWT 생성 (user_id, email)
-    Auth-->>FE: 14. {token: "jwt_token_xxx", user: {...}}
+    Auth->>Auth: 13. JWT 생성
+    Auth-->>FE: 14. token 반환
 
-    FE->>FE: 15. localStorage에 JWT 저장
-    FE-->>User: 16. 로그인 완료 → 메인 페이지 이동
+    FE->>FE: 15. localStorage 저장
+    FE-->>User: 16. 로그인 완료
 
     rect rgb(230, 245, 255)
-        Note over User,DB: ✨ 구글 로그인은 비밀번호 없이<br/>OAuth 2.0으로 안전하게 인증됩니다
+        Note over User,DB: 구글 OAuth 2.0 안전 인증
     end
-
-    style Google fill:#4285F4,stroke:#4285F4,stroke-width:3px,color:#fff
-    style Auth fill:#FFE5B4,stroke:#FF8C00,stroke-width:3px
-    style DB fill:#336791,stroke:#336791,stroke-width:3px,color:#fff
 ```
 
 ---
