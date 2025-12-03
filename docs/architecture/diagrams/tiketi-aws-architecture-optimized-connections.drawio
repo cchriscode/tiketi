@@ -1,0 +1,484 @@
+<mxfile host="app.diagrams.net" modified="2025-12-03T00:00:00.000Z" agent="Claude Code" version="24.0.0">
+  <diagram name="Tiketi AWS Production - Optimized Connections" id="tiketi-aws-optimized">
+    <mxGraphModel dx="2400" dy="1600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3000" pageHeight="2200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title -->
+        <mxCell id="title" value="Tiketi Production AWS Architecture - Optimized Connections (연결선 최적화)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=28;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="600" y="20" width="1400" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Subtitle -->
+        <mxCell id="subtitle" value="✨ 모든 연결선 겹침 최소화 | 정확한 좌표 계산 | 시각적 최적화 | 프로덕션 레디" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="600" y="70" width="1400" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- ============================================ -->
+        <!-- Region: AWS us-east-1 -->
+        <!-- ============================================ -->
+        <mxCell id="aws-region" value="AWS Region: us-east-1" style="points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=14;fontStyle=0;container=1;pointerEvents=0;collapsible=0;recursiveResize=0;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_region;strokeColor=#00A4A6;fillColor=none;verticalAlign=top;align=left;spacingLeft=30;fontColor=#AAB7B8;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="120" width="2900" height="2000" as="geometry" />
+        </mxCell>
+
+        <!-- Internet Gateway -->
+        <mxCell id="igw" value="Internet Gateway&#xa;VPC 인터넷 연결" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#8C4FFF;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=1;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.internet_gateway;" vertex="1" parent="aws-region">
+          <mxGeometry x="1400" y="50" width="78" height="78" as="geometry" />
+        </mxCell>
+
+        <!-- CloudFront -->
+        <mxCell id="cloudfront" value="CloudFront CDN&#xa;글로벌 엣지 로케이션&#xa;정적 파일 + API" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#8C4FFF;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=1;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.cloudfront;" vertex="1" parent="aws-region">
+          <mxGeometry x="1400" y="180" width="78" height="78" as="geometry" />
+        </mxCell>
+
+        <!-- WAF -->
+        <mxCell id="waf" value="AWS WAF&#xa;DDoS 방어 | Bot 차단&#xa;SQL Injection 차단" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#DD344C;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=1;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.waf;" vertex="1" parent="aws-region">
+          <mxGeometry x="1400" y="310" width="78" height="78" as="geometry" />
+        </mxCell>
+
+        <!-- Route 53 -->
+        <mxCell id="route53" value="Route 53 DNS&#xa;tiketi.com&#xa;api.tiketi.com&#xa;cdn.tiketi.com" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#8C4FFF;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=1;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.route_53;" vertex="1" parent="aws-region">
+          <mxGeometry x="1200" y="180" width="78" height="78" as="geometry" />
+        </mxCell>
+
+        <!-- Connection: Internet → IGW -->
+        <mxCell id="conn-internet-igw" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#FF6B35;strokeWidth=3;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="aws-region" target="igw">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1439" y="10" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- IGW → CloudFront -->
+        <mxCell id="conn-igw-cf" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#FF6B35;strokeWidth=3;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="aws-region" source="igw" target="cloudfront">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- CloudFront → WAF -->
+        <mxCell id="conn-cf-waf" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#FF6B35;strokeWidth=3;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="aws-region" source="cloudfront" target="waf">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Route 53 → CloudFront (좌표 최적화) -->
+        <mxCell id="conn-route53-cf" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#3498DB;strokeWidth=3;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="aws-region" source="route53" target="cloudfront">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label-route53-cf" value="DNS Resolution" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontStyle=1;fontColor=#3498DB;" vertex="1" connectable="0" parent="conn-route53-cf">
+          <mxGeometry x="0.1" y="2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- VPC -->
+        <mxCell id="vpc" value="VPC: 10.0.0.0/16 - Tiketi Production" style="points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=14;fontStyle=1;container=1;pointerEvents=0;collapsible=0;recursiveResize=0;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_vpc2;strokeColor=#8C4FFF;fillColor=none;verticalAlign=top;align=left;spacingLeft=30;fontColor=#AAB7B8;dashed=0;" vertex="1" parent="aws-region">
+          <mxGeometry x="200" y="450" width="2600" height="1450" as="geometry" />
+        </mxCell>
+
+        <!-- VPC Endpoints Box -->
+        <mxCell id="vpc-endpoints-box" value="VPC Endpoints&#xa;(NAT 비용 절감)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF5E7;strokeColor=#F39C12;fontSize=12;fontStyle=1;align=center;verticalAlign=top;" vertex="1" parent="vpc">
+          <mxGeometry x="2300" y="100" width="250" height="300" as="geometry" />
+        </mxCell>
+
+        <mxCell id="vpce-s3" value="VPC Endpoint&#xa;S3&#xa;━━━━━━━━━━&#xa;Gateway Endpoint&#xa;프리 티어" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#8C4FFF;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=1;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.endpoint;" vertex="1" parent="vpc">
+          <mxGeometry x="2340" y="140" width="60" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="vpce-ecr" value="VPC Endpoint&#xa;ECR&#xa;━━━━━━━━━━&#xa;Interface Endpoint&#xa;$0.01/GB" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#8C4FFF;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=1;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.endpoint;" vertex="1" parent="vpc">
+          <mxGeometry x="2450" y="140" width="60" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="vpce-secrets" value="VPC Endpoint&#xa;Secrets Manager&#xa;━━━━━━━━━━&#xa;Interface Endpoint&#xa;$0.01/GB" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#8C4FFF;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=1;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.endpoint;" vertex="1" parent="vpc">
+          <mxGeometry x="2395" y="230" width="60" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Availability Zone A -->
+        <mxCell id="az-a" value="Availability Zone A (us-east-1a)" style="fillColor=none;strokeColor=#147EBA;dashed=1;verticalAlign=top;fontStyle=1;fontColor=#147EBA;whiteSpace=wrap;html=1;fontSize=14;" vertex="1" parent="vpc">
+          <mxGeometry x="50" y="50" width="1100" height="1350" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pub-subnet-a" value="Public Subnet A&#xa;10.0.1.0/24&#xa;Security Group: ALB-SG (0.0.0.0/0:443)" style="points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=12;fontStyle=1;container=1;pointerEvents=0;collapsible=0;recursiveResize=0;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_security_group;grStroke=0;strokeColor=#7AA116;fillColor=#F2F6E8;verticalAlign=top;align=left;spacingLeft=30;fontColor=#248814;dashed=0;" vertex="1" parent="az-a">
+          <mxGeometry x="30" y="40" width="1040" height="280" as="geometry" />
+        </mxCell>
+
+        <mxCell id="nat-a" value="NAT Gateway A&#xa;고정 Elastic IP" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#8C4FFF;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=1;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.nat_gateway;" vertex="1" parent="pub-subnet-a">
+          <mxGeometry x="50" y="80" width="78" height="78" as="geometry" />
+        </mxCell>
+
+        <mxCell id="alb" value="Application Load Balancer&#xa;━━━━━━━━━━━━━━━━━━━━&#xa;✅ HTTP/HTTPS Support&#xa;✅ WebSocket Support&#xa;━━━━━━━━━━━━━━━━━━━━&#xa;Rate Limit: 10 req/sec/user&#xa;Connection Draining: 30s&#xa;Health Check: /health" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#8C4FFF;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=1;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.application_load_balancer;" vertex="1" parent="pub-subnet-a">
+          <mxGeometry x="480" y="80" width="78" height="78" as="geometry" />
+        </mxCell>
+
+        <mxCell id="priv-subnet-a" value="Private Subnet A&#xa;10.0.3.0/24 - EKS Worker Nodes&#xa;Security Group: Worker-SG (ALB만 허용)" style="points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=12;fontStyle=1;container=1;pointerEvents=0;collapsible=0;recursiveResize=0;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_security_group;grStroke=0;strokeColor=#00A4A6;fillColor=#E6F6F7;verticalAlign=top;align=left;spacingLeft=30;fontColor=#006B75;dashed=0;" vertex="1" parent="az-a">
+          <mxGeometry x="30" y="350" width="1040" height="500" as="geometry" />
+        </mxCell>
+
+        <mxCell id="worker-a1" value="EKS Worker Node A1&#xa;t3.xlarge (4 vCPU, 16GB)&#xa;평시: 2개 | 피크: 5개" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#ED7100;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=1;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.ec2;" vertex="1" parent="priv-subnet-a">
+          <mxGeometry x="50" y="80" width="78" height="78" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pods-a1" value="Microservice Pods (A1)&#xa;━━━━━━━━━━━━━━&#xa;• Auth: 2 pods (0.5 CPU, 512MB)&#xa;• Event: 3 pods (0.5 CPU, 512MB)&#xa;• Queue: 5 pods (1 CPU, 1GB) ⚡&#xa;• Reservation: 4 pods (1 CPU, 1GB) ⚡&#xa;• Payment: 2 pods (0.5 CPU, 512MB)&#xa;• Notification: 2 pods (0.5 CPU, 512MB)&#xa;━━━━━━━━━━━━━━&#xa;평시: 18 pods | 피크: 40 pods&#xa;HPA: CPU&gt;70% or Mem&gt;80%" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF4E6;strokeColor=#E67E22;fontSize=10;fontStyle=1;align=left;verticalAlign=top;" vertex="1" parent="priv-subnet-a">
+          <mxGeometry x="200" y="60" width="350" height="200" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ws-pods-a1" value="WebSocket Pods (A1)&#xa;━━━━━━━━━━━━━━&#xa;Socket.IO + Redis Adapter&#xa;멀티 인스턴스 세션 공유&#xa;━━━━━━━━━━━━━━&#xa;• WS Handler: 4 pods&#xa;실시간 대기열 알림&#xa;실시간 좌석 업데이트" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F8F5;strokeColor=#16A085;fontSize=10;fontStyle=1;align=left;verticalAlign=top;" vertex="1" parent="priv-subnet-a">
+          <mxGeometry x="600" y="60" width="400" height="140" as="geometry" />
+        </mxCell>
+
+        <mxCell id="monitor-a1" value="모니터링 (A1)&#xa;━━━━━━━━━━━━━━&#xa;• Prometheus: 1 pod&#xa;• Grafana: 1 pod&#xa;• Loki: 1 pod" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF5E7;strokeColor=#F39C12;fontSize=10;fontStyle=1;align=left;verticalAlign=top;" vertex="1" parent="priv-subnet-a">
+          <mxGeometry x="600" y="230" width="400" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rds-proxy-subnet-a" value="RDS Proxy Subnet A" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8DAEF;strokeColor=#8E44AD;fontSize=11;fontStyle=1;align=center;verticalAlign=top;" vertex="1" parent="priv-subnet-a">
+          <mxGeometry x="50" y="360" width="950" height="120" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rds-proxy-a" value="RDS Proxy A&#xa;━━━━━━━━━━━━━━&#xa;커넥션 풀링&#xa;자동 Failover&#xa;IAM 인증" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#C925D1;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=1;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.rds_proxy;" vertex="1" parent="priv-subnet-a">
+          <mxGeometry x="90" y="395" width="60" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="db-subnet-a" value="Database Subnet A - 10.0.5.0/24&#xa;Security Group: RDS-SG (Proxy만 허용)" style="points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=11;fontStyle=1;container=1;pointerEvents=0;collapsible=0;recursiveResize=0;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_security_group;grStroke=0;strokeColor=#C73E1D;fillColor=#FCF3CF;verticalAlign=top;align=left;spacingLeft=30;fontColor=#AD1A07;dashed=0;" vertex="1" parent="az-a">
+          <mxGeometry x="30" y="900" width="500" height="400" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rds-writer-a" value="RDS Aurora Writer&#xa;PostgreSQL 15.x&#xa;db.r6g.xlarge&#xa;4 vCPU, 32GB RAM&#xa;━━━━━━━━━━━━━━&#xa;쓰기 전용&#xa;Auto Backup: 7일&#xa;Multi-AZ Sync" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#C925D1;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=1;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.aurora;" vertex="1" parent="db-subnet-a">
+          <mxGeometry x="70" y="100" width="78" height="78" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cache-subnet-a" value="Cache Subnet A - 10.0.7.0/24&#xa;Security Group: Redis-SG (Worker만 허용)" style="points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=11;fontStyle=1;container=1;pointerEvents=0;collapsible=0;recursiveResize=0;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_security_group;grStroke=0;strokeColor=#DD344C;fillColor=#FEF5E7;verticalAlign=top;align=left;spacingLeft=30;fontColor=#AD1A07;dashed=0;" vertex="1" parent="az-a">
+          <mxGeometry x="570" y="900" width="500" height="400" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cache-primary-a" value="ElastiCache Primary A&#xa;Redis 7.x Cluster&#xa;cache.r6g.large&#xa;2 vCPU, 13.07GB RAM&#xa;━━━━━━━━━━━━━━&#xa;대기열: Sorted Set FIFO&#xa;세션: Socket.IO&#xa;락: Distributed Lock" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#C925D1;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=1;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.elasticache;" vertex="1" parent="cache-subnet-a">
+          <mxGeometry x="70" y="100" width="78" height="78" as="geometry" />
+        </mxCell>
+
+        <!-- Availability Zone B -->
+        <mxCell id="az-b" value="Availability Zone B (us-east-1b)" style="fillColor=none;strokeColor=#147EBA;dashed=1;verticalAlign=top;fontStyle=1;fontColor=#147EBA;whiteSpace=wrap;html=1;fontSize=14;" vertex="1" parent="vpc">
+          <mxGeometry x="1250" y="50" width="1100" height="1350" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pub-subnet-b" value="Public Subnet B&#xa;10.0.2.0/24&#xa;Security Group: ALB-SG (0.0.0.0/0:443)" style="points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=12;fontStyle=1;container=1;pointerEvents=0;collapsible=0;recursiveResize=0;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_security_group;grStroke=0;strokeColor=#7AA116;fillColor=#F2F6E8;verticalAlign=top;align=left;spacingLeft=30;fontColor=#248814;dashed=0;" vertex="1" parent="az-b">
+          <mxGeometry x="30" y="40" width="1040" height="280" as="geometry" />
+        </mxCell>
+
+        <mxCell id="nat-b" value="NAT Gateway B&#xa;고정 Elastic IP" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#8C4FFF;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=1;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.nat_gateway;" vertex="1" parent="pub-subnet-b">
+          <mxGeometry x="900" y="80" width="78" height="78" as="geometry" />
+        </mxCell>
+
+        <mxCell id="priv-subnet-b" value="Private Subnet B&#xa;10.0.4.0/24 - EKS Worker Nodes&#xa;Security Group: Worker-SG (ALB만 허용)" style="points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=12;fontStyle=1;container=1;pointerEvents=0;collapsible=0;recursiveResize=0;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_security_group;grStroke=0;strokeColor=#00A4A6;fillColor=#E6F6F7;verticalAlign=top;align=left;spacingLeft=30;fontColor=#006B75;dashed=0;" vertex="1" parent="az-b">
+          <mxGeometry x="30" y="350" width="1040" height="500" as="geometry" />
+        </mxCell>
+
+        <mxCell id="worker-b1" value="EKS Worker Node B1&#xa;t3.xlarge (4 vCPU, 16GB)&#xa;평시: 2개 | 피크: 5개" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#ED7100;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=1;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.ec2;" vertex="1" parent="priv-subnet-b">
+          <mxGeometry x="900" y="80" width="78" height="78" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pods-b1" value="Microservice Pods (B1)&#xa;━━━━━━━━━━━━━━&#xa;동일 구성 (AZ-A와)&#xa;평시: 18 pods | 피크: 40 pods" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF4E6;strokeColor=#E67E22;fontSize=10;fontStyle=1;align=left;verticalAlign=top;" vertex="1" parent="priv-subnet-b">
+          <mxGeometry x="450" y="60" width="350" height="200" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ws-pods-b1" value="WebSocket Pods (B1)&#xa;━━━━━━━━━━━━━━&#xa;Socket.IO + Redis&#xa;AZ-A와 세션 공유" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F8F5;strokeColor=#16A085;fontSize=10;fontStyle=1;align=left;verticalAlign=top;" vertex="1" parent="priv-subnet-b">
+          <mxGeometry x="50" y="60" width="350" height="140" as="geometry" />
+        </mxCell>
+
+        <mxCell id="monitor-b1" value="모니터링 (B1)&#xa;Standby" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF5E7;strokeColor=#F39C12;fontSize=10;fontStyle=1;align=left;verticalAlign=top;" vertex="1" parent="priv-subnet-b">
+          <mxGeometry x="50" y="230" width="350" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rds-proxy-subnet-b" value="RDS Proxy Subnet B" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8DAEF;strokeColor=#8E44AD;fontSize=11;fontStyle=1;align=center;verticalAlign=top;" vertex="1" parent="priv-subnet-b">
+          <mxGeometry x="50" y="360" width="950" height="120" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rds-proxy-b" value="RDS Proxy B&#xa;━━━━━━━━━━━━━━&#xa;커넥션 풀링&#xa;자동 Failover" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#C925D1;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=1;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.rds_proxy;" vertex="1" parent="priv-subnet-b">
+          <mxGeometry x="900" y="395" width="60" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="db-subnet-b" value="Database Subnet B - 10.0.6.0/24&#xa;Security Group: RDS-SG (Proxy만 허용)" style="points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=11;fontStyle=1;container=1;pointerEvents=0;collapsible=0;recursiveResize=0;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_security_group;grStroke=0;strokeColor=#C73E1D;fillColor=#FCF3CF;verticalAlign=top;align=left;spacingLeft=30;fontColor=#AD1A07;dashed=0;" vertex="1" parent="az-b">
+          <mxGeometry x="570" y="900" width="500" height="400" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rds-reader-b" value="RDS Aurora Reader&#xa;PostgreSQL 15.x&#xa;db.r6g.large&#xa;2 vCPU, 16GB RAM&#xa;━━━━━━━━━━━━━━&#xa;읽기 전용&#xa;Auto Scaling: 1-5&#xa;Writer 승격 가능" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#C925D1;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=1;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.aurora;" vertex="1" parent="db-subnet-b">
+          <mxGeometry x="350" y="100" width="78" height="78" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cache-subnet-b" value="Cache Subnet B - 10.0.8.0/24&#xa;Security Group: Redis-SG (Worker만 허용)" style="points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=11;fontStyle=1;container=1;pointerEvents=0;collapsible=0;recursiveResize=0;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_security_group;grStroke=0;strokeColor=#DD344C;fillColor=#FEF5E7;verticalAlign=top;align=left;spacingLeft=30;fontColor=#AD1A07;dashed=0;" vertex="1" parent="az-b">
+          <mxGeometry x="30" y="900" width="500" height="400" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cache-replica-b" value="ElastiCache Replica B&#xa;Redis 7.x Cluster&#xa;cache.r6g.large&#xa;━━━━━━━━━━━━━━&#xa;읽기 복제본&#xa;Primary 승격 가능&#xa;Multi-AZ Failover" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#C925D1;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=1;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.elasticache;" vertex="1" parent="cache-subnet-b">
+          <mxGeometry x="350" y="100" width="78" height="78" as="geometry" />
+        </mxCell>
+
+        <!-- EKS Control Plane -->
+        <mxCell id="eks-control" value="EKS Control Plane&#xa;(AWS Managed)&#xa;━━━━━━━━━━━━━━&#xa;Kubernetes 1.28&#xa;Multi-AZ HA" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#ED7100;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=11;fontStyle=1;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.eks;" vertex="1" parent="vpc">
+          <mxGeometry x="1250" y="100" width="100" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- AWS Services Outside VPC -->
+        <mxCell id="s3" value="S3 Bucket&#xa;Static Assets&#xa;Logs Archive&#xa;Backup" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#7AA116;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=1;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.s3;" vertex="1" parent="aws-region">
+          <mxGeometry x="100" y="600" width="78" height="78" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ecr" value="ECR Repository&#xa;Docker Images&#xa;GitHub Actions" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#ED7100;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=1;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.ecr;" vertex="1" parent="aws-region">
+          <mxGeometry x="100" y="750" width="78" height="78" as="geometry" />
+        </mxCell>
+
+        <mxCell id="secrets" value="Secrets Manager&#xa;━━━━━━━━━━━━━━&#xa;DB Passwords&#xa;API Keys&#xa;JWT Secrets" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#DD344C;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=1;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.secrets_manager;" vertex="1" parent="aws-region">
+          <mxGeometry x="100" y="900" width="78" height="78" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cloudwatch" value="CloudWatch&#xa;━━━━━━━━━━━━━━&#xa;Container Insights&#xa;Logs Groups&#xa;Metrics/Alarms" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#E7157B;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=1;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.cloudwatch_2;" vertex="1" parent="aws-region">
+          <mxGeometry x="100" y="1050" width="78" height="78" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sns" value="SNS Topics&#xa;━━━━━━━━━━━━━━&#xa;알람 알림&#xa;Email/SMS/Slack" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#E7157B;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=1;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.sns;" vertex="1" parent="aws-region">
+          <mxGeometry x="100" y="1200" width="78" height="78" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sqs" value="SQS Queues&#xa;━━━━━━━━━━━━━━&#xa;이메일 발송&#xa;푸시 알림&#xa;결제 후처리" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#E7157B;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=1;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.sqs;" vertex="1" parent="aws-region">
+          <mxGeometry x="100" y="1350" width="78" height="78" as="geometry" />
+        </mxCell>
+
+        <mxCell id="github" value="GitHub Actions&#xa;CI/CD Pipeline&#xa;━━━━━━━━━━━━━━&#xa;Build → Push ECR&#xa;→ Update EKS" style="shape=image;html=1;verticalAlign=top;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;imageAspect=0;aspect=fixed;image=https://cdn-icons-png.flaticon.com/512/25/25231.png;fontSize=10;fontStyle=1;" vertex="1" parent="aws-region">
+          <mxGeometry x="100" y="450" width="78" height="78" as="geometry" />
+        </mxCell>
+
+        <!-- ============================================ -->
+        <!-- Optimized Connection Lines -->
+        <!-- ============================================ -->
+
+        <!-- NAT Gateway A → IGW (좌표 최적화: IGW 왼쪽 아래로 진입) -->
+        <mxCell id="conn-nat-a-igw" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#E74C3C;strokeWidth=3;dashed=1;entryX=0.2;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="aws-region" source="nat-a" target="igw">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label-nat-a-igw" value="Private Outbound" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;fontStyle=1;fontColor=#E74C3C;" vertex="1" connectable="0" parent="conn-nat-a-igw">
+          <mxGeometry x="0.1" y="2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- NAT Gateway B → IGW (좌표 최적화: IGW 오른쪽 아래로 진입) -->
+        <mxCell id="conn-nat-b-igw" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#E74C3C;strokeWidth=3;dashed=1;entryX=0.8;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="aws-region" source="nat-b" target="igw">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- WAF → ALB -->
+        <mxCell id="conn-waf-alb" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#FF6B35;strokeWidth=3;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="aws-region" source="waf" target="alb">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Route 53 → ALB (API 트래픽, 좌표 최적화) -->
+        <mxCell id="conn-route53-alb" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;strokeWidth=3;dashed=1;entryX=0;entryY=0.3;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="aws-region" source="route53" target="alb">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1239" y="350" />
+              <mxPoint x="700" y="350" />
+              <mxPoint x="700" y="553" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="label-route53-alb" value="API Traffic" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontStyle=1;fontColor=#27AE60;" vertex="1" connectable="0" parent="conn-route53-alb">
+          <mxGeometry x="0.1" y="2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- CloudFront → S3 (정적 파일, S3 오른쪽 위로 진입) -->
+        <mxCell id="conn-cf-s3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7AA116;strokeWidth=3;dashed=1;entryX=1;entryY=0.3;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="aws-region" source="cloudfront" target="s3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label-cf-s3" value="Static Files" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontStyle=1;fontColor=#7AA116;" vertex="1" connectable="0" parent="conn-cf-s3">
+          <mxGeometry x="0.1" y="2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ALB → Worker A (중앙) -->
+        <mxCell id="conn-alb-worker-a" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2ECC71;strokeWidth=2;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="aws-region" source="alb" target="worker-a1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ALB → Worker B (우회) -->
+        <mxCell id="conn-alb-worker-b" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2ECC71;strokeWidth=2;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="aws-region" source="alb" target="worker-b1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="769" y="250" />
+              <mxPoint x="2219" y="250" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- EKS ↔ Worker A (양방향, 왼쪽 출구) -->
+        <mxCell id="conn-eks-worker-a-fwd" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#3498DB;strokeWidth=2;dashed=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.25;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;endArrow=classic;startArrow=classic;" edge="1" parent="aws-region" source="eks-control" target="worker-a1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label-eks-worker-a" value="kubectl ↔ kubelet" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;fontStyle=1;fontColor=#3498DB;" vertex="1" connectable="0" parent="conn-eks-worker-a-fwd">
+          <mxGeometry x="0.1" y="2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- EKS ↔ Worker B (양방향, 오른쪽 출구) -->
+        <mxCell id="conn-eks-worker-b-fwd" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#3498DB;strokeWidth=2;dashed=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.75;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;endArrow=classic;startArrow=classic;" edge="1" parent="aws-region" source="eks-control" target="worker-b1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Pods A → RDS Proxy A (중앙 아래) -->
+        <mxCell id="conn-pods-a-proxy-a" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#8E44AD;strokeWidth=2;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="aws-region" source="pods-a1" target="rds-proxy-a">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- RDS Proxy A → RDS Writer -->
+        <mxCell id="conn-proxy-a-rds-writer" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9B59B6;strokeWidth=2;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="aws-region" source="rds-proxy-a" target="rds-writer-a">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Pods B → RDS Proxy B -->
+        <mxCell id="conn-pods-b-proxy-b" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#8E44AD;strokeWidth=2;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="aws-region" source="pods-b1" target="rds-proxy-b">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- RDS Proxy B → RDS Reader -->
+        <mxCell id="conn-proxy-b-rds-reader" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9B59B6;strokeWidth=2;dashed=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="aws-region" source="rds-proxy-b" target="rds-reader-b">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- RDS Writer → RDS Reader (Multi-AZ Replication) -->
+        <mxCell id="conn-rds-replication" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#E74C3C;strokeWidth=3;dashed=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="aws-region" source="rds-writer-a" target="rds-reader-b">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label-rds-replication" value="Multi-AZ Sync" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontStyle=1;fontColor=#E74C3C;" vertex="1" connectable="0" parent="conn-rds-replication">
+          <mxGeometry x="0.1" y="2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Pods A → ElastiCache Primary (오른쪽 아래) -->
+        <mxCell id="conn-pods-a-cache-primary" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#E67E22;strokeWidth=2;entryX=0.3;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.7;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="aws-region" source="pods-a1" target="cache-primary-a">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Pods B → ElastiCache Replica (왼쪽 아래) -->
+        <mxCell id="conn-pods-b-cache-replica" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#E67E22;strokeWidth=2;dashed=1;entryX=0.7;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.3;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="aws-region" source="pods-b1" target="cache-replica-b">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ElastiCache Primary → Replica (Replication) -->
+        <mxCell id="conn-cache-replication" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#E74C3C;strokeWidth=3;dashed=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="aws-region" source="cache-replica-b" target="cache-primary-a">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label-cache-replication" value="Multi-AZ Failover" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontStyle=1;fontColor=#E74C3C;" vertex="1" connectable="0" parent="conn-cache-replication">
+          <mxGeometry x="0.1" y="2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- WebSocket Pods A → ElastiCache (왼쪽 아래로 나감) -->
+        <mxCell id="conn-ws-a-cache" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#16A085;strokeWidth=3;entryX=0.3;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.3;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="aws-region" source="ws-pods-a1" target="cache-primary-a">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- WebSocket Pods B → ElastiCache (오른쪽 아래로 나감) -->
+        <mxCell id="conn-ws-b-cache" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#16A085;strokeWidth=3;dashed=1;entryX=0.7;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.7;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="aws-region" source="ws-pods-b1" target="cache-replica-b">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Pods A → CloudWatch (왼쪽 위로 나감, CloudWatch 위로 진입) -->
+        <mxCell id="conn-pods-a-cloudwatch" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#E7157B;strokeWidth=2;dashed=1;entryX=1;entryY=0.3;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0;exitY=0.15;exitDx=0;exitDy=0;" edge="1" parent="aws-region" source="pods-a1" target="cloudwatch">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Pods B → CloudWatch (왼쪽으로 나감, CloudWatch 아래로 진입) -->
+        <mxCell id="conn-pods-b-cloudwatch" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#E7157B;strokeWidth=2;dashed=1;entryX=1;entryY=0.7;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0;exitY=0.2;exitDx=0;exitDy=0;" edge="1" parent="aws-region" source="pods-b1" target="cloudwatch">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1500" y="800" />
+              <mxPoint x="1500" y="1650" />
+              <mxPoint x="200" y="1650" />
+              <mxPoint x="200" y="1104" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Pods A → Prometheus (오른쪽 중앙) -->
+        <mxCell id="conn-pods-a-prometheus" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#F39C12;strokeWidth=2;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="aws-region" source="pods-a1" target="monitor-a1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- CloudWatch → SNS (중앙 아래) -->
+        <mxCell id="conn-cloudwatch-sns" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#E7157B;strokeWidth=2;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="aws-region" source="cloudwatch" target="sns">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Pods A → SQS (왼쪽 중앙으로 나감, SQS 위로 진입) -->
+        <mxCell id="conn-pods-a-sqs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#E7157B;strokeWidth=2;entryX=1;entryY=0.3;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0;exitY=0.35;exitDx=0;exitDy=0;" edge="1" parent="aws-region" source="pods-a1" target="sqs">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Pods B → SQS (왼쪽으로 나감, SQS 아래로 진입) -->
+        <mxCell id="conn-pods-b-sqs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#E7157B;strokeWidth=2;dashed=1;entryX=1;entryY=0.7;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0;exitY=0.4;exitDx=0;exitDy=0;" edge="1" parent="aws-region" source="pods-b1" target="sqs">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1500" y="820" />
+              <mxPoint x="1500" y="1700" />
+              <mxPoint x="200" y="1700" />
+              <mxPoint x="200" y="1404" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Secrets Manager → Pods A (오른쪽 위로 나감) -->
+        <mxCell id="conn-secrets-pods-a" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DD344C;strokeWidth=2;dashed=1;entryX=0;entryY=0.25;entryDx=0;entryDy=0;exitX=1;exitY=0.3;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="aws-region" source="secrets" target="pods-a1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Secrets Manager → Pods B (오른쪽 아래로 나감) -->
+        <mxCell id="conn-secrets-pods-b" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DD344C;strokeWidth=2;dashed=1;entryX=0;entryY=0.35;entryDx=0;entryDy=0;exitX=1;exitY=0.7;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="aws-region" source="secrets" target="pods-b1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="200" y="955" />
+              <mxPoint x="200" y="830" />
+              <mxPoint x="1700" y="830" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Pods A → S3 (왼쪽 아래로 나감, S3 중앙으로 진입) -->
+        <mxCell id="conn-pods-a-s3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7AA116;strokeWidth=2;dashed=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0;exitY=0.55;exitDx=0;exitDy=0;" edge="1" parent="aws-region" source="pods-a1" target="s3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Pods B → S3 (왼쪽으로 나감, S3 아래로 진입) -->
+        <mxCell id="conn-pods-b-s3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7AA116;strokeWidth=2;dashed=1;entryX=1;entryY=0.7;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0;exitY=0.6;exitDx=0;exitDy=0;" edge="1" parent="aws-region" source="pods-b1" target="s3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1500" y="880" />
+              <mxPoint x="1500" y="655" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- GitHub → ECR -->
+        <mxCell id="conn-github-ecr" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#211F1F;strokeWidth=2;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="aws-region" source="github" target="ecr">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ECR → EKS -->
+        <mxCell id="conn-ecr-eks" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#211F1F;strokeWidth=2;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="aws-region" source="ecr" target="eks-control">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- VPC Endpoint S3 → Pods B -->
+        <mxCell id="conn-vpce-s3-pods" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#F39C12;strokeWidth=2;dashed=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="aws-region" source="vpce-s3" target="pods-b1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label-vpce-s3" value="No NAT Cost" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;fontStyle=1;fontColor=#F39C12;" vertex="1" connectable="0" parent="conn-vpce-s3-pods">
+          <mxGeometry x="0.1" y="2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
