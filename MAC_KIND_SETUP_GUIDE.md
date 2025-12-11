@@ -74,12 +74,12 @@ git clone <repository-url> project-ticketing
 # 또는 이미 클론했다면 해당 경로로 이동
 cd ~/project-ticketing
 
-# mono-k3s 브랜치로 체크아웃
-git checkout mono-k3s
+# mono-kind 브랜치로 체크아웃
+git checkout mono-kind
 
 # 현재 브랜치 확인
 git branch
-# * mono-k3s
+# * mono-kind
 
 # 파일 확인
 ls -la
@@ -450,7 +450,7 @@ curl http://localhost:3001/api/health
 **실행 전**:
 - [ ] Docker Desktop 실행 중
 - [ ] kubectl, kind 설치 완료
-- [ ] 프로젝트 클론 및 mono-k3s 브랜치
+- [ ] 프로젝트 클론 및 mono-kind 브랜치
 
 **배포 순서**:
 1. [ ] `./scripts/kind-cluster-create.sh`
@@ -495,7 +495,7 @@ WSL2 없이 바로 터미널에서 실행하면 됩니다.
 ```bash
 # Mac에서 시작하기
 cd ~/project-ticketing
-git checkout mono-k3s
+git checkout mono-kind
 chmod +x scripts/*.sh
 ./scripts/kind-cluster-create.sh
 ```

@@ -165,13 +165,13 @@ ls -la
 # 현재 브랜치 확인
 git branch
 
-# mono-k3s 브랜치여야 함
-# * mono-k3s
+# mono-kind 브랜치여야 함
+# * mono-kind
 ```
 
 만약 다른 브랜치라면:
 ```bash
-git checkout mono-k3s
+git checkout mono-kind
 ```
 
 ### Step 3-3: 스크립트 실행 권한 확인

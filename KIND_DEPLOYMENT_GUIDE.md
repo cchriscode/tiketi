@@ -2,7 +2,7 @@
 
 ## 📋 개요
 
-이 브랜치(`mono-k3s`)는 Tiketi 애플리케이션을 **모놀리식 구조 그대로** Kind 로컬 Kubernetes 클러스터에 배포하기 위한 설정입니다.
+이 브랜치(`mono-kind`)는 Tiketi 애플리케이션을 **모놀리식 구조 그대로** Kind 로컬 Kubernetes 클러스터에 배포하기 위한 설정입니다.
 
 ### 아키텍처
 - **구조**: 모놀리식 (Monolithic)
@@ -389,6 +389,6 @@ alias kd='kubectl describe -n tiketi'
 ---
 
 **작성일**: 2025-12-11
-**브랜치**: mono-k3s
+**브랜치**: mono-kind
 **환경**: Kind 로컬 Kubernetes
 **아키텍처**: 모놀리식 (Monolithic)
