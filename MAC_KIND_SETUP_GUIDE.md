@@ -137,7 +137,7 @@ kubectl get nodes
 # Backend 이미지 빌드 및 Kind에 로드
 ./scripts/build-and-load-images.sh
 
-# Frontend 빌드 물어보면 'n' 입력
+# Frontend 빌드 물어보면 'y' 입력 (1-2분 소요)
 ```
 
 **진행 과정**:
@@ -162,7 +162,7 @@ Do you want to build the frontend image? (y/n): n
 # 모든 Kubernetes 리소스 배포
 ./scripts/deploy-all.sh
 
-# Frontend 배포 물어보면 'n' 입력
+# Frontend 배포 물어보면 'y' 입력
 ```
 
 **진행 과정**:
@@ -195,6 +195,7 @@ kubectl get pods -n tiketi -w
 ```
 NAME                         READY   STATUS    RESTARTS   AGE
 backend-xxx                  1/1     Running   0          2m
+frontend-xxx                 1/1     Running   0          2m
 dragonfly-xxx                1/1     Running   0          3m
 grafana-xxx                  1/1     Running   0          2m
 loki-xxx                     1/1     Running   0          2m
@@ -225,6 +226,7 @@ cd ~/project-ticketing
 ✅ Port forwarding active!
 
 🌐 Access URLs:
+  - Frontend UI: http://localhost:3000
   - Backend API: http://localhost:3001
   - Grafana: http://localhost:3002 (admin/admin)
 
@@ -244,6 +246,7 @@ curl http://localhost:3001/api/health
 ```
 
 **브라우저에서**:
+- 🎨 Frontend UI: http://localhost:3000
 - 🌐 Backend: http://localhost:3001/api/health
 - 📖 API 문서: http://localhost:3001/api-docs
 - 📊 Grafana: http://localhost:3002 (admin/admin)

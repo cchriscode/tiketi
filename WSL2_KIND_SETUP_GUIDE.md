@@ -249,14 +249,24 @@ kubectl get nodes
 ✅ Backend image built: tiketi-backend:local
 
 📦 Building Frontend image (optional)...
-Do you want to build the frontend image? (y/n): n
+Do you want to build the frontend image? (y/n): y
+
+📦 Building Frontend image...
+[+] Building 65.3s (16/16) FINISHED
+ => exporting to image
+ => => naming to docker.io/library/tiketi-frontend:local
+✅ Frontend image built: tiketi-frontend:local
 
 📤 Loading images into Kind cluster...
 Image: "tiketi-backend:local" with ID "sha256:..." not yet present on node "tiketi-local-control-plane", loading...
 ✅ Backend image loaded into cluster
+Image: "tiketi-frontend:local" with ID "sha256:..." not yet present on node "tiketi-local-control-plane", loading...
+✅ Frontend image loaded into cluster
 
 ✅ All images loaded successfully!
 ```
+
+**참고**: Frontend 빌드는 React production build를 생성하므로 1-2분 정도 소요됩니다.
 
 **이미지 확인**:
 ```bash
@@ -309,7 +319,9 @@ deployment.apps/backend created
 service/backend-service created
 
   7️⃣  Deploying Frontend (optional)...
-Do you want to deploy the frontend? (y/n): n
+Do you want to deploy the frontend? (y/n): y
+deployment.apps/frontend created
+service/frontend-service created
 
   8️⃣  Deploying Monitoring stack...
 ...
@@ -331,6 +343,7 @@ kubectl get pods -n tiketi -w
 ```
 NAME                         READY   STATUS    RESTARTS   AGE
 backend-xxx                  1/1     Running   0          2m
+frontend-xxx                 1/1     Running   0          2m
 dragonfly-xxx                1/1     Running   0          3m
 grafana-xxx                  1/1     Running   0          2m
 loki-xxx                     1/1     Running   0          2m
@@ -383,6 +396,7 @@ Forwarding from 127.0.0.1:5432 -> 5432
 ✅ Port forwarding active!
 
 🌐 Access URLs:
+  - Frontend UI: http://localhost:3000
   - Backend API: http://localhost:3001
   - Grafana: http://localhost:3002 (admin/admin)
 
@@ -407,8 +421,9 @@ curl http://localhost:3001/api/health
 ```
 
 **Windows 브라우저에서 테스트**:
-- http://localhost:3001/api/health
-- http://localhost:3001/api-docs (Swagger UI)
+- 🎨 http://localhost:3000 (Frontend UI)
+- 🌐 http://localhost:3001/api/health (Backend Health)
+- 📖 http://localhost:3001/api-docs (Swagger UI)
 
 ### Step 5-3: PostgreSQL 접속 테스트
 
