@@ -24,7 +24,7 @@ spec:
               name: dragonfly
           args:
             - "--maxmemory=512mb"
-            - "--save_schedule=*:*"
+            # - "--save_schedule=*:*"  # Deprecated - removed to fix SIGSEGV
             - "--dir=/data"
           volumeMounts:
             - name: dragonfly-storage

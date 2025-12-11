@@ -9,6 +9,9 @@ data:
   POSTGRES_USER: "tiketi_user"
   DB_HOST: "postgres-service"
   DB_PORT: "5432"
+  # For Dockerfile start script compatibility
+  DB_NAME: "tiketi"
+  DB_USER: "tiketi_user"
 
   # Redis (DragonflyDB) Configuration
   REDIS_HOST: "dragonfly-service"

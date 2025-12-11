@@ -55,7 +55,7 @@ spec:
                 name: tiketi-secret
           livenessProbe:
             httpGet:
-              path: /api/health
+              path: /health
               port: 3001
             initialDelaySeconds: 30
             periodSeconds: 10
@@ -63,7 +63,7 @@ spec:
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /api/health
+              path: /health
               port: 3001
             initialDelaySeconds: 20
             periodSeconds: 5
