@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tiketi-config
+  namespace: tiketi
+data:
+  # Database Configuration
+  POSTGRES_DB: "tiketi"
+  POSTGRES_USER: "tiketi_user"
+  DB_HOST: "postgres-service"
+  DB_PORT: "5432"
+
+  # Redis (DragonflyDB) Configuration
+  REDIS_HOST: "dragonfly-service"
+  REDIS_PORT: "6379"
+
+  # Backend Configuration
+  NODE_ENV: "development"
+  PORT: "3001"
+
+  # Frontend Configuration
+  REACT_APP_API_URL: "http://localhost:3001"
+
+  # AWS Configuration (로컬에서는 Mock/비활성화)
+  AWS_REGION: "ap-northeast-2"
+  AWS_S3_BUCKET: "local-mock-bucket"
+
+  # Monitoring
+  LOKI_URL: "http://loki-service:3100"

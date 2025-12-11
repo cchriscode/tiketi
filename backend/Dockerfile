@@ -13,6 +13,10 @@ COPY . .
 
 EXPOSE 3001
 
+# Health check for Kubernetes probes
+HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3001/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})" || exit 1
+
 # Create a simple startup script inline
 RUN echo '#!/bin/sh' > /start.sh && \
     echo 'echo "Waiting for PostgreSQL to be ready..."' >> /start.sh && \
