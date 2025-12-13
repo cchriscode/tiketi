@@ -203,6 +203,74 @@ postgres-xxx                 1/1     Running   0          3m
 promtail-xxx                 1/1     Running   0          2m
 ```
 
+### Step 4-6: 데이터베이스 초기화 🔥 **중요!**
+
+**모든 Pod이 Running 상태가 되면, 데이터베이스 스키마를 초기화해야 합니다.**
+
+```bash
+# PostgreSQL Pod 이름 확인
+kubectl get pods -n tiketi -l app=postgres
+
+# 출력 예시:
+# NAME                        READY   STATUS    RESTARTS   AGE
+# postgres-548647c6fd-dpgrm   1/1     Running   0          5m
+
+# 데이터베이스 스키마 적용 (Pod 이름을 실제 이름으로 변경)
+cat database/init.sql | kubectl exec -i -n tiketi postgres-548647c6fd-dpgrm -- psql -U tiketi_user -d tiketi
+
+# 정상 출력:
+# CREATE EXTENSION
+# CREATE TABLE
+# CREATE TABLE
+# ...
+# INSERT 0 25  (샘플 데이터 25개 삽입)
+```
+
+**추가 마이그레이션 적용:**
+```bash
+# 뉴스 기능 추가
+cat database/migration_add_news_and_keyword_mappings.sql | kubectl exec -i -n tiketi postgres-548647c6fd-dpgrm -- psql -U tiketi_user -d tiketi
+
+# 뉴스 고정 기능 추가
+cat database/migration_add_news_pinned.sql | kubectl exec -i -n tiketi postgres-548647c6fd-dpgrm -- psql -U tiketi_user -d tiketi
+
+# 예약 외래키 설정
+cat database/migrations/2025-11-21-alter-reservations-event-on-delete-set-null.sql | kubectl exec -i -n tiketi postgres-548647c6fd-dpgrm -- psql -U tiketi_user -d tiketi
+```
+
+**데이터베이스 초기화 확인:**
+```bash
+# 테이블 목록 확인
+kubectl exec -n tiketi postgres-548647c6fd-dpgrm -- psql -U tiketi_user -d tiketi -c "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name;"
+
+# 이벤트 개수 확인 (25개여야 함)
+kubectl exec -n tiketi postgres-548647c6fd-dpgrm -- psql -U tiketi_user -d tiketi -c "SELECT COUNT(*) FROM events;"
+
+# 관리자 계정 확인
+kubectl exec -n tiketi postgres-548647c6fd-dpgrm -- psql -U tiketi_user -d tiketi -c "SELECT email, role FROM users;"
+
+# 출력:
+#      email      | role
+# ----------------+-------
+#  admin@tiketi.gg | admin
+```
+
+**Backend 재시작 (데이터베이스 반영):**
+```bash
+# Backend를 재시작하여 데이터베이스 연결 갱신
+kubectl rollout restart deployment/backend -n tiketi
+
+# Backend가 다시 Ready될 때까지 대기
+kubectl wait --for=condition=ready pod -l app=backend -n tiketi --timeout=60s
+
+# Backend 로그 확인 (에러가 없어야 함)
+kubectl logs -n tiketi -l app=backend --tail=20
+```
+
+**✅ 이제 데이터베이스가 완전히 설정되었습니다!**
+- 관리자 계정: `admin@tiketi.gg` / `admin123`
+- 샘플 이벤트: 25개 (10CM, 싸이, 아이유, BTS, BLACKPINK 등)
+
 ---
 
 ## 5. 서비스 테스트
@@ -421,11 +489,18 @@ cd ~/project-ticketing
 ./scripts/build-and-load-images.sh
 ./scripts/deploy-all.sh
 
-# 5. 포트 포워딩 (새 터미널)
+# 5. 데이터베이스 초기화 (🔥 중요!)
+cat database/init.sql | kubectl exec -i -n tiketi <postgres-pod> -- psql -U tiketi_user -d tiketi
+cat database/migration_add_news_and_keyword_mappings.sql | kubectl exec -i -n tiketi <postgres-pod> -- psql -U tiketi_user -d tiketi
+cat database/migration_add_news_pinned.sql | kubectl exec -i -n tiketi <postgres-pod> -- psql -U tiketi_user -d tiketi
+cat database/migrations/2025-11-21-alter-reservations-event-on-delete-set-null.sql | kubectl exec -i -n tiketi <postgres-pod> -- psql -U tiketi_user -d tiketi
+kubectl rollout restart deployment/backend -n tiketi
+
+# 6. 포트 포워딩 (새 터미널)
 ./scripts/port-forward-all.sh
 
-# 6. 테스트
-curl http://localhost:3001/api/health
+# 7. 테스트
+curl http://localhost:3001/health
 ```
 
 ---
@@ -457,8 +532,16 @@ curl http://localhost:3001/api/health
 2. [ ] `./scripts/build-and-load-images.sh`
 3. [ ] `./scripts/deploy-all.sh`
 4. [ ] `kubectl get pods -n tiketi -w` (모두 Running)
-5. [ ] `./scripts/port-forward-all.sh` (새 터미널)
-6. [ ] `curl http://localhost:3001/api/health`
+5. [ ] 데이터베이스 초기화 (🔥 중요!)
+   ```bash
+   cat database/init.sql | kubectl exec -i -n tiketi <postgres-pod> -- psql -U tiketi_user -d tiketi
+   cat database/migration_add_news_and_keyword_mappings.sql | kubectl exec -i -n tiketi <postgres-pod> -- psql -U tiketi_user -d tiketi
+   cat database/migration_add_news_pinned.sql | kubectl exec -i -n tiketi <postgres-pod> -- psql -U tiketi_user -d tiketi
+   cat database/migrations/2025-11-21-alter-reservations-event-on-delete-set-null.sql | kubectl exec -i -n tiketi <postgres-pod> -- psql -U tiketi_user -d tiketi
+   kubectl rollout restart deployment/backend -n tiketi
+   ```
+6. [ ] `./scripts/port-forward-all.sh` (새 터미널)
+7. [ ] `curl http://localhost:3001/health`
 
 **접속 정보**:
 - Backend: http://localhost:3001

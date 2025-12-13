@@ -8,7 +8,7 @@ const {
 } = require('../shared/constants');
 const { logger } = require('../utils/logger');
 const CustomError = require('../utils/custom-error');
-const { eventViews, conversionFunnel } = require('../metrics');
+const { eventViews, conversionFunnelRate } = require('../metrics');
 const { validate: isUUID } = require('uuid');
 
 const router = express.Router();
@@ -292,7 +292,7 @@ router.get('/:id', async (req, res, next) => {
 
     // 메트릭 추가: 이벤트 조회
     eventViews.labels(id, eventResult.rows[0].title || 'Unknown').inc();
-    conversionFunnel.labels('view', id).inc();
+    // conversionFunnelRate는 Gauge이므로 aggregator에서 계산됨
 
     // Cache with TTL from constants
     await redisClient.setEx(cacheKey, CACHE_SETTINGS.EVENT_DETAIL_TTL, JSON.stringify(response));
