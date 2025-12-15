@@ -1,0 +1,20 @@
+grafana:
+  enabled: false
+
+promtail:
+  enabled: true
+  serviceMonitor:
+    enabled: false
+
+loki:
+  auth_enabled: false
+  persistence:
+    enabled: false
+
+
+
+
+
+
+
+

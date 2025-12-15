@@ -1,0 +1,114 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: app
+data:
+  PORT: "3001"
+  NODE_ENV: production
+  DB_HOST: postgres.app.svc.cluster.local
+  DB_PORT: "5432"
+  DB_NAME: tiketi
+  DB_USER: tiketi_user
+  REDIS_HOST: redis.app.svc.cluster.local
+  REDIS_PORT: "6379"
+  FRONTEND_URL: http://frontend.tiketi.local
+  TZ: Asia/Seoul
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend-secret
+  namespace: app
+type: Opaque
+stringData:
+  DB_PASSWORD: change-me
+  JWT_SECRET: change-me
+  ADMIN_EMAIL: admin@tiketi.gg
+  ADMIN_PASSWORD: admin123
+  AWS_ACCESS_KEY_ID: ""
+  AWS_SECRET_ACCESS_KEY: ""
+  AWS_REGION: ""
+  AWS_S3_BUCKET: ""
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: localhost:5001/backend:dev
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c", "npm start"]
+          ports:
+            - containerPort: 3001
+              name: http
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secret
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: app
+spec:
+  ports:
+    - port: 80
+      targetPort: 3001
+      name: http
+  selector:
+    app: backend
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: backend
+  namespace: app
+  annotations:
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: tiketi.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 80
+

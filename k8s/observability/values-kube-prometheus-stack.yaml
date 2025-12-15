@@ -1,0 +1,29 @@
+grafana:
+  adminUser: admin
+  adminPassword: admin
+  service:
+    type: ClusterIP
+  ingress:
+    enabled: false
+
+prometheus:
+  prometheusSpec:
+    serviceMonitorSelector: {}
+    serviceMonitorNamespaceSelector: {}
+    podMonitorSelector: {}
+    podMonitorNamespaceSelector: {}
+    probeSelector: {}
+    probeNamespaceSelector: {}
+    scrapeInterval: 15s
+    evaluationInterval: 15s
+
+alertmanager:
+  enabled: true
+
+
+
+
+
+
+
+
