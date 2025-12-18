@@ -1,8 +1,6 @@
 import axios from 'axios';
 
-// Use relative URL for production (works with nginx proxy)
-// Falls back to localhost for local development without proxy
-const API_URL = process.env.REACT_APP_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:3001' : '');
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 const api = axios.create({
   baseURL: `${API_URL}/api`,

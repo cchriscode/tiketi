@@ -1,10 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 
-// Use relative URL for production (works with nginx proxy)
-// Falls back to localhost for local development without proxy
-const SOCKET_URL = process.env.REACT_APP_SOCKET_URL ||
-  (window.location.hostname === 'localhost' ? 'http://localhost:3001' : window.location.origin);
+const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:3001';
 
 /**
  * Socket.IO 연결 및 이벤트 관리 훅 (ALB 멀티 인스턴스 대비)
