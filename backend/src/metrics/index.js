@@ -152,6 +152,38 @@ const conversionFunnelRate = new client.Gauge({
   registers: [register]
 });
 
+// 전환 퍼널 단계별 카운트
+const conversionFunnel = new client.Counter({
+  name: 'tiketi_conversion_funnel_total',
+  help: 'Conversion funnel step counts',
+  labelNames: ['stage', 'event_id'], // stage: view, seat_select, reservation, payment
+  registers: [register]
+});
+
+// 좌석 예약 건수
+const seatsReserved = new client.Counter({
+  name: 'tiketi_seats_reserved_total',
+  help: 'Total seats reserved',
+  labelNames: ['event_id'],
+  registers: [register]
+});
+
+// 좌석 가용 수 (현재 남은 좌석)
+const seatsAvailable = new client.Gauge({
+  name: 'tiketi_seats_available',
+  help: 'Available seats per event',
+  labelNames: ['event_id'],
+  registers: [register]
+});
+
+// 예약 생성 건수
+const reservationsCreated = new client.Counter({
+  name: 'tiketi_reservations_created_total',
+  help: 'Total reservations created',
+  labelNames: ['event_id', 'status'],
+  registers: [register]
+});
+
 // ==========================================
 // 🗄️ 데이터베이스 메트릭
 // ==========================================
@@ -177,15 +209,16 @@ const dbConnections = new client.Gauge({
 
 module.exports = {
   register,
-  
+
   // HTTP
   httpRequestCounter,
   httpRequestDuration,
   activeRequests,
-  
+
   // 비즈니스
   queueUsers,
   reservationsCancelled,
+  reservationsCreated,
   paymentsTotal,
   paymentAmount,
   authAttempts,
@@ -198,7 +231,10 @@ module.exports = {
   eventAvgPrice,
   paymentMethodCount,
   conversionFunnelRate,
-  
+  conversionFunnel,
+  seatsReserved,
+  seatsAvailable,
+
   // DB
   dbQueryDuration,
   dbConnections,

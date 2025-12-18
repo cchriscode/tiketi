@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat:*)",
+      "Bash(git stash:*)",
+      "Bash(wsl sleep:*)",
+      "Bash(kubectl get:*)",
+      "Bash(wsl kubectl logs -n tiketi backend-75b75b5654-8qnkk --tail=100)",
+      "Bash(wsl cat:*)",
+      "Bash(wsl bash -c \"cd /mnt/c/Users/USER/project-ticketing/frontend && docker build -t tiketi-frontend:local .\")",
+      "Bash(wsl bash -c \"cat /mnt/c/Users/USER/project-ticketing/database/init.sql | kubectl exec -i -n tiketi postgres-548647c6fd-dpgrm -- psql -U tiketi_user -d tiketi\")",
+      "Bash(wsl kubectl exec -n tiketi postgres-548647c6fd-dpgrm -- psql -U tiketi_user -d tiketi -c \"\\dt\")",
+      "Bash(wsl kubectl rollout:*)"
+    ]
+  }
+}
