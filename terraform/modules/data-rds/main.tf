@@ -16,6 +16,10 @@ terraform {
 resource "random_password" "db" {
   length  = 24
   special = true
+
+  # RDS 마스터 비밀번호는 /, ", @, 공백 문자를 포함할 수 없음(AWS 문서).
+  # safe set으로 강제해서 apply 실패를 예방.
+  override_special = "!&#$^<>-"
 }
 
 resource "aws_security_group" "rds" {
@@ -52,8 +56,8 @@ module "rds" {
   family               = var.parameter_group_family
   major_engine_version = split(".", var.engine_version)[0]
 
-  instance_class = var.instance_class
-  allocated_storage = var.allocated_storage
+  instance_class        = var.instance_class
+  allocated_storage     = var.allocated_storage
   max_allocated_storage = var.max_allocated_storage
 
   db_name  = var.db_name

@@ -10,7 +10,7 @@ terraform {
 }
 
 locals {
-  alb_policy_name         = "${var.cluster_name}-aws-load-balancer-controller"
+  alb_policy_name          = "${var.cluster_name}-aws-load-balancer-controller"
   external_dns_policy_name = "${var.cluster_name}-external-dns"
 }
 

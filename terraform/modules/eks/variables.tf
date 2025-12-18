@@ -37,13 +37,19 @@ variable "subnet_ids" {
 variable "cluster_endpoint_public_access" {
   type        = bool
   description = "Whether the EKS API endpoint is publicly accessible"
+  default     = false
+}
+
+variable "cluster_endpoint_private_access" {
+  type        = bool
+  description = "Whether the EKS API endpoint is privately accessible within the VPC"
   default     = true
 }
 
 variable "cluster_endpoint_public_access_cidrs" {
   type        = list(string)
   description = "Allowed CIDRs for public EKS API endpoint access"
-  default     = ["0.0.0.0/0"]
+  default     = []
 }
 
 variable "node_groups" {

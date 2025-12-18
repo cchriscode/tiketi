@@ -126,8 +126,8 @@ resource "aws_acm_certificate_validation" "cloudfront" {
 }
 
 resource "aws_acm_certificate" "alb" {
-  domain_name               = "api.${local.fqdn_root}"
-  validation_method         = "DNS"
+  domain_name       = "api.${local.fqdn_root}"
+  validation_method = "DNS"
 
   lifecycle {
     create_before_destroy = true

@@ -16,6 +16,10 @@ terraform {
 resource "random_password" "redis" {
   length  = 32
   special = true
+
+  # ElastiCache Redis AUTH token은 허용 특수문자가 제한됨(AWS 문서).
+  # safe set으로 강제해서 apply 실패를 예방.
+  override_special = "!&#$^<>-"
 }
 
 resource "aws_security_group" "redis" {
@@ -45,25 +49,25 @@ module "redis" {
   source  = "terraform-aws-modules/elasticache/aws"
   version = "~> 1.0"
 
-  replication_group_id          = "${var.project}-${var.env}-redis"
-  description                   = "Tiketi Redis"
-  engine                        = "redis"
-  engine_version                = var.engine_version
-  port                          = 6379
+  replication_group_id = "${var.project}-${var.env}-redis"
+  description          = "Tiketi Redis"
+  engine               = "redis"
+  engine_version       = var.engine_version
+  port                 = 6379
 
-  node_type                     = var.node_type
-  num_cache_clusters            = var.num_cache_clusters
-  automatic_failover_enabled    = true
-  multi_az_enabled              = true
+  node_type                  = var.node_type
+  num_cache_clusters         = var.num_cache_clusters
+  automatic_failover_enabled = true
+  multi_az_enabled           = true
 
-  at_rest_encryption_enabled    = true
-  transit_encryption_enabled    = true
-  auth_token                    = random_password.redis.result
+  at_rest_encryption_enabled = true
+  transit_encryption_enabled = true
+  auth_token                 = random_password.redis.result
 
-  subnet_ids                    = var.subnet_ids
-  create_subnet_group           = true
+  subnet_ids          = var.subnet_ids
+  create_subnet_group = true
 
-  security_group_ids            = [aws_security_group.redis.id]
+  security_group_ids = [aws_security_group.redis.id]
 
   tags = var.tags
 }

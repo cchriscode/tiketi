@@ -31,16 +31,16 @@ module "vpc" {
 
   public_subnet_tags = merge(
     {
-      "kubernetes.io/role/elb"                        = "1"
-      "kubernetes.io/cluster/${var.cluster_name}"     = "shared"
+      "kubernetes.io/role/elb"                    = "1"
+      "kubernetes.io/cluster/${var.cluster_name}" = "shared"
     },
     var.tags
   )
 
   private_subnet_tags = merge(
     {
-      "kubernetes.io/role/internal-elb"              = "1"
-      "kubernetes.io/cluster/${var.cluster_name}"    = "shared"
+      "kubernetes.io/role/internal-elb"           = "1"
+      "kubernetes.io/cluster/${var.cluster_name}" = "shared"
     },
     var.tags
   )

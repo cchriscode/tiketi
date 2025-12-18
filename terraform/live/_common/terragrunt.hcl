@@ -15,7 +15,9 @@ locals {
 
   state_bucket_name    = "${local.project}-${local.env}-${local.region}-tfstate"
   dynamodb_lock_table  = "${local.project}-${local.env}-${local.region}-tflock"
-  state_key_prefix     = "${local.project}/${local.env}/${local.region}"
+  # remote state key는 path_relative_to_include()가 이미 env/region을 포함하므로
+  # 여기서는 project만 prefix로 둬서 env/region 중복을 제거한다.
+  state_key_prefix     = local.project
   state_bucket_region  = local.region
 }
 

@@ -1,0 +1,112 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: backend
+  namespace: app
+  annotations:
+    # TODO: If backend needs AWS API access (S3, SecretsManager, etc.), set IRSA role ARN.
+    # eks.amazonaws.com/role-arn: arn:aws:iam::<ACCOUNT_ID>:role/<ROLE_NAME>
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: app
+data:
+  PORT: "3001"
+  NODE_ENV: "production"
+  TZ: "Asia/Seoul"
+  # DB/Redis endpoints come from Terraform outputs (data-rds/data-redis).
+  # Prefer syncing credentials from Secrets Manager via ExternalSecrets/CSI.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      serviceAccountName: backend
+      nodeSelector:
+        nodegroup: app
+      containers:
+        - name: backend
+          image: <ECR_REGISTRY>/tiketi-backend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3001
+              name: http
+          envFrom:
+            - configMapRef:
+                name: backend-config
+          # TODO: inject secrets via ExternalSecret -> SecretRef or CSI volume.
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: app
+spec:
+  type: ClusterIP
+  selector:
+    app: backend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3001
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: backend
+  namespace: app
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/group.name: tiketi
+    # From Terraform output: terraform/modules/edge/outputs.tf -> alb_certificate_arn
+    alb.ingress.kubernetes.io/certificate-arn: <ALB_CERTIFICATE_ARN>
+    # If using ExternalDNS:
+    external-dns.alpha.kubernetes.io/hostname: api.<DOMAIN>
+spec:
+  ingressClassName: alb
+  rules:
+    - host: api.<DOMAIN>
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 80

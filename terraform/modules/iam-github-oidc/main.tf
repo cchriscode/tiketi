@@ -15,7 +15,7 @@ locals {
   repos = [for r in var.github_repositories : "repo:${r}:*"]
 
   apply_subjects = [for r in var.github_repositories : "repo:${r}:ref:refs/heads/${var.apply_branch}"]
-  plan_subjects  = concat(
+  plan_subjects = concat(
     [for r in var.github_repositories : "repo:${r}:pull_request"],
     [for r in var.github_repositories : "repo:${r}:ref:refs/heads/${var.apply_branch}"]
   )
@@ -201,41 +201,53 @@ data "aws_iam_policy_document" "deploy" {
     resources = ["*"]
   }
 
-  statement {
-    effect = "Allow"
-    actions = [
-      "ecr:BatchCheckLayerAvailability",
-      "ecr:BatchGetImage",
-      "ecr:CompleteLayerUpload",
-      "ecr:GetDownloadUrlForLayer",
-      "ecr:InitiateLayerUpload",
-      "ecr:PutImage",
-      "ecr:UploadLayerPart",
-      "ecr:DescribeRepositories",
-      "ecr:CreateRepository",
-      "ecr:TagResource"
-    ]
-    resources = length(var.ecr_repository_arns) > 0 ? var.ecr_repository_arns : ["*"]
+  dynamic "statement" {
+    for_each = length(var.ecr_repository_arns) > 0 ? [1] : []
+
+    content {
+      effect = "Allow"
+      actions = [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:BatchGetImage",
+        "ecr:CompleteLayerUpload",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:InitiateLayerUpload",
+        "ecr:PutImage",
+        "ecr:UploadLayerPart",
+        "ecr:DescribeRepositories",
+        "ecr:CreateRepository",
+        "ecr:TagResource"
+      ]
+      resources = var.ecr_repository_arns
+    }
   }
 
-  statement {
-    effect = "Allow"
-    actions = [
-      "s3:ListBucket",
-      "s3:GetBucketLocation",
-      "s3:GetObject",
-      "s3:PutObject",
-      "s3:DeleteObject"
-    ]
-    resources = length(var.frontend_bucket_arn) > 0 ? [var.frontend_bucket_arn, "${var.frontend_bucket_arn}/*"] : ["*"]
+  dynamic "statement" {
+    for_each = var.frontend_bucket_arn != "" ? [1] : []
+
+    content {
+      effect = "Allow"
+      actions = [
+        "s3:ListBucket",
+        "s3:GetBucketLocation",
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ]
+      resources = [var.frontend_bucket_arn, "${var.frontend_bucket_arn}/*"]
+    }
   }
 
-  statement {
-    effect = "Allow"
-    actions = [
-      "cloudfront:CreateInvalidation"
-    ]
-    resources = length(var.cloudfront_distribution_arns) > 0 ? var.cloudfront_distribution_arns : ["*"]
+  dynamic "statement" {
+    for_each = length(var.cloudfront_distribution_arns) > 0 ? [1] : []
+
+    content {
+      effect = "Allow"
+      actions = [
+        "cloudfront:CreateInvalidation"
+      ]
+      resources = var.cloudfront_distribution_arns
+    }
   }
 }
 
