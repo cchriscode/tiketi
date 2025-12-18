@@ -3,7 +3,7 @@ const { logger } = require('../utils/logger');
 
 const redisClient = createClient({
   socket: {
-    host: process.env.REDIS_HOST || 'dragonfly-service',  // K8s service name
+    host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || 6379,
   },
 });
