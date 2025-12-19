@@ -1,4 +1,4 @@
-# Ticket Service MSA 분리 - Step 2 마이그레이션 보고서
+# Ticket Service MSA 분리
 
 ## 📋 개요
 

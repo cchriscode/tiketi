@@ -1,6 +1,6 @@
-# Auth Service 마이그레이션 1단계
+# Auth Service MSA 분리
 
-## 개요
+## 📋 개요
 
 Auth Service는 Tiketi의 MSA 아키텍처 1단계에서 분리된 첫 번째 마이크로서비스입니다.
 
