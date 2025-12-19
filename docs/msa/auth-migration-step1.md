@@ -312,9 +312,3 @@ PORT=3011 npm run dev
 - [RFP 기획서](../../docs/final/(최종)프로젝트기획서_RFP.md)
 - [아키텍처 설계](../../docs/final/(최종)아키텍처기획서.md)
 - [MSA 마이그레이션 계획](../../claudedocs/K8S_MSA_MIGRATION_PLAN.md)
-
----
-
-**생성 일시**: 2024년  
-**상태**: Phase 1 - 진행 중  
-**담당**: Backend Team
