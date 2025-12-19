@@ -286,15 +286,9 @@ docker build -t tiketi-ticket-service:latest .
 
 ---
 
-## 📞 주요 연락처
+## 작업 확인
 
 - Ticket Service Port: **3002**
 - Health Check: `http://localhost:3002/health`
 - API Base: `http://localhost:3002/api/v1/`
 - WebSocket: `ws://localhost:3002`
-
----
-
-**작성일**: 2025년 12월 19일  
-**상태**: Phase 2 - Ticket Service 분리 완료  
-**다음 단계**: Phase 3 - Payment & Stats Service 분리
