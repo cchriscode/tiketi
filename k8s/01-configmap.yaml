@@ -5,28 +5,34 @@ metadata:
   namespace: tiketi
 data:
   # Database Configuration
-  POSTGRES_DB: "tiketi"
-  POSTGRES_USER: "tiketi_user"
   DB_HOST: "postgres-service"
   DB_PORT: "5432"
-  # For Dockerfile start script compatibility
   DB_NAME: "tiketi"
   DB_USER: "tiketi_user"
-
+  
+  # PostgreSQL (for compatibility)
+  POSTGRES_DB: "tiketi"
+  POSTGRES_USER: "tiketi_user"
+  
   # Redis (DragonflyDB) Configuration
   REDIS_HOST: "dragonfly-service"
   REDIS_PORT: "6379"
-
-  # Backend Configuration
-  NODE_ENV: "development"
-  PORT: "3001"
-
+  
+  # Node Environment
+  NODE_ENV: "production"
+  
+  # Service Ports (각 서비스별로 Deployment에서 override)
+  # auth-service: 3010
+  # ticket-service: 3002
+  # payment-service: 3003
+  # stats-service: 3004
+  
   # Frontend Configuration
-  REACT_APP_API_URL: "http://localhost:3001"
-
-  # AWS Configuration (로컬에서는 Mock/비활성화)
+  REACT_APP_API_URL: "http://localhost:8080"
+  
+  # AWS Configuration (로컬 mock)
   AWS_REGION: "ap-northeast-2"
   AWS_S3_BUCKET: "local-mock-bucket"
-
+  
   # Monitoring
   LOKI_URL: "http://loki-service:3100"

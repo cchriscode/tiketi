@@ -1,11 +1,11 @@
 const express = require('express');
 const queueManager = require('../services/queue-manager');
 const db = require('../config/database');
-const { authenticate } = require('../middleware/auth');
+const { authenticateToken } = require('@tiketi/common');
 const { emitToQueue } = require('../config/socket');
 const router = express.Router();
-const { logger } = require('../utils/logger');
-const CustomError = require('../utils/custom-error');
+const { logger } = require('@tiketi/common');
+const { CustomError } = require('@tiketi/common');
 const { validate: isUUID } = require('uuid');
 
 const ensureValidEventId = (eventId, res) => {
@@ -36,7 +36,7 @@ const ensureValidEventId = (eventId, res) => {
  *       200:
  *         description: 대기열 진입 결과
  */
-router.post('/check/:eventId', authenticate, async (req, res, next) => {
+router.post('/check/:eventId', authenticateToken, async (req, res, next) => {
   try {
     const { eventId } = req.params;
     if (!ensureValidEventId(eventId, res)) return;
@@ -93,7 +93,7 @@ async function getEventInfo(eventId) {
  *       200:
  *         description: 대기열 상태
  */
-router.get('/status/:eventId', authenticate, async (req, res, next) => {
+router.get('/status/:eventId', authenticateToken, async (req, res, next) => {
   try {
     const { eventId } = req.params;
     if (!ensureValidEventId(eventId, res)) return;
@@ -127,7 +127,7 @@ router.get('/status/:eventId', authenticate, async (req, res, next) => {
  *       200:
  *         description: 대기열 나가기 성공
  */
-router.post('/leave/:eventId', authenticate, async (req, res, next) => {
+router.post('/leave/:eventId', authenticateToken, async (req, res, next) => {
   try {
     const { eventId } = req.params;
     if (!ensureValidEventId(eventId, res)) return;
@@ -162,7 +162,7 @@ router.post('/leave/:eventId', authenticate, async (req, res, next) => {
  *       200:
  *         description: 대기열 정보
  */
-router.get('/admin/:eventId', authenticate, async (req, res, next) => {
+router.get('/admin/:eventId', authenticateToken, async (req, res, next) => {
   try {
     // TODO: 관리자 권한 체크 추가
     const { eventId } = req.params;
@@ -204,7 +204,7 @@ router.get('/admin/:eventId', authenticate, async (req, res, next) => {
  *       200:
  *         description: 대기열 초기화 성공
  */
-router.post('/admin/clear/:eventId', authenticate, async (req, res, next) => {
+router.post('/admin/clear/:eventId', authenticateToken, async (req, res, next) => {
   try {
     // TODO: 관리자 권한 체크 추가
     const { eventId } = req.params;

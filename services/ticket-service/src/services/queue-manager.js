@@ -1,5 +1,5 @@
 const { client: redisClient } = require('../config/redis');
-const { logger } = require('../utils/logger');
+const { logger } = require('@tiketi/common');
 
 /**
  * 대기열 관리 시스템

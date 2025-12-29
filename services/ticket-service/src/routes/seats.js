@@ -5,9 +5,9 @@
 
 const express = require('express');
 const db = require('../config/database');
-const { logger } = require('../utils/logger');
+const { logger } = require('@tiketi/common');
 const { client: redisClient } = require('../config/redis');
-const { authenticate } = require('../middleware/auth');
+const { authenticateToken } = require('@tiketi/common');
 const { emitToSeats } = require('../config/socket');
 const {
   SEAT_STATUS,
@@ -19,8 +19,8 @@ const {
   ERROR_MESSAGES,
   SUCCESS_MESSAGES,
   RESERVATION_SETTINGS,
-} = require('../shared/constants');
-const CustomError = require('../utils/custom-error');
+} = require('@tiketi/common');
+const { CustomError } = require('@tiketi/common');
 const { validate: isUUID } = require('uuid');
 
 const router = express.Router();
@@ -151,7 +151,7 @@ router.get('/events/:eventId', async (req, res, next) => {
  *       400:
  *         description: 잘못된 요청
  */
-router.post('/reserve', authenticate, async (req, res, next) => {
+router.post('/reserve', authenticateToken, async (req, res, next) => {
   try {
     const { eventId, seatIds } = req.body;
     const userId = req.user.userId;
@@ -311,7 +311,7 @@ router.post('/reserve', authenticate, async (req, res, next) => {
  *       404:
  *         description: 예약을 찾을 수 없음
  */
-router.get('/reservation/:reservationId', authenticate, async (req, res, next) => {
+router.get('/reservation/:reservationId', authenticateToken, async (req, res, next) => {
   try {
     const { reservationId } = req.params;
     if (!isValidUUID(reservationId)) {

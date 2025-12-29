@@ -4,11 +4,11 @@
  */
 
 const express = require('express');
-const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { authenticateToken, requireAdmin } = require('@tiketi/common');
 const statsQueries = require('../services/stats-queries');
-const { logger } = require('../utils/logger');
-const CustomError = require('../utils/custom-error');
-const { GRANULARITY, ERROR_MESSAGES } = require('../shared/constants');
+const { logger } = require('@tiketi/common');
+const { CustomError } = require('@tiketi/common');
+const { GRANULARITY, ERROR_MESSAGES } = require('@tiketi/common');
 
 const router = express.Router();
 

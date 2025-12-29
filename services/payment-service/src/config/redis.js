@@ -1,5 +1,5 @@
 const redis = require('redis');
-const { logger } = require('../utils/logger');
+const { logger } = require('@tiketi/common');
 
 const client = redis.createClient({
   host: process.env.REDIS_HOST || 'dragonfly',

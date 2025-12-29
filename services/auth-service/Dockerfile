@@ -2,21 +2,16 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy package.json and lock file
-COPY package*.json ./
+# Dependencies 먼저 설치
+COPY services/auth-service/package*.json ./
+RUN npm install --production
 
-# Install dependencies
-RUN npm ci --only=production
+# 공통 라이브러리를 npm install 이후에 복사!
+COPY tiketi-common ./node_modules/@tiketi/common
 
-# Copy source code
-COPY src/ ./src/
+# 소스 복사
+COPY services/auth-service/src ./src
 
-# Expose port
 EXPOSE 3010
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3010/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
-
-# Start the service
 CMD ["node", "src/index.js"]

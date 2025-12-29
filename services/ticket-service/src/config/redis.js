@@ -1,5 +1,5 @@
 const { createClient } = require('redis');
-const { logger } = require('../utils/logger');
+const { logger } = require('@tiketi/common');
 
 const redisClient = createClient({
   socket: {

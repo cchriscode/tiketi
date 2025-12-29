@@ -1,0 +1,19 @@
+{
+  "name": "@tiketi/common",
+  "version": "1.0.0",
+  "description": "Tiketi MSA 공통 라이브러리",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "keywords": ["tiketi", "common", "shared"],
+  "author": "Tiketi Team",
+  "license": "ISC",
+  "dependencies": {
+    "winston": "^3.11.0",
+    "jsonwebtoken": "^9.0.2",
+    "bcrypt": "^5.1.1",
+    "pg": "^8.11.3",
+    "ioredis": "^5.3.2"
+  }
+}

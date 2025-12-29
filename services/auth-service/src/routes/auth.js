@@ -2,12 +2,11 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
-const db = require('../config/database');
-const { CONFIG } = require('../utils/constants');
-const CustomError = require('../utils/custom-error');
+const { db, CONFIG, CustomError, logger } = require('@tiketi/common');
 
 const router = express.Router();
 
+// Register
 router.post('/register',
   [
     body('email').isEmail().normalizeEmail(),
@@ -30,44 +29,48 @@ router.post('/register',
       );
 
       if (existingUser.rows.length > 0) {
-        return res.status(400).json({ error: '이미 존재하는 이메일입니다.' });
+        throw new CustomError(400, '이미 등록된 이메일입니다.');
       }
 
       // Hash password
-      const passwordHash = await bcrypt.hash(password, CONFIG.BCRYPT_SALT_ROUNDS);
+      const hashedPassword = await bcrypt.hash(password, CONFIG.BCRYPT_SALT_ROUNDS);
 
       // Insert user
       const result = await db.query(
-        'INSERT INTO users (email, password_hash, name, phone) VALUES ($1, $2, $3, $4) RETURNING id, email, name, role',
-        [email, passwordHash, name, phone]
+        `INSERT INTO users (email, password, name, phone, role)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, email, name, role, created_at`,
+        [email, hashedPassword, name, phone || null, 'user']
       );
 
       const user = result.rows[0];
 
-      // Generate JWT
+      // Generate token
       const token = jwt.sign(
         { userId: user.id, email: user.email, role: user.role },
         CONFIG.JWT_SECRET,
         { expiresIn: CONFIG.JWT_EXPIRES_IN }
       );
 
+      logger.info(`✅ New user registered: ${email}`);
+
       res.status(201).json({
         message: '회원가입이 완료되었습니다.',
         token,
         user: {
           id: user.id,
-          userId: user.id,
           email: user.email,
           name: user.name,
           role: user.role,
-        }
+        },
       });
     } catch (error) {
-      next(new CustomError(500, '회원가입에 실패했습니다.', error));
+      next(error);
     }
   }
 );
 
+// Login
 router.post('/login',
   [
     body('email').isEmail().normalizeEmail(),
@@ -89,7 +92,7 @@ router.post('/login',
       );
 
       if (result.rows.length === 0) {
-        return res.status(401).json({ error: '이메일 또는 비밀번호가 일치하지 않습니다.' });
+        throw new CustomError(401, '이메일 또는 비밀번호가 일치하지 않습니다.');
       }
 
       const user = result.rows[0];
@@ -97,29 +100,30 @@ router.post('/login',
       // Check password
       const passwordMatch = await bcrypt.compare(password, user.password_hash);
       if (!passwordMatch) {
-        return res.status(401).json({ error: '이메일 또는 비밀번호가 일치하지 않습니다.' });
+        throw new CustomError(401, '이메일 또는 비밀번호가 일치하지 않습니다.');
       }
 
-      // Generate JWT
+      // Generate token
       const token = jwt.sign(
         { userId: user.id, email: user.email, role: user.role },
         CONFIG.JWT_SECRET,
         { expiresIn: CONFIG.JWT_EXPIRES_IN }
       );
 
+      logger.info(`✅ User logged in: ${email}`);
+
       res.json({
-        message: '로그인 성공',
+        message: '로그인에 성공했습니다.',
         token,
         user: {
           id: user.id,
-          userId: user.id,
           email: user.email,
           name: user.name,
           role: user.role,
-        }
+        },
       });
     } catch (error) {
-      next(new CustomError(500, '로그인에 실패했습니다.', error));
+      next(error);
     }
   }
 );

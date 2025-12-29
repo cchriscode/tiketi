@@ -5,7 +5,7 @@
 
 const express = require('express');
 const db = require('../config/database');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken } = require('@tiketi/common');
 const {
   SEAT_STATUS,
   RESERVATION_STATUS,
@@ -14,10 +14,10 @@ const {
   PAYMENT_SETTINGS,
   ERROR_MESSAGES,
   SUCCESS_MESSAGES,
-} = require('../shared/constants');
-const { withTransaction } = require('../utils/transaction-helpers');
-const { logger } = require('../utils/logger');
-const CustomError = require('../utils/custom-error');
+} = require('@tiketi/common');
+const { withTransaction } = require('@tiketi/common');
+const { logger } = require('@tiketi/common');
+const { CustomError } = require('@tiketi/common');
 const { validate: isUUID } = require('uuid');
 
 const router = express.Router();

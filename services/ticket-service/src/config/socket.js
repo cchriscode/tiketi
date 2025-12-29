@@ -2,8 +2,8 @@ const { Server } = require('socket.io');
 const { createAdapter } = require('@socket.io/redis-adapter');
 const { createClient } = require('redis');
 const jwt = require('jsonwebtoken');
-const { logger } = require('../utils/logger');
-const { CONFIG } = require('../shared/constants');
+const { logger } = require('@tiketi/common');
+const { CONFIG } = require('@tiketi/common');
 
 /**
  * Socket.IO 초기화 (AWS 멀티 인스턴스 대비)

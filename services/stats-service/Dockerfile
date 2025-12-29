@@ -1,24 +1,25 @@
-# Stats Service Dockerfile
-
 FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# 공통 라이브러리 먼저 준비
+COPY tiketi-common/package.json /tiketi-common/package.json
+WORKDIR /tiketi-common
+RUN npm install --omit=dev --no-package-lock
 
-# Install dependencies
-RUN npm ci --only=production
+# 공통 라이브러리 소스 복사
+COPY tiketi-common/src /tiketi-common/src
 
-# Copy application code
-COPY src ./src
+# 서비스 빌드
+WORKDIR /app
+COPY services/stats-service/package.json ./
+RUN npm install --omit=dev --no-package-lock
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3004/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+# 공통 라이브러리 링크
+RUN ln -s /tiketi-common ./node_modules/@tiketi/common
 
-# Expose port
+COPY services/stats-service/src ./src
+
 EXPOSE 3004
 
-# Start application
 CMD ["node", "src/server.js"]

@@ -1,7 +1,7 @@
 const express = require('express');
 const db = require('../config/database');
-const { logger } = require('../utils/logger');
-const CustomError = require('../utils/custom-error');
+const { logger } = require('@tiketi/common');
+const { CustomError } = require('@tiketi/common');
 const { validate: isUUID } = require('uuid');
 
 const router = express.Router();

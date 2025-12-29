@@ -1,9 +1,9 @@
 const { Pool } = require('pg');
-const { CONFIG } = require('@tiketi/common');
-const { logger } = require('@tiketi/common');
+const { CONFIG } = require('../utils/constants');
+const { logger } = require('../utils/logger');
 
 const pool = new Pool({
-  host: process.env.DB_HOST || 'postgres-service',  // K8s service name
+  host: process.env.DB_HOST || 'postgres-service',
   port: process.env.DB_PORT || 5432,
   database: process.env.DB_NAME || process.env.POSTGRES_DB || 'tiketi',
   user: process.env.DB_USER || process.env.POSTGRES_USER || 'tiketi_user',

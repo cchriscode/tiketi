@@ -5,9 +5,9 @@ const {
   CACHE_KEYS,
   CACHE_SETTINGS,
   PAGINATION_DEFAULTS,
-} = require('../shared/constants');
-const { logger } = require('../utils/logger');
-const CustomError = require('../utils/custom-error');
+} = require('@tiketi/common');
+const { logger } = require('@tiketi/common');
+const { CustomError } = require('@tiketi/common');
 const { validate: isUUID } = require('uuid');
 
 const router = express.Router();

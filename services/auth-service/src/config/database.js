@@ -1,13 +1,12 @@
 const { Pool } = require('pg');
-const { CONFIG } = require('../utils/constants');
-const { logger } = require('../utils/logger');
+const { CONFIG, logger } = require('@tiketi/common');
 
 const pool = new Pool({
-  host: process.env.DB_HOST || 'postgres-service',
+  host: process.env.DB_HOST || 'localhost',
   port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || process.env.POSTGRES_DB || 'tiketi',
-  user: process.env.DB_USER || process.env.POSTGRES_USER || 'tiketi_user',
-  password: process.env.DB_PASSWORD || process.env.POSTGRES_PASSWORD || 'tiketi_pass',
+  database: process.env.DB_NAME || 'tiketi',
+  user: process.env.DB_USER || 'tiketi_user',
+  password: process.env.DB_PASSWORD || 'tiketi_password',
   max: CONFIG.DB_POOL_MAX,
   idleTimeoutMillis: CONFIG.DB_IDLE_TIMEOUT_MS,
   connectionTimeoutMillis: CONFIG.DB_CONNECTION_TIMEOUT_MS,
@@ -18,10 +17,7 @@ pool.on('connect', () => {
 });
 
 pool.on('error', (err) => {
-  logger.error('❌ Unexpected error on idle client', err.message);
+  logger.error('❌ PostgreSQL pool error:', err);
 });
 
-module.exports = {
-  query: (text, params) => pool.query(text, params),
-  getClient: () => pool.connect(),
-};
+module.exports = { pool };

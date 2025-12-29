@@ -1,7 +1,7 @@
 const express = require('express');
 const db = require('../config/database');
 const { acquireLock, releaseLock, client: redisClient } = require('../config/redis');
-const { authenticate } = require('../middleware/auth');
+const { authenticateToken } = require('@tiketi/common');
 const { emitToEvent } = require('../config/socket');
 const {
   RESERVATION_STATUS,
@@ -11,9 +11,9 @@ const {
   LOCK_SETTINGS,
   CACHE_KEYS,
   ERROR_MESSAGES,
-} = require('../shared/constants');
-const { logger } = require('../utils/logger');
-const CustomError = require('../utils/custom-error');
+} = require('@tiketi/common');
+const { logger } = require('@tiketi/common');
+const { CustomError } = require('@tiketi/common');
 const { validate: isUUID } = require('uuid');
 
 const router = express.Router();
@@ -65,7 +65,7 @@ const ensureUUIDArray = (values, res, field = 'id') => {
  *       400:
  *         description: 잘못된 요청
  */
-router.post('/', authenticate, async (req, res, next) => {
+router.post('/', authenticateToken, async (req, res, next) => {
   const client = await db.getClient();
 
   try {
@@ -241,7 +241,7 @@ router.post('/', authenticate, async (req, res, next) => {
  *       200:
  *         description: 예매 목록
  */
-router.get('/my', authenticate, async (req, res, next) => {
+router.get('/my', authenticateToken, async (req, res, next) => {
   try {
     const userId = req.user.userId;
 
@@ -297,7 +297,7 @@ router.get('/my', authenticate, async (req, res, next) => {
  *       404:
  *         description: 예매 내역을 찾을 수 없음
  */
-router.get('/:id', authenticate, async (req, res, next) => {
+router.get('/:id', authenticateToken, async (req, res, next) => {
   try {
     const { id } = req.params;
     if (!ensureUUID(id, res)) return;
@@ -361,7 +361,7 @@ router.get('/:id', authenticate, async (req, res, next) => {
  *       400:
  *         description: 잘못된 요청
  */
-router.post('/:id/cancel', authenticate, async (req, res, next) => {
+router.post('/:id/cancel', authenticateToken, async (req, res, next) => {
   const client = await db.getClient();
 
   try {

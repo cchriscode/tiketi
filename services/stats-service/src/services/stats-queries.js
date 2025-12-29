@@ -4,7 +4,7 @@
  */
 
 const db = require('../config/database');
-const { RESERVATION_STATUS, PAYMENT_STATUS, GRANULARITY } = require('../shared/constants');
+const { RESERVATION_STATUS, PAYMENT_STATUS, GRANULARITY } = require('@tiketi/common');
 
 /**
  * Get dashboard summary statistics
