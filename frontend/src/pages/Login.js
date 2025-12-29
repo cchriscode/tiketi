@@ -1,16 +1,83 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
+import axios from 'axios';
 import './Auth.css';
 
 function Login() {
   const navigate = useNavigate();
+  const googleButtonRef = useRef(null);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // Google Sign-In 초기화
+  useEffect(() => {
+    // Google Identity Services 스크립트가 로드될 때까지 대기
+    const initializeGoogleSignIn = () => {
+      if (window.google && googleButtonRef.current) {
+        window.google.accounts.id.initialize({
+          client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
+          callback: handleGoogleResponse,
+        });
+
+        window.google.accounts.id.renderButton(
+          googleButtonRef.current,
+          {
+            theme: 'outline',
+            size: 'large',
+            text: 'continue_with',
+            width: googleButtonRef.current.offsetWidth,
+          }
+        );
+      }
+    };
+
+    // 스크립트 로드 확인
+    if (window.google) {
+      initializeGoogleSignIn();
+    } else {
+      window.addEventListener('load', initializeGoogleSignIn);
+      return () => window.removeEventListener('load', initializeGoogleSignIn);
+    }
+  }, []);
+
+  // Google 로그인 응답 처리
+  const handleGoogleResponse = async (response) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Backend로 Google credential 전송
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+      const result = await axios.post(`${apiUrl}/api/auth/google`, {
+        credential: response.credential,
+      });
+
+      const { token, user } = result.data;
+
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+
+      // Redirect based on role
+      if (user.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
+
+      window.location.reload();
+    } catch (err) {
+      console.error('Google login error:', err);
+      const message = err.response?.data?.error || '구글 로그인에 실패했습니다.';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     setFormData({
@@ -90,6 +157,13 @@ function Login() {
               {loading ? '로그인 중...' : '로그인'}
             </button>
           </form>
+
+          <div className="social-login-divider">
+            <span>또는</span>
+          </div>
+
+          {/* Google Sign-In Button */}
+          <div ref={googleButtonRef} className="google-signin-button"></div>
 
           <div className="auth-footer">
             <p>

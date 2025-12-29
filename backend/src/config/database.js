@@ -14,8 +14,10 @@ const pool = new Pool({
   connectionTimeoutMillis: CONFIG.DB_CONNECTION_TIMEOUT_MS,
 });
 
-pool.on('connect', () => {
-  logger.info('✅ Connected to PostgreSQL database');
+pool.on('connect', async (client) => {
+  // Set search_path to include MSA schemas
+  await client.query(`SET search_path TO ticket_schema, auth_schema, payment_schema, stats_schema, public`);
+  logger.info('✅ Connected to PostgreSQL database (search_path configured)');
 });
 
 pool.on('error', (err) => {

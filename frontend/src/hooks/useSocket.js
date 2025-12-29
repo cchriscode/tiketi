@@ -3,8 +3,29 @@ import { io } from 'socket.io-client';
 
 // Use relative URL for production (works with nginx proxy)
 // Falls back to localhost for local development without proxy
-const SOCKET_URL = process.env.REACT_APP_SOCKET_URL ||
-  (window.location.hostname === 'localhost' ? 'http://localhost:3001' : window.location.origin);
+// Supports WSL IP addresses (e.g., 172.17.x.x) for WSL-based development
+const getSocketUrl = () => {
+  if (process.env.REACT_APP_SOCKET_URL) {
+    return process.env.REACT_APP_SOCKET_URL;
+  }
+
+  const hostname = window.location.hostname;
+
+  // localhost: use localhost:3001
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:3001';
+  }
+
+  // WSL IP or other local IP: use same IP with port 3001
+  if (hostname.match(/^(172\.|192\.168\.|10\.)/)) {
+    return `http://${hostname}:3001`;
+  }
+
+  // Production: use window.location.origin
+  return window.location.origin;
+};
+
+const SOCKET_URL = getSocketUrl();
 
 /**
  * Socket.IO 연결 및 이벤트 관리 훅 (ALB 멀티 인스턴스 대비)

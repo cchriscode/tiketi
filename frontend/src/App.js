@@ -18,12 +18,14 @@ import ReservationDetail from './pages/ReservationDetail';
 import SeatSelection from './pages/SeatSelection';
 import Payment from './pages/Payment';
 import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentCallback from './pages/PaymentCallback';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminEvents from './pages/admin/Events';
 import AdminEventForm from './pages/admin/EventForm';
 import AdminReservations from './pages/admin/Reservations';
+import AdminStatistics from './pages/admin/Statistics';
 
 // Auth Helper
 const PrivateRoute = ({ children }) => {
@@ -96,6 +98,23 @@ function App() {
               }
             />
 
+            <Route
+              path="/payment/success"
+              element={
+                <PrivateRoute>
+                  <PaymentCallback />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/payment/fail"
+              element={
+                <PrivateRoute>
+                  <PaymentCallback />
+                </PrivateRoute>
+              }
+            />
+
             {/* Admin Routes */}
             <Route
               path="/admin"
@@ -134,6 +153,14 @@ function App() {
               element={
                 <AdminRoute>
                   <AdminReservations />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/statistics"
+              element={
+                <AdminRoute>
+                  <AdminStatistics />
                 </AdminRoute>
               }
             />

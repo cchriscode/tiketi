@@ -1,0 +1,39 @@
+{
+  "name": "@tiketi/ticket-service",
+  "version": "1.0.0",
+  "description": "Ticket Service - Events, Tickets, Seats, and Queue Management",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "jest --coverage",
+    "test:watch": "jest --watch"
+  },
+  "keywords": [
+    "microservices",
+    "ticketing",
+    "events",
+    "queue"
+  ],
+  "author": "TIKETI",
+  "license": "MIT",
+  "dependencies": {
+    "@tiketi/common": "file:../../packages/common",
+    "@tiketi/database": "file:../../packages/database",
+    "@tiketi/metrics": "file:../../packages/metrics",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "ioredis": "^5.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "redis": "^4.6.5",
+    "socket.io": "^4.6.0",
+    "socket.io-redis": "^6.1.1",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "axios": "^1.4.0",
+    "jest": "^29.5.0",
+    "nodemon": "^2.0.22",
+    "supertest": "^6.3.3"
+  }
+}

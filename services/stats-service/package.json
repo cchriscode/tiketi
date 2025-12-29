@@ -1,0 +1,33 @@
+{
+  "name": "@tiketi/stats-service",
+  "version": "1.0.0",
+  "description": "Stats Service - Dashboard and Analytics",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "jest --coverage"
+  },
+  "keywords": [
+    "microservices",
+    "statistics",
+    "analytics",
+    "dashboard"
+  ],
+  "author": "TIKETI",
+  "license": "MIT",
+  "dependencies": {
+    "@tiketi/common": "file:../../packages/common",
+    "@tiketi/database": "file:../../packages/database",
+    "@tiketi/metrics": "file:../../packages/metrics",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "jest": "^29.5.0",
+    "nodemon": "^2.0.22",
+    "supertest": "^6.3.3"
+  }
+}

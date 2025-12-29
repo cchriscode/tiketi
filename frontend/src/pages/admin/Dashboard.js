@@ -57,6 +57,9 @@ function Dashboard() {
             <Link to="/admin/reservations" className="btn btn-outline">
               예매 관리
             </Link>
+            <Link to="/admin/statistics" className="btn btn-outline">
+              📊 통계
+            </Link>
           </div>
         </div>
 

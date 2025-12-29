@@ -1,0 +1,12 @@
+{
+  "name": "@tiketi/metrics",
+  "version": "1.0.0",
+  "description": "Prometheus metrics for TIKETI microservices",
+  "main": "src/index.js",
+  "keywords": ["tiketi", "metrics", "prometheus"],
+  "author": "TIKETI Team",
+  "license": "MIT",
+  "dependencies": {
+    "prom-client": "^15.1.0"
+  }
+}

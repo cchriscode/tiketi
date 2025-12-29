@@ -21,6 +21,9 @@ data:
   NODE_ENV: "development"
   PORT: "3001"
 
+  # Timezone Configuration (한국 시간 통일)
+  TZ: "Asia/Seoul"
+
   # Frontend Configuration
   REACT_APP_API_URL: "http://localhost:3001"
 
@@ -30,3 +33,7 @@ data:
 
   # Monitoring
   LOKI_URL: "http://loki-service:3100"
+
+  # Google OAuth Configuration
+  GOOGLE_CLIENT_ID: "721028631258-dhjgd4gquphib49fsoitiubusbo3t9e9.apps.googleusercontent.com"
+  REACT_APP_GOOGLE_CLIENT_ID: "721028631258-dhjgd4gquphib49fsoitiubusbo3t9e9.apps.googleusercontent.com"

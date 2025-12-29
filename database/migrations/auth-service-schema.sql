@@ -1,0 +1,104 @@
+-- ========================================
+-- Auth Service Database Schema
+-- ========================================
+-- 기존 tiketi DB에서 auth_schema로 분리
+-- 기존 users 테이블을 auth_schema.users로 이동
+
+-- 1. Schema 생성
+CREATE SCHEMA IF NOT EXISTS auth_schema;
+
+-- 2. Enable UUID extension (in public schema)
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- 3. Set search path
+SET search_path TO auth_schema, public;
+
+-- 4. Users 테이블 (auth_schema로 생성)
+CREATE TABLE IF NOT EXISTS auth_schema.users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    phone VARCHAR(20),
+    role VARCHAR(20) DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 5. 인덱스 생성
+CREATE INDEX IF NOT EXISTS idx_auth_users_email ON auth_schema.users(email);
+CREATE INDEX IF NOT EXISTS idx_auth_users_role ON auth_schema.users(role);
+
+-- 7. Updated_at 트리거 함수 (이미 있으면 재사용)
+CREATE OR REPLACE FUNCTION auth_schema.update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 7. Updated_at 트리거
+DROP TRIGGER IF EXISTS update_auth_users_updated_at ON auth_schema.users;
+CREATE TRIGGER update_auth_users_updated_at
+    BEFORE UPDATE ON auth_schema.users
+    FOR EACH ROW
+    EXECUTE FUNCTION auth_schema.update_updated_at_column();
+
+-- ========================================
+-- 데이터 마이그레이션 (기존 users → auth_schema.users)
+-- ========================================
+-- 주의: 기존 public.users 테이블이 있다면 데이터 복사
+-- 실행 전 백업 필수!
+
+-- 기존 테이블 확인
+DO $$
+BEGIN
+    -- public.users 테이블이 존재하고, auth_schema.users가 비어있으면 데이터 복사
+    IF EXISTS (SELECT FROM information_schema.tables
+               WHERE table_schema = 'public' AND table_name = 'users')
+    AND NOT EXISTS (SELECT FROM auth_schema.users LIMIT 1)
+    THEN
+        INSERT INTO auth_schema.users (id, email, password_hash, name, phone, role, created_at, updated_at)
+        SELECT id, email, password_hash, name, phone, role, created_at, updated_at
+        FROM public.users;
+
+        RAISE NOTICE '✅ Migrated % users from public.users to auth_schema.users',
+                     (SELECT COUNT(*) FROM auth_schema.users);
+    ELSE
+        RAISE NOTICE 'ℹ️  auth_schema.users already has data or public.users does not exist';
+    END IF;
+END $$;
+
+-- ========================================
+-- 권한 설정
+-- ========================================
+-- Auth Service 전용 사용자 생성 (선택사항)
+-- CREATE USER auth_service_user WITH PASSWORD 'auth_password';
+
+-- Auth Service에 auth_schema 접근 권한 부여
+GRANT USAGE ON SCHEMA auth_schema TO tiketi_user;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA auth_schema TO tiketi_user;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA auth_schema TO tiketi_user;
+
+-- ========================================
+-- 검증 쿼리
+-- ========================================
+-- 테이블 및 데이터 확인
+SELECT 'auth_schema.users' as table_name, COUNT(*) as row_count FROM auth_schema.users;
+SELECT 'Users sample' as info, id, email, name, role FROM auth_schema.users LIMIT 3;
+
+-- 스키마 정보
+SELECT
+    schemaname,
+    tablename,
+    tableowner
+FROM pg_tables
+WHERE schemaname = 'auth_schema';
+
+-- 인덱스 확인
+SELECT
+    indexname,
+    indexdef
+FROM pg_indexes
+WHERE schemaname = 'auth_schema';

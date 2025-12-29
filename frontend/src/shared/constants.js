@@ -59,6 +59,7 @@ export const PAYMENT_METHODS = {
   NAVER_PAY: 'naver_pay',
   KAKAO_PAY: 'kakao_pay',
   BANK_TRANSFER: 'bank_transfer',
+  TOSS_PAYMENTS: 'toss_payments',
 };
 
 // Payment Method Display
@@ -66,6 +67,7 @@ export const PAYMENT_METHOD_DISPLAY = {
   [PAYMENT_METHODS.NAVER_PAY]: '네이버페이',
   [PAYMENT_METHODS.KAKAO_PAY]: '카카오페이',
   [PAYMENT_METHODS.BANK_TRANSFER]: '계좌이체',
+  [PAYMENT_METHODS.TOSS_PAYMENTS]: '토스페이먼츠',
 };
 
 // Reservation Settings

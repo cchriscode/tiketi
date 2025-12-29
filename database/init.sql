@@ -1,5 +1,9 @@
 -- Database initialization script for Tiketi
 
+-- Set timezone to Asia/Seoul (한국 시간 통일)
+SET timezone = 'Asia/Seoul';
+ALTER DATABASE tiketi SET timezone TO 'Asia/Seoul';
+
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 

@@ -160,10 +160,10 @@ const conversionFunnel = new client.Counter({
   registers: [register]
 });
 
-// 좌석 예약 건수
-const seatsReserved = new client.Counter({
-  name: 'tiketi_seats_reserved_total',
-  help: 'Total seats reserved',
+// 좌석 예약 건수 (현재 예약된 좌석)
+const seatsReserved = new client.Gauge({
+  name: 'tiketi_seats_reserved',
+  help: 'Currently reserved seats per event',
   labelNames: ['event_id'],
   registers: [register]
 });

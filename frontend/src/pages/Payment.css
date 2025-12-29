@@ -226,6 +226,12 @@
   font-size: 28px;
 }
 
+.option-icon.toss {
+  background: #1B64DA;
+  color: #fff;
+  font-weight: bold;
+}
+
 .option-name {
   font-size: 16px;
   font-weight: 500;

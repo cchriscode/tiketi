@@ -1,0 +1,19 @@
+{
+  "name": "@tiketi/common",
+  "version": "1.0.0",
+  "description": "Shared common utilities for TIKETI microservices",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": ["tiketi", "common", "shared"],
+  "author": "TIKETI Team",
+  "license": "MIT",
+  "dependencies": {
+    "uuid": "^9.0.0",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

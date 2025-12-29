@@ -78,6 +78,45 @@
   margin: 0;
 }
 
+/* Google Sign-In Styles */
+.social-login-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 24px 0;
+  color: #666;
+}
+
+.social-login-divider::before,
+.social-login-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.social-login-divider span {
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.google-signin-button {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+/* Google 버튼이 로드 안 될 때를 대비한 스타일 */
+.google-signin-button:empty::after {
+  content: '구글 로그인 로드 중...';
+  display: block;
+  padding: 12px;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+}
+
 @media (max-width: 768px) {
   .auth-card {
     padding: 30px 20px;

@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import axios from 'axios';
 import {
   PAYMENT_METHODS,
   PAYMENT_METHOD_DISPLAY,
   API_ENDPOINTS,
 } from '../shared/constants';
 import './Payment.css';
+import { loadTossPayments } from '@tosspayments/payment-sdk';
 
 function Payment() {
   const { reservationId } = useParams();
@@ -79,6 +81,14 @@ function Payment() {
 
     try {
       setProcessing(true);
+
+      // Toss Payments를 선택한 경우 - 실제 SDK 사용
+      if (paymentMethod === PAYMENT_METHODS.TOSS_PAYMENTS) {
+        await handleTossPayment();
+        return;
+      }
+
+      // 다른 결제 수단들은 목업 처리
       const response = await api.post(API_ENDPOINTS.PROCESS_PAYMENT, {
         reservationId,
         paymentMethod,
@@ -91,6 +101,56 @@ function Payment() {
       console.error('Payment failed:', error);
       alert(error.response?.data?.error || '결제에 실패했습니다.');
     } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleTossPayment = async () => {
+    try {
+      // Get Payment Service URL (port 3003)
+      const hostname = window.location.hostname;
+      let paymentServiceUrl;
+
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        paymentServiceUrl = 'http://localhost:3003';
+      } else if (hostname.match(/^(172\.|192\.168\.|10\.)/)) {
+        // WSL IP or local network
+        paymentServiceUrl = `http://${hostname}:3003`;
+      } else {
+        // Production - assume same origin with different port
+        paymentServiceUrl = `${window.location.protocol}//${hostname}:3003`;
+      }
+
+      // 1. 결제 준비 - orderId 생성
+      const token = localStorage.getItem('token');
+      const prepareResponse = await axios.post(`${paymentServiceUrl}/payments/prepare`, {
+        reservationId,
+        amount: reservation.total_amount,
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const { orderId, amount, clientKey } = prepareResponse.data;
+
+      // 2. Toss Payments SDK 로드 및 초기화
+      const tossPayments = await loadTossPayments(clientKey);
+
+      // 3. 결제창 띄우기
+      await tossPayments.requestPayment('카드', {
+        amount: amount,
+        orderId: orderId,
+        orderName: reservation.event_title || '티켓 예매',
+        customerName: reservation.user_name || '고객',
+        successUrl: `${window.location.origin}/payment/success`,
+        failUrl: `${window.location.origin}/payment/fail`,
+      });
+
+    } catch (error) {
+      console.error('Toss Payment failed:', error);
+      alert('토스 페이먼츠 결제에 실패했습니다.');
       setProcessing(false);
     }
   };
@@ -215,6 +275,21 @@ function Payment() {
               <div className="option-content">
                 <div className="option-icon bank">🏦</div>
                 <span className="option-name">{PAYMENT_METHOD_DISPLAY[PAYMENT_METHODS.BANK_TRANSFER]}</span>
+              </div>
+            </label>
+
+
+            <label className={`payment-option ${paymentMethod === PAYMENT_METHODS.TOSS_PAYMENTS ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="paymentMethod"
+                value={PAYMENT_METHODS.TOSS_PAYMENTS}
+                checked={paymentMethod === PAYMENT_METHODS.TOSS_PAYMENTS}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+              />
+              <div className="option-content">
+                <div className="option-icon toss">T</div>
+                <span className="option-name">{PAYMENT_METHOD_DISPLAY[PAYMENT_METHODS.TOSS_PAYMENTS]}</span>
               </div>
             </label>
           </div>

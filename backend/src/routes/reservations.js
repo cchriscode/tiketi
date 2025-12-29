@@ -15,10 +15,12 @@ const {
 const { invalidateCache, withTransaction } = require('../utils/transaction-helpers');
 const { logger } = require('../utils/logger');
 const CustomError = require('../utils/custom-error');
-const { 
-  reservationsCreated, 
+const {
+  reservationsCreated,
   reservationsCancelled,
-  conversionFunnel
+  conversionFunnel,
+  seatsReserved,
+  seatsAvailable
 } = require('../metrics');
 const { validate: isUUID } = require('uuid');
 

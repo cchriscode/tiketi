@@ -51,6 +51,10 @@ spec:
                   key: POSTGRES_PASSWORD
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
+            - name: TZ
+              value: Asia/Seoul
+            - name: PGTZ
+              value: Asia/Seoul
           volumeMounts:
             - name: postgres-storage
               mountPath: /var/lib/postgresql/data

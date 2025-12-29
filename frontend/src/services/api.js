@@ -2,7 +2,29 @@ import axios from 'axios';
 
 // Use relative URL for production (works with nginx proxy)
 // Falls back to localhost for local development without proxy
-const API_URL = process.env.REACT_APP_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:3001' : '');
+// Supports WSL IP addresses (e.g., 172.17.x.x) for WSL-based development
+const getApiUrl = () => {
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+
+  const hostname = window.location.hostname;
+
+  // localhost: use localhost:3001
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:3001';
+  }
+
+  // WSL IP or other local IP: use same IP with port 3001
+  if (hostname.match(/^(172\.|192\.168\.|10\.)/)) {
+    return `http://${hostname}:3001`;
+  }
+
+  // Production: use relative URL (empty string)
+  return '';
+};
+
+const API_URL = getApiUrl();
 
 const api = axios.create({
   baseURL: `${API_URL}/api`,
