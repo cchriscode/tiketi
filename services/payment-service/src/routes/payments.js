@@ -226,9 +226,20 @@ router.post('/confirm', authenticateToken, async (req, res, next) => {
     // Update reservation status to confirmed
     await client.query(
       `UPDATE ticket_schema.reservations
-       SET status = $1, payment_status = $2, updated_at = NOW()
-       WHERE id = $3`,
-      ['confirmed', 'completed', payment.reservation_id]
+       SET status = $1, payment_status = $2, payment_method = $3, updated_at = NOW()
+       WHERE id = $4`,
+      ['confirmed', 'completed', tossData.method || 'toss', payment.reservation_id]
+    );
+
+    // Update seats status from 'locked' to 'reserved'
+    await client.query(
+      `UPDATE ticket_schema.seats
+       SET status = $1, updated_at = NOW()
+       WHERE id IN (
+         SELECT seat_id FROM ticket_schema.reservation_items
+         WHERE reservation_id = $2 AND seat_id IS NOT NULL
+       )`,
+      ['reserved', payment.reservation_id]
     );
 
     await client.query('COMMIT');
@@ -432,6 +443,127 @@ router.get('/user/me', authenticateToken, async (req, res, next) => {
 
   } catch (error) {
     next(error);
+  }
+});
+
+/**
+ * POST /payments/process
+ * Non-Toss 결제 처리 (네이버페이, 카카오페이, 계좌이체 등)
+ */
+router.post('/process', authenticateToken, async (req, res, next) => {
+  const client = await db.pool.connect();
+
+  try {
+    const { reservationId, paymentMethod } = req.body;
+    const userId = req.user.userId;
+
+    // Validation
+    if (!reservationId || !isUUID(reservationId)) {
+      return res.status(400).json({ error: 'Valid reservation ID is required' });
+    }
+
+    if (!paymentMethod) {
+      return res.status(400).json({ error: 'Payment method is required' });
+    }
+
+    const validMethods = ['naver_pay', 'kakao_pay', 'bank_transfer'];
+    if (!validMethods.includes(paymentMethod)) {
+      return res.status(400).json({ error: 'Invalid payment method' });
+    }
+
+    await client.query('BEGIN');
+
+    // Get reservation with lock
+    const reservationResult = await client.query(
+      `SELECT
+        r.id, r.user_id, r.reservation_number, r.total_amount, r.status,
+        r.payment_status, r.expires_at, r.event_id
+      FROM ticket_schema.reservations r
+      WHERE r.id = $1
+      FOR UPDATE`,
+      [reservationId]
+    );
+
+    if (reservationResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Reservation not found' });
+    }
+
+    const reservation = reservationResult.rows[0];
+
+    // Check ownership
+    if (reservation.user_id !== userId) {
+      await client.query('ROLLBACK');
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Check if already paid
+    if (reservation.payment_status === 'completed') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Payment already completed for this reservation' });
+    }
+
+    // Check if expired
+    if (reservation.expires_at && new Date(reservation.expires_at) < new Date()) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Reservation has expired' });
+    }
+
+    // Simulate payment processing (in real implementation, call actual payment API)
+    // For now, just mark as completed
+
+    // Generate order ID
+    const orderId = `ORD_${Date.now()}_${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+
+    // Create payment record
+    const paymentResult = await client.query(
+      `INSERT INTO payment_schema.payments (
+        user_id, event_id, reservation_id, order_id, amount, method, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id`,
+      [userId, reservation.event_id, reservationId, orderId, reservation.total_amount, paymentMethod, 'confirmed']
+    );
+
+    const paymentId = paymentResult.rows[0].id;
+
+    // Update reservation status
+    await client.query(
+      `UPDATE ticket_schema.reservations
+       SET status = $1, payment_status = $2, payment_method = $3, updated_at = NOW()
+       WHERE id = $4`,
+      ['confirmed', 'completed', paymentMethod, reservationId]
+    );
+
+    // Update seats status from 'locked' to 'reserved'
+    await client.query(
+      `UPDATE ticket_schema.seats
+       SET status = $1, updated_at = NOW()
+       WHERE id IN (
+         SELECT seat_id FROM ticket_schema.reservation_items
+         WHERE reservation_id = $2 AND seat_id IS NOT NULL
+       )`,
+      ['reserved', reservationId]
+    );
+
+    await client.query('COMMIT');
+
+    res.json({
+      success: true,
+      message: '결제가 완료되었습니다.',
+      payment: {
+        id: paymentId,
+        orderId,
+        amount: reservation.total_amount,
+        method: paymentMethod,
+        reservationNumber: reservation.reservation_number,
+      },
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    next(error);
+  } finally {
+    client.release();
   }
 });
 

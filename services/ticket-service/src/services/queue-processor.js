@@ -12,6 +12,15 @@ class QueueProcessor {
     this.isRunning = false;
     this.errorCount = 0;
     this.maxErrors = 5;
+    this.io = null; // Socket.IO instance
+  }
+
+  /**
+   * Set Socket.IO instance for real-time updates
+   */
+  setIO(io) {
+    this.io = io;
+    console.log('🔌 Socket.IO connected to QueueProcessor');
   }
 
   /**
@@ -86,7 +95,7 @@ class QueueProcessor {
       const activeKey = `active:${eventId}`;
 
       // 현재 활성 사용자 수
-      const currentUsers = await redisClient.sCard(activeKey) || 0;
+      const currentUsers = await redisClient.scard(activeKey) || 0;
 
       // 임계값 (기본 1000)
       const threshold = 1000;
@@ -99,7 +108,7 @@ class QueueProcessor {
       }
 
       // 대기열에서 입장 가능한 만큼 사용자 가져오기 (FIFO)
-      const users = await redisClient.zRange(queueKey, 0, available - 1);
+      const users = await redisClient.zrange(queueKey, 0, available - 1);
 
       if (users.length === 0) {
         return; // 대기열 비어있음
@@ -107,12 +116,32 @@ class QueueProcessor {
 
       // 사용자들을 활성 상태로 전환
       for (const userId of users) {
-        await redisClient.sAdd(activeKey, userId);
+        await redisClient.sadd(activeKey, userId);
         await redisClient.expire(activeKey, 300); // 5분 타임아웃
+
+        // Emit 'queue-entry-allowed' event to specific user
+        if (this.io) {
+          this.io.to(`queue:${eventId}`).emit('queue-entry-allowed', {
+            eventId,
+            userId,
+            message: '입장이 허용되었습니다. 좌석을 선택해주세요.',
+          });
+        }
       }
 
       // 대기열에서 제거
-      await redisClient.zRemRangeByRank(queueKey, 0, users.length - 1);
+      await redisClient.zremrangebyrank(queueKey, 0, users.length - 1);
+
+      // Emit 'queue-updated' event to all users in queue
+      if (this.io) {
+        const remainingCount = await redisClient.zcard(queueKey) || 0;
+        this.io.to(`queue:${eventId}`).emit('queue-updated', {
+          eventId,
+          queueSize: remainingCount,
+          currentUsers,
+          threshold,
+        });
+      }
 
       console.log(`✅ Admitted ${users.length} user(s) from queue for event ${eventId}`);
 

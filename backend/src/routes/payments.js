@@ -301,5 +301,63 @@ function getPaymentMethodName(method) {
   return names[method] || method;
 }
 
+/**
+ * POST /api/payments/confirm
+ * Toss Payments 결제 승인 (Payment Service로 프록시)
+ */
+router.post('/confirm', async (req, res, next) => {
+  try {
+    const axios = require('axios');
+    const PAYMENT_SERVICE_URL = process.env.PAYMENT_SERVICE_URL || 'http://payment-service:3003';
+
+    // Payment Service로 프록시
+    const response = await axios.post(
+      `${PAYMENT_SERVICE_URL}/api/payments/confirm`,
+      req.body,
+      {
+        headers: {
+          'Authorization': req.headers.authorization,
+          'Content-Type': 'application/json',
+        },
+        validateStatus: () => true, // Accept all status codes
+      }
+    );
+
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    logger.error('Payment Service proxy error:', error);
+    next(new CustomError(503, 'Payment Service unavailable'));
+  }
+});
+
+/**
+ * POST /api/payments/prepare
+ * Toss Payments 결제 준비 (Payment Service로 프록시)
+ */
+router.post('/prepare', async (req, res, next) => {
+  try {
+    const axios = require('axios');
+    const PAYMENT_SERVICE_URL = process.env.PAYMENT_SERVICE_URL || 'http://payment-service:3003';
+
+    // Payment Service로 프록시
+    const response = await axios.post(
+      `${PAYMENT_SERVICE_URL}/api/payments/prepare`,
+      req.body,
+      {
+        headers: {
+          'Authorization': req.headers.authorization,
+          'Content-Type': 'application/json',
+        },
+        validateStatus: () => true,
+      }
+    );
+
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    logger.error('Payment Service proxy error:', error);
+    next(new CustomError(503, 'Payment Service unavailable'));
+  }
+});
+
 module.exports = router;
 

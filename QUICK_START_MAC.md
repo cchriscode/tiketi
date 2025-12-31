@@ -12,6 +12,20 @@
 
 ---
 
+## ⚠️ 시작하기 전에
+
+**필수 확인사항:**
+1. ✅ Docker Desktop 실행 중
+2. ✅ 터미널 열기
+3. ✅ 프로젝트 디렉토리로 이동: `cd ~/project-ticketing` (또는 클론한 경로)
+
+**전체 정리 후 재시작하려면:**
+```bash
+./scripts/cleanup.sh
+```
+
+---
+
 ## 빠른 시작 (자동 설치)
 
 ### 원스텝 설치 🎯
@@ -326,10 +340,10 @@ chmod +x scripts/port-forward-all.sh
 이 스크립트는 백그라운드로 실행되며, 다음 포트를 포워딩합니다:
 - PostgreSQL: 5432
 - Backend: 3001
-- Auth: 3002
+- Auth: 3005
 - Payment: 3003
-- Ticket: 3004
-- Stats: 3005
+- Ticket: 3002
+- Stats: 3004
 - Frontend: 3000
 
 **수동 설정 (선택사항):**
@@ -337,11 +351,11 @@ chmod +x scripts/port-forward-all.sh
 # 각각 별도의 터미널에서 실행하거나 백그라운드로 실행
 kubectl port-forward -n tiketi svc/postgres-service 5432:5432 &
 kubectl port-forward -n tiketi svc/backend-service 3001:3001 &
-kubectl port-forward -n tiketi svc/auth-service 3002:3002 &
+kubectl port-forward -n tiketi svc/auth-service 3005:3005 &
 kubectl port-forward -n tiketi svc/payment-service 3003:3003 &
-kubectl port-forward -n tiketi svc/ticket-service 3004:3004 &
-kubectl port-forward -n tiketi svc/stats-service 3005:3005 &
-kubectl port-forward -n tiketi svc/frontend-service 3000:80 &
+kubectl port-forward -n tiketi svc/ticket-service 3002:3002 &
+kubectl port-forward -n tiketi svc/stats-service 3004:3004 &
+kubectl port-forward -n tiketi svc/frontend-service 3000:3000 &
 ```
 
 ### 2. 접속 URL
@@ -350,10 +364,10 @@ kubectl port-forward -n tiketi svc/frontend-service 3000:80 &
 |--------|-----|------|
 | **Frontend** | http://localhost:3000 | 메인 사용자 웹사이트 |
 | **Backend API** | http://localhost:3001 | Legacy API (Admin 등) |
-| **Auth Service** | http://localhost:3002 | 인증 서비스 |
+| **Auth Service** | http://localhost:3005 | 인증 서비스 (MSA) |
 | **Payment Service** | http://localhost:3003 | 결제 서비스 |
-| **Ticket Service** | http://localhost:3004 | 티켓 예매 서비스 |
-| **Stats Service** | http://localhost:3005 | 통계 서비스 |
+| **Ticket Service** | http://localhost:3002 | 티켓 예매 서비스 |
+| **Stats Service** | http://localhost:3004 | 통계 서비스 |
 
 ### 3. 기본 테스트
 
@@ -362,10 +376,10 @@ kubectl port-forward -n tiketi svc/frontend-service 3000:80 &
 ```bash
 # 모든 서비스 Health 확인
 curl http://localhost:3001/health  # Backend
-curl http://localhost:3002/health  # Auth
+curl http://localhost:3005/health  # Auth
 curl http://localhost:3003/health  # Payment
-curl http://localhost:3004/health  # Ticket
-curl http://localhost:3005/health  # Stats
+curl http://localhost:3002/health  # Ticket
+curl http://localhost:3004/health  # Stats
 ```
 
 모든 서비스가 `{"status":"ok"}` 응답을 반환해야 합니다.
@@ -554,12 +568,12 @@ npm run dev  # Port 3001
 # 탭 2: Auth Service
 cd services/auth-service
 npm install
-npm run dev  # Port 3002
+npm run dev  # Port 3005
 
 # 탭 3: Ticket Service
 cd services/ticket-service
 npm install
-npm run dev  # Port 3004
+npm run dev  # Port 3002
 
 # 탭 4: Payment Service
 cd services/payment-service
@@ -569,7 +583,7 @@ npm run dev  # Port 3003
 # 탭 5: Stats Service
 cd services/stats-service
 npm install
-npm run dev  # Port 3005
+npm run dev  # Port 3004
 
 # 탭 6: Frontend
 cd frontend

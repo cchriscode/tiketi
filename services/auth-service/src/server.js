@@ -10,7 +10,7 @@ const { metricsMiddleware, register } = require('@tiketi/metrics');
 const authRoutes = require('./routes/auth');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3005;
 
 // Middleware
 app.use(cors());
@@ -33,7 +33,7 @@ app.get('/metrics', async (req, res) => {
 });
 
 // Routes
-app.use('/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

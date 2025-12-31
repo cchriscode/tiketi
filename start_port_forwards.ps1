@@ -99,23 +99,23 @@ Start-Process powershell -ArgumentList "-NoExit","-Command","kubectl port-forwar
 Start-Sleep -Seconds 3
 
 # Auth Service
-Write-Host "[3/7] Auth Service (3002)" -ForegroundColor Cyan
-Start-Process powershell -ArgumentList "-NoExit","-Command","kubectl port-forward --address 0.0.0.0 -n tiketi svc/auth-service 3002:3002" -WindowStyle Minimized
-Start-Sleep -Seconds 3
-
-# Payment Service
-Write-Host "[4/7] Payment Service (3003)" -ForegroundColor Cyan
-Start-Process powershell -ArgumentList "-NoExit","-Command","kubectl port-forward --address 0.0.0.0 -n tiketi svc/payment-service 3003:3003" -WindowStyle Minimized
+Write-Host "[3/7] Auth Service (3005)" -ForegroundColor Cyan
+Start-Process powershell -ArgumentList "-NoExit","-Command","kubectl port-forward --address 0.0.0.0 -n tiketi svc/auth-service 3005:3005" -WindowStyle Minimized
 Start-Sleep -Seconds 3
 
 # Ticket Service
-Write-Host "[5/7] Ticket Service (3004)" -ForegroundColor Cyan
-Start-Process powershell -ArgumentList "-NoExit","-Command","kubectl port-forward --address 0.0.0.0 -n tiketi svc/ticket-service 3004:3004" -WindowStyle Minimized
+Write-Host "[4/7] Ticket Service (3002)" -ForegroundColor Cyan
+Start-Process powershell -ArgumentList "-NoExit","-Command","kubectl port-forward --address 0.0.0.0 -n tiketi svc/ticket-service 3002:3002" -WindowStyle Minimized
+Start-Sleep -Seconds 3
+
+# Payment Service
+Write-Host "[5/7] Payment Service (3003)" -ForegroundColor Cyan
+Start-Process powershell -ArgumentList "-NoExit","-Command","kubectl port-forward --address 0.0.0.0 -n tiketi svc/payment-service 3003:3003" -WindowStyle Minimized
 Start-Sleep -Seconds 3
 
 # Stats Service
-Write-Host "[6/7] Stats Service (3005)" -ForegroundColor Cyan
-Start-Process powershell -ArgumentList "-NoExit","-Command","kubectl port-forward --address 0.0.0.0 -n tiketi svc/stats-service 3005:3005" -WindowStyle Minimized
+Write-Host "[6/7] Stats Service (3004)" -ForegroundColor Cyan
+Start-Process powershell -ArgumentList "-NoExit","-Command","kubectl port-forward --address 0.0.0.0 -n tiketi svc/stats-service 3004:3004" -WindowStyle Minimized
 Start-Sleep -Seconds 3
 
 # Frontend - Start LAST to ensure backend is ready
@@ -130,10 +130,10 @@ Start-Sleep -Seconds 5
 # Test each service
 $services = @(
     @{Name="Backend"; Port=3001; Path="/health"},
-    @{Name="Auth Service"; Port=3002; Path="/health"},
+    @{Name="Auth Service"; Port=3005; Path="/health"},
     @{Name="Payment Service"; Port=3003; Path="/health"},
-    @{Name="Ticket Service"; Port=3004; Path="/health"},
-    @{Name="Stats Service"; Port=3005; Path="/health"},
+    @{Name="Ticket Service"; Port=3002; Path="/health"},
+    @{Name="Stats Service"; Port=3004; Path="/health"},
     @{Name="Frontend"; Port=3000; Path="/"}
 )
 
@@ -168,10 +168,10 @@ Write-Host ""
 Write-Host "Services available at:" -ForegroundColor White
 Write-Host "  • Frontend:       http://localhost:3000" -ForegroundColor White
 Write-Host "  • Backend API:    http://localhost:3001" -ForegroundColor White
-Write-Host "  • Auth Service:   http://localhost:3002" -ForegroundColor White
+Write-Host "  • Auth Service:   http://localhost:3005" -ForegroundColor White
 Write-Host "  • Payment:        http://localhost:3003" -ForegroundColor White
-Write-Host "  • Ticket Service: http://localhost:3004" -ForegroundColor White
-Write-Host "  • Stats Service:  http://localhost:3005" -ForegroundColor White
+Write-Host "  • Ticket Service: http://localhost:3002" -ForegroundColor White
+Write-Host "  • Stats Service:  http://localhost:3004" -ForegroundColor White
 Write-Host "  • PostgreSQL:     localhost:5432" -ForegroundColor White
 Write-Host ""
 Write-Host "Press any key to exit..." -ForegroundColor Gray

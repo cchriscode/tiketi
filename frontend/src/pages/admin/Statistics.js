@@ -21,7 +21,7 @@ import {
   PolarRadiusAxis,
   Radar,
 } from 'recharts';
-import axios from 'axios';
+import { statsAPI } from '../../services/api';
 import './Statistics.css';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
@@ -57,33 +57,11 @@ function Statistics() {
     return () => clearInterval(realtimeInterval);
   }, []);
 
-  const getStatsServiceUrl = () => {
-    const hostname = window.location.hostname;
-
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'http://localhost:3005';
-    } else if (hostname.match(/^(172\.|192\.168\.|10\.)/)) {
-      return `http://${hostname}:3005`;
-    } else {
-      return `${window.location.protocol}//${hostname}:3005`;
-    }
-  };
-
-  const getHeaders = () => {
-    const token = localStorage.getItem('token');
-    return {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    };
-  };
-
   const fetchAllStats = async () => {
     try {
       setLoading(true);
-      const statsServiceUrl = getStatsServiceUrl();
-      const headers = getHeaders();
 
-      // 모든 통계를 병렬로 가져오기
+      // 모든 통계를 병렬로 가져오기 (통합 API 사용)
       const [
         overviewRes,
         dailyRes,
@@ -98,18 +76,18 @@ function Statistics() {
         userBehaviorRes,
         performanceRes,
       ] = await Promise.all([
-        axios.get(`${statsServiceUrl}/stats/overview`, { headers }),
-        axios.get(`${statsServiceUrl}/stats/daily?days=30`, { headers }),
-        axios.get(`${statsServiceUrl}/stats/events?limit=10&sortBy=revenue`, { headers }),
-        axios.get(`${statsServiceUrl}/stats/payments`, { headers }),
-        axios.get(`${statsServiceUrl}/stats/revenue?period=daily&days=30`, { headers }),
-        axios.get(`${statsServiceUrl}/stats/hourly-traffic?days=7`, { headers }),
-        axios.get(`${statsServiceUrl}/stats/conversion?days=30`, { headers }),
-        axios.get(`${statsServiceUrl}/stats/cancellations?days=30`, { headers }),
-        axios.get(`${statsServiceUrl}/stats/realtime`, { headers }),
-        axios.get(`${statsServiceUrl}/stats/seat-preferences`, { headers }),
-        axios.get(`${statsServiceUrl}/stats/user-behavior?days=30`, { headers }),
-        axios.get(`${statsServiceUrl}/stats/performance`, { headers }),
+        statsAPI.getOverview(),
+        statsAPI.getDaily(30),
+        statsAPI.getEvents({ limit: 10, sortBy: 'revenue' }),
+        statsAPI.getPayments(),
+        statsAPI.getRevenue({ period: 'daily', days: 30 }),
+        statsAPI.getHourlyTraffic(7),
+        statsAPI.getConversion(30),
+        statsAPI.getCancellations(30),
+        statsAPI.getRealtime(),
+        statsAPI.getSeatPreferences(),
+        statsAPI.getUserBehavior(30),
+        statsAPI.getPerformance(),
       ]);
 
       setOverview(overviewRes.data.data);
@@ -136,9 +114,7 @@ function Statistics() {
 
   const fetchRealtimeStats = async () => {
     try {
-      const statsServiceUrl = getStatsServiceUrl();
-      const headers = getHeaders();
-      const response = await axios.get(`${statsServiceUrl}/stats/realtime`, { headers });
+      const response = await statsAPI.getRealtime();
       setRealtime(response.data.data);
     } catch (error) {
       console.error('Failed to fetch realtime stats:', error);

@@ -66,10 +66,17 @@ if kubectl get service/backend-service -n tiketi &> /dev/null; then
     sleep 2
 fi
 
-# Auth Service (Port 3002)
+# Auth Service (Port 3005)
 if kubectl get service/auth-service -n tiketi &> /dev/null; then
-    echo "  🔐 Auth Service: localhost:3002 -> auth-service:3002"
-    kubectl port-forward --address 0.0.0.0 -n tiketi service/auth-service 3002:3002 > /dev/null 2>&1 &
+    echo "  🔐 Auth Service: localhost:3005 -> auth-service:3005"
+    kubectl port-forward --address 0.0.0.0 -n tiketi service/auth-service 3005:3005 > /dev/null 2>&1 &
+    sleep 2
+fi
+
+# Ticket Service (Port 3002)
+if kubectl get service/ticket-service -n tiketi &> /dev/null; then
+    echo "  🎫 Ticket Service: localhost:3002 -> ticket-service:3002"
+    kubectl port-forward --address 0.0.0.0 -n tiketi service/ticket-service 3002:3002 > /dev/null 2>&1 &
     sleep 2
 fi
 
@@ -80,17 +87,10 @@ if kubectl get service/payment-service -n tiketi &> /dev/null; then
     sleep 2
 fi
 
-# Ticket Service (Port 3004)
-if kubectl get service/ticket-service -n tiketi &> /dev/null; then
-    echo "  🎫 Ticket Service: localhost:3004 -> ticket-service:3004"
-    kubectl port-forward --address 0.0.0.0 -n tiketi service/ticket-service 3004:3004 > /dev/null 2>&1 &
-    sleep 2
-fi
-
-# Stats Service (Port 3005)
+# Stats Service (Port 3004)
 if kubectl get service/stats-service -n tiketi &> /dev/null; then
-    echo "  📊 Stats Service: localhost:3005 -> stats-service:3005"
-    kubectl port-forward --address 0.0.0.0 -n tiketi service/stats-service 3005:3005 > /dev/null 2>&1 &
+    echo "  📊 Stats Service: localhost:3004 -> stats-service:3004"
+    kubectl port-forward --address 0.0.0.0 -n tiketi service/stats-service 3004:3004 > /dev/null 2>&1 &
     sleep 2
 fi
 
@@ -133,16 +133,16 @@ if kubectl get service/backend-service -n tiketi &> /dev/null; then
     echo "  Backend Health:  http://localhost:3001/health"
 fi
 if kubectl get service/auth-service -n tiketi &> /dev/null; then
-    echo "  Auth Service:    http://localhost:3002/health"
+    echo "  Auth Service:    http://localhost:3005/health"
+fi
+if kubectl get service/ticket-service -n tiketi &> /dev/null; then
+    echo "  Ticket Service:  http://localhost:3002/health"
 fi
 if kubectl get service/payment-service -n tiketi &> /dev/null; then
     echo "  Payment Service: http://localhost:3003/health"
 fi
-if kubectl get service/ticket-service -n tiketi &> /dev/null; then
-    echo "  Ticket Service:  http://localhost:3004/health"
-fi
 if kubectl get service/stats-service -n tiketi &> /dev/null; then
-    echo "  Stats Service:   http://localhost:3005/health"
+    echo "  Stats Service:   http://localhost:3004/health"
 fi
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -165,10 +165,10 @@ echo ""
 echo "💡 Quick Test Commands:"
 echo "  # Test all health endpoints"
 echo "  curl http://localhost:3001/health  # Backend"
-echo "  curl http://localhost:3002/health  # Auth"
+echo "  curl http://localhost:3005/health  # Auth"
+echo "  curl http://localhost:3002/health  # Ticket"
 echo "  curl http://localhost:3003/health  # Payment"
-echo "  curl http://localhost:3004/health  # Ticket"
-echo "  curl http://localhost:3005/health  # Stats"
+echo "  curl http://localhost:3004/health  # Stats"
 echo ""
 echo "  # View service logs"
 echo "  kubectl logs -f -n tiketi deployment/auth-service"

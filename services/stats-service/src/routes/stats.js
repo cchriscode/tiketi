@@ -18,7 +18,7 @@ router.get('/overview', authenticateToken, requireAdmin, async (req, res, next) 
     // 전체 통계 쿼리
     const stats = await db.query(`
       SELECT
-        (SELECT COUNT(*) FROM users) as total_users,
+        (SELECT COUNT(*) FROM auth_schema.users) as total_users,
         (SELECT COUNT(*) FROM ticket_schema.events WHERE status = 'on_sale') as active_events,
         (SELECT COUNT(*) FROM ticket_schema.reservations) as total_reservations,
         (SELECT COUNT(*) FROM ticket_schema.reservations WHERE status = 'confirmed') as confirmed_reservations,
@@ -256,7 +256,7 @@ router.get('/users', authenticateToken, requireAdmin, async (req, res, next) => 
         DATE(created_at) as date,
         COUNT(*) as new_users,
         SUM(COUNT(*)) OVER (ORDER BY DATE(created_at)) as cumulative_users
-      FROM users
+      FROM auth_schema.users
       WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
       GROUP BY DATE(created_at)
       ORDER BY date DESC
@@ -266,7 +266,7 @@ router.get('/users', authenticateToken, requireAdmin, async (req, res, next) => 
       SELECT
         role,
         COUNT(*) as count
-      FROM users
+      FROM auth_schema.users
       GROUP BY role
     `);
 

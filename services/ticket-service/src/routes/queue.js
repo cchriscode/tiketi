@@ -6,7 +6,7 @@
 const express = require('express');
 const { client: redisClient } = require('../config/redis');
 const db = require('../config/database');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const { validate: isUUID } = require('uuid');
 
 const router = express.Router();
@@ -55,7 +55,7 @@ const QueueManager = {
   async getCurrentUsers(eventId) {
     try {
       const key = `active:${eventId}`;
-      return await redisClient.sCard(key) || 0;
+      return await redisClient.scard(key) || 0;
     } catch (error) {
       console.log('Redis error (getCurrentUsers):', error.message);
       return 0;
@@ -65,7 +65,7 @@ const QueueManager = {
   async getQueueSize(eventId) {
     try {
       const key = `queue:${eventId}`;
-      return await redisClient.zCard(key) || 0;
+      return await redisClient.zcard(key) || 0;
     } catch (error) {
       console.log('Redis error (getQueueSize):', error.message);
       return 0;
@@ -75,7 +75,7 @@ const QueueManager = {
   async isInQueue(eventId, userId) {
     try {
       const key = `queue:${eventId}`;
-      const score = await redisClient.zScore(key, userId);
+      const score = await redisClient.zscore(key, userId);
       return score !== null;
     } catch (error) {
       console.log('Redis error (isInQueue):', error.message);
@@ -86,7 +86,7 @@ const QueueManager = {
   async isActiveUser(eventId, userId) {
     try {
       const key = `active:${eventId}`;
-      return await redisClient.sIsMember(key, userId);
+      return await redisClient.sismember(key, userId);
     } catch (error) {
       console.log('Redis error (isActiveUser):', error.message);
       return false;
@@ -96,7 +96,7 @@ const QueueManager = {
   async getQueuePosition(eventId, userId) {
     try {
       const key = `queue:${eventId}`;
-      const rank = await redisClient.zRank(key, userId);
+      const rank = await redisClient.zrank(key, userId);
       return rank !== null ? rank + 1 : 0;
     } catch (error) {
       console.log('Redis error (getQueuePosition):', error.message);
@@ -108,7 +108,7 @@ const QueueManager = {
     try {
       const key = `queue:${eventId}`;
       const timestamp = Date.now();
-      await redisClient.zAdd(key, { score: timestamp, value: userId });
+      await redisClient.zadd(key, timestamp, userId);
     } catch (error) {
       console.log('Redis error (addToQueue):', error.message);
     }
@@ -117,7 +117,7 @@ const QueueManager = {
   async addActiveUser(eventId, userId) {
     try {
       const key = `active:${eventId}`;
-      await redisClient.sAdd(key, userId);
+      await redisClient.sadd(key, userId);
       await redisClient.expire(key, 300); // 5분 후 만료
     } catch (error) {
       console.log('Redis error (addActiveUser):', error.message);
@@ -127,7 +127,7 @@ const QueueManager = {
   async removeFromQueue(eventId, userId) {
     try {
       const key = `queue:${eventId}`;
-      await redisClient.zRem(key, userId);
+      await redisClient.zrem(key, userId);
     } catch (error) {
       console.log('Redis error (removeFromQueue):', error.message);
     }
@@ -136,7 +136,7 @@ const QueueManager = {
   async removeActiveUser(eventId, userId) {
     try {
       const key = `active:${eventId}`;
-      await redisClient.sRem(key, userId);
+      await redisClient.srem(key, userId);
     } catch (error) {
       console.log('Redis error (removeActiveUser):', error.message);
     }
@@ -250,6 +250,9 @@ router.get('/status/:eventId', authenticateToken, async (req, res, next) => {
     const inQueue = await QueueManager.isInQueue(eventId, userId);
     const isActive = await QueueManager.isActiveUser(eventId, userId);
 
+    // Get current active users count (for UI display)
+    const currentUsers = await QueueManager.getCurrentUsers(eventId);
+
     if (inQueue) {
       const position = await QueueManager.getQueuePosition(eventId, userId);
       const estimatedWait = QueueManager.getEstimatedWait(eventId, position);
@@ -257,6 +260,8 @@ router.get('/status/:eventId', authenticateToken, async (req, res, next) => {
 
       return res.json({
         status: 'queued',
+        queued: true,
+        currentUsers,
         position,
         estimatedWait,
         queueSize,
@@ -264,11 +269,15 @@ router.get('/status/:eventId', authenticateToken, async (req, res, next) => {
     } else if (isActive) {
       return res.json({
         status: 'active',
+        queued: false,
+        currentUsers,
         message: '입장하였습니다.',
       });
     } else {
       return res.json({
         status: 'not_in_queue',
+        queued: false,
+        currentUsers,
         message: '대기열에 없습니다.',
       });
     }
@@ -300,9 +309,8 @@ router.post('/leave/:eventId', authenticateToken, async (req, res, next) => {
  * GET /queue/admin/:eventId
  * 대기열 정보 조회 (관리자)
  */
-router.get('/admin/:eventId', authenticateToken, async (req, res, next) => {
+router.get('/admin/:eventId', authenticateToken, requireAdmin, async (req, res, next) => {
   try {
-    // TODO: 관리자 권한 체크
     const { eventId } = req.params;
     if (!ensureValidEventId(eventId, res)) return;
 
@@ -326,13 +334,21 @@ router.get('/admin/:eventId', authenticateToken, async (req, res, next) => {
  * POST /queue/admin/clear/:eventId
  * 대기열 초기화 (관리자)
  */
-router.post('/admin/clear/:eventId', authenticateToken, async (req, res, next) => {
+router.post('/admin/clear/:eventId', authenticateToken, requireAdmin, async (req, res, next) => {
   try {
-    // TODO: 관리자 권한 체크
     const { eventId } = req.params;
     if (!ensureValidEventId(eventId, res)) return;
 
     await QueueManager.clearQueue(eventId);
+
+    // Emit 'queue-cleared' event to all users in queue
+    const io = req.app.locals.io;
+    if (io) {
+      io.to(`queue:${eventId}`).emit('queue-cleared', {
+        eventId,
+        message: '대기열이 초기화되었습니다.',
+      });
+    }
 
     res.json({ message: '대기열이 초기화되었습니다.' });
   } catch (error) {

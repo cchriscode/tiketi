@@ -27,11 +27,11 @@ RUN mkdir -p node_modules/@tiketi && \
     cp -r packages/metrics node_modules/@tiketi/metrics
 
 # Expose port
-EXPOSE 3005
+EXPOSE 3004
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3005/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); })"
+  CMD node -e "require('http').get('http://localhost:3004/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); })"
 
 # Start the service
 CMD ["node", "src/server.js"]

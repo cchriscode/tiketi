@@ -33,7 +33,7 @@ const testUser = {
   role: 'user',
 };
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-only-secret-change-in-production-f8a7b6c5d4e3f2a1';
 
 describe('Auth Service - POST /auth/register', () => {
   beforeEach(() => {

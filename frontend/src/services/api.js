@@ -26,8 +26,40 @@ const getApiUrl = () => {
 
 const API_URL = getApiUrl();
 
+// Separate Auth Service URL (port 3005)
+const getAuthServiceUrl = () => {
+  if (process.env.REACT_APP_AUTH_URL) {
+    return process.env.REACT_APP_AUTH_URL;
+  }
+
+  const hostname = window.location.hostname;
+
+  // localhost: use localhost:3005
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:3005';
+  }
+
+  // WSL IP or other local IP: use same IP with port 3005
+  if (hostname.match(/^(172\.|192\.168\.|10\.)/)) {
+    return `http://${hostname}:3005`;
+  }
+
+  // Production: use relative URL for auth-service
+  return '/auth-api';
+};
+
+const AUTH_SERVICE_URL = getAuthServiceUrl();
+
 const api = axios.create({
   baseURL: `${API_URL}/api`,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Separate axios instance for Auth Service
+const authApiClient = axios.create({
+  baseURL: `${AUTH_SERVICE_URL}/api`,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -71,10 +103,10 @@ api.interceptors.response.use(
   }
 );
 
-// Auth APIs
+// Auth APIs - Uses dedicated Auth Service (port 3005)
 export const authAPI = {
-  register: (data) => api.post('/auth/register', data),
-  login: (data) => api.post('/auth/login', data),
+  register: (data) => authApiClient.post('/auth/register', data),
+  login: (data) => authApiClient.post('/auth/login', data),
 };
 
 // Events APIs
@@ -105,7 +137,25 @@ export const seatsAPI = {
 
 // Payments APIs
 export const paymentsAPI = {
+  prepare: (data) => api.post('/payments/prepare', data),
+  confirm: (data) => api.post('/payments/confirm', data),
   process: (data) => api.post('/payments/process', data),
+};
+
+// Stats APIs
+export const statsAPI = {
+  getOverview: () => api.get('/stats/overview'),
+  getDaily: (days) => api.get('/stats/daily', { params: { days } }),
+  getEvents: (params) => api.get('/stats/events', { params }),
+  getPayments: () => api.get('/stats/payments'),
+  getRevenue: (params) => api.get('/stats/revenue', { params }),
+  getHourlyTraffic: (days) => api.get('/stats/hourly-traffic', { params: { days } }),
+  getConversion: (days) => api.get('/stats/conversion', { params: { days } }),
+  getCancellations: (days) => api.get('/stats/cancellations', { params: { days } }),
+  getRealtime: () => api.get('/stats/realtime'),
+  getSeatPreferences: () => api.get('/stats/seat-preferences'),
+  getUserBehavior: (days) => api.get('/stats/user-behavior', { params: { days } }),
+  getPerformance: () => api.get('/stats/performance'),
 };
 
 // Admin APIs
@@ -141,6 +191,8 @@ export const imageAPI = {
 }
 
 // News APIs
+// ⚠️ TODO: Migrate /news endpoints from legacy backend to microservices
+// Currently only available in legacy backend, not in microservices architecture
 export const newsAPI = {
   getAll: (params) => api.get('/news', { params }),
   getById: (id) => api.get(`/news/${id}`),

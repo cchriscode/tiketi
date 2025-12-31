@@ -47,6 +47,9 @@ app.use('/api/payments', require('./routes/payments'));
 app.use('/api/queue', require('./routes/queue'));
 app.use('/api/news', require('./routes/news'));
 
+// MSA Service Proxies
+app.use('/api/stats', require('./routes/stats-proxy'));
+
 // Image upload route (only if AWS S3 is configured)
 if (process.env.AWS_S3_BUCKET) {
   app.use('/api/image', require('./routes/image'));

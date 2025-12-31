@@ -45,7 +45,7 @@ spec:
           image: tiketi-ticket-service:local
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 3004
+            - containerPort: 3002
               name: http
           envFrom:
             - configMapRef:
@@ -54,7 +54,7 @@ spec:
                 name: tiketi-secret
           env:
             - name: PORT
-              value: "3004"
+              value: "3002"
             - name: SERVICE_NAME
               value: "ticket-service"
             - name: REDIS_URL
@@ -62,7 +62,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /health
-              port: 3004
+              port: 3002
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
@@ -70,7 +70,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /health
-              port: 3004
+              port: 3002
             initialDelaySeconds: 20
             periodSeconds: 5
             timeoutSeconds: 3
@@ -96,8 +96,8 @@ spec:
   selector:
     app: ticket-service
   ports:
-    - port: 3004
-      targetPort: 3004
+    - port: 3002
+      targetPort: 3002
       nodePort: 30004
       protocol: TCP
       name: http

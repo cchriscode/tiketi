@@ -15,7 +15,7 @@ const router = express.Router();
 const SEAT_STATUS = {
   AVAILABLE: 'available',
   LOCKED: 'locked',
-  SOLD: 'sold',
+  RESERVED: 'reserved',
 };
 
 const RESERVATION_STATUS = {
@@ -33,7 +33,7 @@ const PAYMENT_STATUS = {
 };
 
 const RESERVATION_SETTINGS = {
-  MAX_SEATS_PER_RESERVATION: 4,
+  MAX_SEATS_PER_RESERVATION: 1, // Aligned with frontend: 1인 1좌석 선택
   TEMPORARY_RESERVATION_MINUTES: 5,
 };
 
@@ -271,6 +271,17 @@ router.post('/reserve', authenticateToken, async (req, res, next) => {
       // Release locks
       for (const lockKey of acquiredLocks) {
         await releaseLock(lockKey);
+      }
+
+      // Emit 'seat-selected' event to all users in the event room
+      const io = req.app.locals.io;
+      if (io) {
+        io.to(`seats:${eventId}`).emit('seat-selected', {
+          eventId,
+          seatIds,
+          userId,
+          status: 'locked',
+        });
       }
 
       res.status(201).json({

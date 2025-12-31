@@ -187,7 +187,7 @@ router.get('/', async (req, res, next) => {
 
     // Cache with TTL
     try {
-      await redisClient.setEx(cacheKey, EVENTS_LIST_CACHE_TTL, JSON.stringify(response));
+      await redisClient.setex(cacheKey, EVENTS_LIST_CACHE_TTL, JSON.stringify(response));
     } catch (cacheError) {
       console.log('Cache set error (continuing):', cacheError.message);
     }
@@ -245,7 +245,7 @@ router.get('/:id', async (req, res, next) => {
 
     // Cache with TTL
     try {
-      await redisClient.setEx(cacheKey, EVENT_DETAIL_CACHE_TTL, JSON.stringify(response));
+      await redisClient.setex(cacheKey, EVENT_DETAIL_CACHE_TTL, JSON.stringify(response));
     } catch (cacheError) {
       console.log('Cache set error (continuing):', cacheError.message);
     }

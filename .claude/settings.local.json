@@ -57,7 +57,16 @@
       "Bash(wsl kubectl delete:*)",
       "Bash(dos2unix:*)",
       "Bash(wsl kind get:*)",
-      "Bash(wsl kubectl config current-context:*)"
+      "Bash(wsl kubectl config current-context:*)",
+      "Bash(tree:*)",
+      "Bash(wc:*)",
+      "Bash(mkdir:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(find:*)",
+      "Bash(wsl wc:*)",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File \"C:\\\\Users\\\\USER\\\\project-ticketing\\\\setup-windows-kubectl.ps1\")",
+      "Bash(wsl kubectl wait:*)",
+      "Skill(sc:analyze)"
     ]
   }
 }

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import api from '../services/api';
-import axios from 'axios';
+import { paymentsAPI } from '../services/api';
 import './PaymentCallback.css';
 
 function PaymentCallback() {
@@ -27,31 +26,11 @@ function PaymentCallback() {
       }
 
       try {
-        // Get Payment Service URL (port 3003)
-        const hostname = window.location.hostname;
-        let paymentServiceUrl;
-
-        if (hostname === 'localhost' || hostname === '127.0.0.1') {
-          paymentServiceUrl = 'http://localhost:3003';
-        } else if (hostname.match(/^(172\.|192\.168\.|10\.)/)) {
-          // WSL IP or local network
-          paymentServiceUrl = `http://${hostname}:3003`;
-        } else {
-          // Production
-          paymentServiceUrl = `${window.location.protocol}//${hostname}:3003`;
-        }
-
-        // 결제 승인 API 호출
-        const token = localStorage.getItem('token');
-        const response = await axios.post(`${paymentServiceUrl}/payments/confirm`, {
+        // 결제 승인 API 호출 (통합 API 사용)
+        const response = await paymentsAPI.confirm({
           paymentKey,
           orderId,
           amount: parseInt(amount),
-        }, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
         });
 
         if (response.data.success) {

@@ -207,15 +207,16 @@ function EventDetail() {
         quantity,
       }));
 
-      await reservationsAPI.create({
+      const response = await reservationsAPI.create({
         eventId: id,
         items,
       });
 
-      setSuccess('예매가 완료되었습니다!');
-      setTimeout(() => {
-        navigate('/my-reservations');
-      }, 2000);
+      const reservationId = response.data.reservation.id;
+
+      // Navigate to payment page (reservation is pending, not completed)
+      alert('예약이 생성되었습니다. 5분 이내에 결제를 완료해주세요.');
+      navigate(`/payment/${reservationId}`);
     } catch (err) {
       const message = err.response?.data?.error || '예매에 실패했습니다.';
       setError(message);

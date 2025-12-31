@@ -36,7 +36,7 @@ app.get('/metrics', async (req, res) => {
 });
 
 // Routes
-app.use('/stats', statsRoutes);
+app.use('/api/stats', statsRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

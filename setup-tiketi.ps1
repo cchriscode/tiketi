@@ -61,7 +61,7 @@ Write-Host ""
 
 # Convert scripts to Unix format
 Write-Host "Converting scripts to Unix format..." -ForegroundColor Cyan
-$convertCmd = 'cd "' + $wslPath + '" && find scripts -name "*.sh" -exec dos2unix {} \; 2>&1'
+$convertCmd = 'cd "' + $wslPath + '" && dos2unix scripts/*.sh 2>&1'
 wsl bash -c $convertCmd
 Write-Host ""
 
@@ -117,10 +117,10 @@ Write-Host ""
 Write-Host "  3. Access the application:" -ForegroundColor White
 Write-Host "     Frontend:  http://localhost:3000" -ForegroundColor White
 Write-Host "     Backend:   http://localhost:3001" -ForegroundColor White
-Write-Host "     Auth:      http://localhost:3002" -ForegroundColor White
+Write-Host "     Auth:      http://localhost:3005" -ForegroundColor White
 Write-Host "     Payment:   http://localhost:3003" -ForegroundColor White
-Write-Host "     Ticket:    http://localhost:3004" -ForegroundColor White
-Write-Host "     Stats:     http://localhost:3005" -ForegroundColor White
+Write-Host "     Ticket:    http://localhost:3002" -ForegroundColor White
+Write-Host "     Stats:     http://localhost:3004" -ForegroundColor White
 Write-Host ""
 Write-Host "  4. Admin Login:" -ForegroundColor White
 Write-Host "     Email:    admin@tiketi.gg" -ForegroundColor Cyan

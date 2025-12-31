@@ -5,7 +5,7 @@
 const jwt = require('jsonwebtoken');
 const db = require('../config/database');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'tiketi_secret_key_change_in_production';
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-only-secret-change-in-production-f8a7b6c5d4e3f2a1';
 
 const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];

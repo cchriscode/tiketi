@@ -1,7 +1,12 @@
+/**
+ * ⚠️ DEAD CODE WARNING
+ * This file is NOT used in the application.
+ * The route /payment/success uses PaymentCallback.js instead.
+ * Consider removing this file if not needed in the future.
+ */
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import api from '../services/api';
-import axios from 'axios';
+import { paymentsAPI } from '../services/api';
 
 function TossPaymentSuccess() {
   const [searchParams] = useSearchParams();
@@ -23,31 +28,11 @@ function TossPaymentSuccess() {
       }
 
       try {
-        // Get Payment Service URL (port 3003)
-        const hostname = window.location.hostname;
-        let paymentServiceUrl;
-
-        if (hostname === 'localhost' || hostname === '127.0.0.1') {
-          paymentServiceUrl = 'http://localhost:3003';
-        } else if (hostname.match(/^(172\.|192\.168\.|10\.)/)) {
-          // WSL IP or local network
-          paymentServiceUrl = `http://${hostname}:3003`;
-        } else {
-          // Production
-          paymentServiceUrl = `${window.location.protocol}//${hostname}:3003`;
-        }
-
-        // Payment Service에 결제 승인 요청
-        const token = localStorage.getItem('token');
-        const response = await axios.post(`${paymentServiceUrl}/payments/confirm`, {
+        // Payment Service에 결제 승인 요청 (통합 API 사용)
+        const response = await paymentsAPI.confirm({
           paymentKey,
           orderId,
           amount: parseInt(amount),
-        }, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
         });
 
         if (response.data.success) {

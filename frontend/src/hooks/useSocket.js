@@ -335,9 +335,9 @@ export function useSeatUpdates(eventId, onSeatUpdate) {
       }
     });
 
-    // 좌석 해제 이벤트
-    socket.on('seat-released', (data) => {
-      console.log('🪑 Seat released:', data);
+    // 좌석 해제 이벤트 (복수형 - backend와 일치)
+    socket.on('seats-released', (data) => {
+      console.log('🪑 Seats released:', data);
       if (onSeatUpdate) {
         onSeatUpdate(data);
       }
@@ -345,7 +345,7 @@ export function useSeatUpdates(eventId, onSeatUpdate) {
 
     return () => {
       socket.off('seat-selected');
-      socket.off('seat-released');
+      socket.off('seats-released');
     };
   }, [socket, isConnected, eventId, onSeatUpdate]);
 

@@ -34,7 +34,7 @@ spec:
           image: tiketi-auth-service:local
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 3002
+            - containerPort: 3005
               name: http
           envFrom:
             - configMapRef:
@@ -43,13 +43,13 @@ spec:
                 name: tiketi-secret
           env:
             - name: PORT
-              value: "3002"
+              value: "3005"
             - name: SERVICE_NAME
               value: "auth-service"
           livenessProbe:
             httpGet:
               path: /health
-              port: 3002
+              port: 3005
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
@@ -57,7 +57,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /health
-              port: 3002
+              port: 3005
             initialDelaySeconds: 20
             periodSeconds: 5
             timeoutSeconds: 3
@@ -83,8 +83,8 @@ spec:
   selector:
     app: auth-service
   ports:
-    - port: 3002
-      targetPort: 3002
+    - port: 3005
+      targetPort: 3005
       nodePort: 30006
       protocol: TCP
       name: http

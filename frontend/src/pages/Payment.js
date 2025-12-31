@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from '../services/api';
-import axios from 'axios';
+import api, { paymentsAPI } from '../services/api';
 import {
   PAYMENT_METHODS,
   PAYMENT_METHOD_DISPLAY,
@@ -107,30 +106,10 @@ function Payment() {
 
   const handleTossPayment = async () => {
     try {
-      // Get Payment Service URL (port 3003)
-      const hostname = window.location.hostname;
-      let paymentServiceUrl;
-
-      if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        paymentServiceUrl = 'http://localhost:3003';
-      } else if (hostname.match(/^(172\.|192\.168\.|10\.)/)) {
-        // WSL IP or local network
-        paymentServiceUrl = `http://${hostname}:3003`;
-      } else {
-        // Production - assume same origin with different port
-        paymentServiceUrl = `${window.location.protocol}//${hostname}:3003`;
-      }
-
-      // 1. 결제 준비 - orderId 생성
-      const token = localStorage.getItem('token');
-      const prepareResponse = await axios.post(`${paymentServiceUrl}/payments/prepare`, {
+      // 1. 결제 준비 - orderId 생성 (통합 API 사용)
+      const prepareResponse = await paymentsAPI.prepare({
         reservationId,
         amount: reservation.total_amount,
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
       });
 
       const { orderId, amount, clientKey } = prepareResponse.data;

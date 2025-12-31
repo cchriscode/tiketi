@@ -5,7 +5,7 @@
 const jwt = require('jsonwebtoken');
 const db = require('../config/database');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'tiketi_secret_key_change_in_production';
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-only-secret-change-in-production-f8a7b6c5d4e3f2a1';
 
 const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -45,7 +45,9 @@ const authenticateToken = async (req, res, next) => {
 };
 
 const requireAdmin = (req, res, next) => {
-  if (req.user.role !== 'admin') {
+  // Use req.userInfo.role (from database) for most up-to-date role
+  // req.user.role is from JWT token and may be outdated
+  if (req.userInfo.role !== 'admin') {
     return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
   }
   next();

@@ -70,10 +70,10 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "🔧 Backend Services"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 test_endpoint "Backend Health" "http://localhost:3001/health" "200"
-test_endpoint "Auth Health" "http://localhost:3002/health" "200"
+test_endpoint "Auth Health" "http://localhost:3005/health" "200"
 test_endpoint "Payment Health" "http://localhost:3003/health" "200"
-test_endpoint "Ticket Health" "http://localhost:3004/health" "200"
-test_endpoint "Stats Health" "http://localhost:3005/health" "200"
+test_endpoint "Ticket Health" "http://localhost:3002/health" "200"
+test_endpoint "Stats Health" "http://localhost:3004/health" "200"
 echo ""
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

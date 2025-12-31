@@ -21,11 +21,18 @@ data:
   NODE_ENV: "development"
   PORT: "3001"
 
+  # WebSocket Configuration
+  SOCKET_IO_CORS_ORIGIN: "http://localhost:3000"
+  # ⚠️ EKS 배포 시 Frontend 도메인으로 변경 필요 (예: https://your-domain.com)
+
   # Timezone Configuration (한국 시간 통일)
   TZ: "Asia/Seoul"
 
   # Frontend Configuration
+  # ⚠️ EKS 배포 시 ALB 도메인으로 변경 필요 (예: https://api.your-domain.com)
   REACT_APP_API_URL: "http://localhost:3001"
+  # ⚠️ EKS 배포 시 ALB 도메인으로 변경 필요 (예: https://api.your-domain.com)
+  REACT_APP_SOCKET_URL: "http://localhost:3001"
 
   # AWS Configuration (로컬에서는 Mock/비활성화)
   AWS_REGION: "ap-northeast-2"

@@ -12,6 +12,24 @@
 
 ---
 
+## ⚠️ 시작하기 전에
+
+**필수 확인사항:**
+1. ✅ Docker Desktop 실행 중
+2. ✅ WSL2 터미널 열기
+3. ✅ 프로젝트 디렉토리로 이동: `cd /mnt/c/Users/USER/project-ticketing`
+
+**전체 정리 후 재시작하려면:**
+```bash
+# Windows (PowerShell)
+.\cleanup.ps1
+
+# 또는 WSL
+./scripts/cleanup.sh
+```
+
+---
+
 ## 빠른 시작 (자동 설치)
 
 ### 원스텝 설치 🎯
@@ -53,34 +71,45 @@
 
 **Windows 크롬에서 접속:**
 ```
-http://172.17.40.29:3000
-(스크립트가 표시한 IP 사용)
+http://<WSL-IP>:3000
+(스크립트가 표시한 IP 사용, 예: http://172.17.40.29:3000)
 ```
 
 ✅ **이 방법이 가장 간단합니다!**
 
 ---
 
-## 방법 2: PowerShell 사용
+## 방법 2: PowerShell 사용 (localhost 접속)
 
-**PowerShell에서:**
+**PowerShell에서 (Windows 네이티브):**
 
 ### 1단계: Windows kubectl 설정 (최초 1회만)
 ```powershell
 .\setup-windows-kubectl.ps1
 ```
 
+**이 스크립트가 하는 일:**
+- Windows용 kubectl 설치 (없을 경우)
+- WSL의 kubeconfig를 Windows로 복사
+- Kind 클러스터 연결 설정
+
 ### 2단계: 포트포워딩 시작
 ```powershell
 .\start_port_forwards.ps1
 ```
+
+**이 스크립트가 하는 일:**
+- 사용 중인 포트 자동 정리
+- 7개 서비스 포트포워딩 시작 (백그라운드 PowerShell 창)
+- Health Check 자동 실행
+- 접속 URL 표시
 
 **Windows 크롬에서 접속:**
 ```
 http://localhost:3000
 ```
 
-**참고**: Google OAuth 테스트 시 `http://localhost:3000`을 사용하려면 이 방법을 사용하세요.
+**장점**: Google OAuth 테스트 시 `http://localhost:3000` 사용 가능 (OAuth 리디렉션 설정과 일치)
 
 ---
 
@@ -374,11 +403,11 @@ chmod +x scripts/port-forward-all.sh
 # 각각 별도의 터미널에서 실행
 kubectl port-forward -n tiketi svc/postgres-service 5432:5432 &
 kubectl port-forward -n tiketi svc/backend-service 3001:3001 &
-kubectl port-forward -n tiketi svc/auth-service 3002:3002 &
+kubectl port-forward -n tiketi svc/auth-service 3005:3005 &
+kubectl port-forward -n tiketi svc/ticket-service 3002:3002 &
 kubectl port-forward -n tiketi svc/payment-service 3003:3003 &
-kubectl port-forward -n tiketi svc/ticket-service 3004:3004 &
-kubectl port-forward -n tiketi svc/stats-service 3005:3005 &
-kubectl port-forward -n tiketi svc/frontend-service 3000:80 &
+kubectl port-forward -n tiketi svc/stats-service 3004:3004 &
+kubectl port-forward -n tiketi svc/frontend-service 3000:3000 &
 ```
 
 **참고**: Auth Service는 NodePort 30006을 사용합니다 (30002는 Grafana가 사용 중)
@@ -389,10 +418,10 @@ kubectl port-forward -n tiketi svc/frontend-service 3000:80 &
 |--------|-----|------|
 | **Frontend** | http://localhost:3000 | 메인 사용자 웹사이트 |
 | **Backend API** | http://localhost:3001 | Legacy API (Admin 등) |
-| **Auth Service** | http://localhost:3002 | 인증 서비스 |
+| **Auth Service** | http://localhost:3005 | 인증 서비스 (MSA) |
+| **Ticket Service** | http://localhost:3002 | 티켓 예매 서비스 (좌석, Socket.IO) |
 | **Payment Service** | http://localhost:3003 | 결제 서비스 (TossPayments) |
-| **Ticket Service** | http://localhost:3004 | 티켓 예매 서비스 (좌석, Socket.IO) |
-| **Stats Service** | http://localhost:3005 | 통계 서비스 (Read-only) |
+| **Stats Service** | http://localhost:3004 | 통계 서비스 (Read-only) |
 | **Grafana** | http://localhost:30002 | 모니터링 대시보드 (NodePort) |
 
 **참고**: Port-forward 없이 NodePort로 직접 접속 가능:
@@ -403,7 +432,7 @@ kubectl port-forward -n tiketi svc/frontend-service 3000:80 &
 - Ticket: http://localhost:30004
 - Stats: http://localhost:30005
 - Auth: http://localhost:30006
-- PostgreSQL: http://localhost:30432
+- PostgreSQL: localhost:30432
 
 ### 3. 기본 테스트
 
@@ -434,10 +463,10 @@ kubectl port-forward -n tiketi svc/frontend-service 3000:80 &
 ```bash
 # 모든 서비스 Health 확인
 curl http://localhost:3001/health  # Backend
-curl http://localhost:3002/health  # Auth
+curl http://localhost:3005/health  # Auth Service
+curl http://localhost:3002/health  # Ticket
 curl http://localhost:3003/health  # Payment
-curl http://localhost:3004/health  # Ticket
-curl http://localhost:3005/health  # Stats
+curl http://localhost:3004/health  # Stats
 ```
 
 ---
@@ -502,7 +531,7 @@ pkill -f "port-forward"
 kubectl logs -n tiketi -l app=frontend
 
 # Frontend Pod에서 백엔드 접속 테스트
-kubectl exec -it -n tiketi $(kubectl get pod -n tiketi -l app=frontend -o jsonpath='{.items[0].metadata.name}') -- wget -O- http://auth-service:3002/health
+kubectl exec -it -n tiketi $(kubectl get pod -n tiketi -l app=frontend -o jsonpath='{.items[0].metadata.name}') -- wget -O- http://auth-service:3005/health
 ```
 
 ### 전체 재시작
@@ -567,6 +596,11 @@ npm run dev  # Port 3001
 # Auth Service
 cd services/auth-service
 npm install
+npm run dev  # Port 3005
+
+# Ticket Service
+cd services/ticket-service
+npm install
 npm run dev  # Port 3002
 
 # Payment Service
@@ -574,15 +608,10 @@ cd services/payment-service
 npm install
 npm run dev  # Port 3003
 
-# Ticket Service
-cd services/ticket-service
-npm install
-npm run dev  # Port 3004
-
 # Stats Service
 cd services/stats-service
 npm install
-npm run dev  # Port 3005
+npm run dev  # Port 3004
 
 # Frontend
 cd frontend

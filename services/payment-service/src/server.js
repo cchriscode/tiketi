@@ -36,7 +36,7 @@ app.get('/metrics', async (req, res) => {
 });
 
 // Routes
-app.use('/payments', paymentsRoutes);
+app.use('/api/payments', paymentsRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

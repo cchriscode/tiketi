@@ -22,7 +22,7 @@ function WaitingRoomModal({ eventId, onEntryAllowed, onClose }) {
   // 대기열 상태 조회
   const fetchQueueStatus = useCallback(async () => {
     try {
-      const response = await api.get(`/api/queue/status/${eventId}`, {
+      const response = await api.get(`/queue/status/${eventId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -112,7 +112,7 @@ function WaitingRoomModal({ eventId, onEntryAllowed, onClose }) {
   const handleLeave = async () => {
     if (window.confirm('대기열에서 나가시겠습니까?')) {
       try {
-        await api.post(`/api/queue/leave/${eventId}`, {}, {
+        await api.post(`/queue/leave/${eventId}`, {}, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (onClose) {
