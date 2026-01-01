@@ -28,7 +28,7 @@ RUN echo '#!/bin/sh' > /start.sh && \
     echo 'echo "Installing/updating dependencies..."' >> /start.sh && \
     echo 'npm install' >> /start.sh && \
     echo 'echo "Starting application..."' >> /start.sh && \
-    echo 'npm run dev' >> /start.sh && \
+    echo 'npm start' >> /start.sh && \
     chmod +x /start.sh
 
 CMD ["/start.sh"]

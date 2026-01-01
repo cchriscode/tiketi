@@ -36,19 +36,22 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customSiteTitle: 'Tiketi API Documentation',
 }));
 
-// Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/events', require('./routes/events'));
-app.use('/api/tickets', require('./routes/tickets'));
-app.use('/api/reservations', require('./routes/reservations'));
-app.use('/api/admin', require('./routes/admin'));
-app.use('/api/seats', require('./routes/seats'));
-app.use('/api/payments', require('./routes/payments'));
-app.use('/api/queue', require('./routes/queue'));
-app.use('/api/news', require('./routes/news'));
-
-// MSA Service Proxies
+// MSA Service Proxies (handle microservice routing)
+app.use('/api/auth', require('./routes/auth-proxy'));
+app.use('/api/payments', require('./routes/payment-proxy'));
 app.use('/api/stats', require('./routes/stats-proxy'));
+
+// Ticket Service Proxy (events, tickets, seats, reservations, queue)
+const ticketProxy = require('./routes/ticket-proxy');
+app.use('/api/events', ticketProxy);
+app.use('/api/tickets', ticketProxy);
+app.use('/api/seats', ticketProxy);
+app.use('/api/reservations', ticketProxy);
+app.use('/api/queue', ticketProxy);
+
+// Backend Legacy Routes (backend-only features)
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api/news', require('./routes/news'));
 
 // Image upload route (only if AWS S3 is configured)
 if (process.env.AWS_S3_BUCKET) {

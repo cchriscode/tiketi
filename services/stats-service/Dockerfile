@@ -10,14 +10,16 @@ RUN cd packages/common && npm install --omit=dev --no-package-lock || true
 RUN cd packages/database && npm install --omit=dev --no-package-lock || true
 RUN cd packages/metrics && npm install --omit=dev --no-package-lock || true
 
+# Copy stats service package.json (Source of Truth)
+COPY services/stats-service/package.json ./package.json
+
+# Install external dependencies only (exclude local @tiketi/* packages)
+# The --legacy-peer-deps flag handles file: dependencies gracefully
+RUN npm install --omit=dev --no-package-lock --legacy-peer-deps || \
+    npm install cors@^2.8.5 dotenv@^16.0.3 express@^4.18.2 jsonwebtoken@^9.0.2 --omit=dev --no-package-lock
+
 # Copy stats service source
 COPY services/stats-service/src ./src
-
-# Create package.json
-RUN printf '{"name":"@tiketi/stats-service","version":"1.0.0","main":"src/server.js","scripts":{"start":"node src/server.js"},"dependencies":{"cors":"^2.8.5","dotenv":"^16.0.3","express":"^4.18.2","jsonwebtoken":"^9.0.2"}}' > package.json
-
-# Install external dependencies
-RUN npm install --omit=dev --no-package-lock
 
 # Copy monorepo packages into node_modules
 RUN mkdir -p node_modules/@tiketi && \

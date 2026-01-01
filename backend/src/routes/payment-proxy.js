@@ -1,20 +1,20 @@
 /**
- * Stats Service Proxy
- * Proxies /api/stats requests to Stats Service (port 3004)
+ * Payment Service Proxy
+ * Proxies /api/payments requests to Payment Service (port 3003)
  */
 
 const express = require('express');
 const axios = require('axios');
 const router = express.Router();
 
-const STATS_SERVICE_URL = process.env.STATS_SERVICE_URL || 'http://stats-service:3004';
+const PAYMENT_SERVICE_URL = process.env.PAYMENT_SERVICE_URL || 'http://payment-service:3003';
 
-// Proxy all /api/stats requests to Stats Service
-// Matches both /api/stats and /api/stats/* routes
+// Proxy all /api/payments requests to Payment Service
+// Matches both /api/payments and /api/payments/* routes
 router.all('*', async (req, res) => {
   try {
     // Use baseUrl + path to construct full target URL
-    const targetUrl = `${STATS_SERVICE_URL}${req.baseUrl}${req.path}`;
+    const targetUrl = `${PAYMENT_SERVICE_URL}${req.baseUrl}${req.path}`;
 
     // Forward the request with same method, headers, and body
     const response = await axios({
@@ -22,7 +22,7 @@ router.all('*', async (req, res) => {
       url: targetUrl,
       headers: {
         ...req.headers,
-        host: 'stats-service:3004', // Override host header
+        host: 'payment-service:3003', // Override host header
       },
       data: req.body,
       params: req.query,
@@ -32,9 +32,9 @@ router.all('*', async (req, res) => {
     // Forward the response
     res.status(response.status).json(response.data);
   } catch (error) {
-    console.error(`Stats Service proxy error (${req.baseUrl}${req.path}): ${error.message}`);
+    console.error(`Payment Service proxy error (${req.baseUrl}${req.path}): ${error.message}`);
     res.status(503).json({
-      error: 'Stats Service unavailable',
+      error: 'Payment Service unavailable',
       message: error.message,
     });
   }

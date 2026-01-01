@@ -10,17 +10,20 @@ RUN cd packages/common && npm install --omit=dev --no-package-lock || true
 RUN cd packages/database && npm install --omit=dev --no-package-lock || true
 RUN cd packages/metrics && npm install --omit=dev --no-package-lock || true
 
+# Copy payment service package.json (Source of Truth)
+COPY services/payment-service/package.json ./package.json
+
+# Install external dependencies only (exclude local @tiketi/* packages)
+# The --legacy-peer-deps flag handles file: dependencies gracefully
+RUN npm install --omit=dev --no-package-lock --legacy-peer-deps || \
+    npm install axios@^1.6.0 cors@^2.8.5 dotenv@^16.0.3 express@^4.18.2 jsonwebtoken@^9.0.2 uuid@^9.0.0 --omit=dev --no-package-lock
+
 # Copy payment service source
 COPY services/payment-service/src ./src
 
-# Create a package.json without file: references
-RUN printf '{"name":"@tiketi/payment-service","version":"1.0.0","description":"Payment Service","main":"src/server.js","scripts":{"start":"node src/server.js"},"dependencies":{"axios":"^1.6.0","cors":"^2.8.5","dotenv":"^16.0.3","express":"^4.18.2","jsonwebtoken":"^9.0.2","uuid":"^9.0.0"}}' > package.json
-
-# Install external dependencies
-RUN npm install --omit=dev --no-package-lock
-
 # Copy monorepo packages into node_modules
 RUN mkdir -p node_modules/@tiketi && \
+    rm -rf node_modules/@tiketi/common node_modules/@tiketi/database node_modules/@tiketi/metrics && \
     cp -r packages/common node_modules/@tiketi/common && \
     cp -r packages/database node_modules/@tiketi/database && \
     cp -r packages/metrics node_modules/@tiketi/metrics

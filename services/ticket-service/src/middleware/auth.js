@@ -4,8 +4,10 @@
 
 const jwt = require('jsonwebtoken');
 const db = require('../config/database');
+const { DEV_DEFAULTS } = require('@tiketi/common');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-only-secret-change-in-production-f8a7b6c5d4e3f2a1';
+// Use shared dev default from @tiketi/common (One Source of Truth)
+const JWT_SECRET = process.env.JWT_SECRET || DEV_DEFAULTS.JWT_SECRET;
 
 const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];

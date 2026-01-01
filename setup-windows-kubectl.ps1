@@ -1,6 +1,21 @@
 # Setup Windows kubectl for TIKETI
 # This allows port-forwarding to Windows localhost instead of WSL IP
 
+# Check if running as Administrator
+$currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+$isAdmin = $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+if (-not $isAdmin) {
+    Write-Host "⚠️  Requesting Administrator privileges..." -ForegroundColor Yellow
+    Write-Host "   (Required for kubectl installation and configuration)" -ForegroundColor Gray
+    Write-Host ""
+
+    # Re-launch as administrator
+    $scriptPath = $MyInvocation.MyCommand.Path
+    Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`"" -Verb RunAs
+    exit
+}
+
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  Windows kubectl Setup for TIKETI" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
@@ -42,18 +57,34 @@ if (-not (Test-Path $windowsKubeDir)) {
 }
 
 # Copy kubeconfig from WSL
-$wslKubeConfig = wsl bash -c "cat ~/.kube/config"
-if ($LASTEXITCODE -eq 0) {
-    # Replace WSL paths with localhost (Kind cluster is accessible from Windows)
-    $wslKubeConfig = $wslKubeConfig -replace 'https://127.0.0.1:', 'https://localhost:'
+try {
+    Write-Host "   Copying kubeconfig from WSL to Windows..." -ForegroundColor Gray
 
-    # Save to Windows
-    $wslKubeConfig | Out-File -FilePath "$windowsKubeDir\config" -Encoding utf8
-    Write-Host "✅ kubeconfig copied to Windows" -ForegroundColor Green
-    Write-Host "   Path: $windowsKubeDir\config" -ForegroundColor Gray
-} else {
+    # Convert Windows path to WSL mount path
+    $windowsMountPath = $windowsKubeDir -replace '\\', '/' -replace '^C:', '/mnt/c'
+
+    # Use WSL command to copy file directly (avoids username encoding issues)
+    $copyResult = wsl bash -c "if [ -f ~/.kube/config ]; then mkdir -p '$windowsMountPath' && cp ~/.kube/config '$windowsMountPath/config' && echo 'SUCCESS'; else echo 'NOT_FOUND'; fi" 2>&1
+
+    if ($copyResult -like "*SUCCESS*" -and (Test-Path "$windowsKubeDir\config")) {
+        # Read and modify kubeconfig
+        $kubeConfig = Get-Content -Path "$windowsKubeDir\config" -Raw
+
+        # Replace 127.0.0.1 with localhost for Windows compatibility
+        $kubeConfig = $kubeConfig -replace '127\.0\.0\.1', 'localhost'
+
+        # Save modified config
+        $kubeConfig | Out-File -FilePath "$windowsKubeDir\config" -Encoding utf8 -NoNewline
+
+        Write-Host "✅ kubeconfig copied to Windows" -ForegroundColor Green
+        Write-Host "   Path: $windowsKubeDir\config" -ForegroundColor Gray
+    } else {
+        throw "WSL kubeconfig not found. Make sure Kind cluster is created in WSL (run: wsl kind get clusters)"
+    }
+} catch {
     Write-Host "❌ Failed to copy kubeconfig from WSL" -ForegroundColor Red
     Write-Host "   Make sure Kind cluster is created in WSL" -ForegroundColor Yellow
+    Write-Host "   Error: $_" -ForegroundColor Red
     exit 1
 }
 

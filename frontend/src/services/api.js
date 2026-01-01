@@ -26,40 +26,8 @@ const getApiUrl = () => {
 
 const API_URL = getApiUrl();
 
-// Separate Auth Service URL (port 3005)
-const getAuthServiceUrl = () => {
-  if (process.env.REACT_APP_AUTH_URL) {
-    return process.env.REACT_APP_AUTH_URL;
-  }
-
-  const hostname = window.location.hostname;
-
-  // localhost: use localhost:3005
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://localhost:3005';
-  }
-
-  // WSL IP or other local IP: use same IP with port 3005
-  if (hostname.match(/^(172\.|192\.168\.|10\.)/)) {
-    return `http://${hostname}:3005`;
-  }
-
-  // Production: use relative URL for auth-service
-  return '/auth-api';
-};
-
-const AUTH_SERVICE_URL = getAuthServiceUrl();
-
 const api = axios.create({
   baseURL: `${API_URL}/api`,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Separate axios instance for Auth Service
-const authApiClient = axios.create({
-  baseURL: `${AUTH_SERVICE_URL}/api`,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -103,10 +71,10 @@ api.interceptors.response.use(
   }
 );
 
-// Auth APIs - Uses dedicated Auth Service (port 3005)
+// Auth APIs - Routed through Backend API Gateway (port 3001)
 export const authAPI = {
-  register: (data) => authApiClient.post('/auth/register', data),
-  login: (data) => authApiClient.post('/auth/login', data),
+  register: (data) => api.post('/auth/register', data),
+  login: (data) => api.post('/auth/login', data),
 };
 
 // Events APIs

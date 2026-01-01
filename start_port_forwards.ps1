@@ -1,5 +1,20 @@
 # TIKETI Port-Forward Startup Script
 
+# Check if running as Administrator
+$currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+$isAdmin = $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+if (-not $isAdmin) {
+    Write-Host "⚠️  Requesting Administrator privileges..." -ForegroundColor Yellow
+    Write-Host "   (Required to kill processes using ports)" -ForegroundColor Gray
+    Write-Host ""
+
+    # Re-launch as administrator
+    $scriptPath = $MyInvocation.MyCommand.Path
+    Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`"" -Verb RunAs
+    exit
+}
+
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  TIKETI Port-Forward Setup" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
@@ -31,6 +46,23 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "✅ Cluster connection OK" -ForegroundColor Green
 Write-Host ""
 
+# Stop PostgreSQL service if running (to free port 5432)
+Write-Host "Checking for local PostgreSQL service..." -ForegroundColor Yellow
+$pgServices = Get-Service -Name "postgresql*" -ErrorAction SilentlyContinue
+if ($pgServices) {
+    foreach ($svc in $pgServices) {
+        if ($svc.Status -eq 'Running') {
+            Write-Host "  Stopping PostgreSQL service: $($svc.Name)..." -ForegroundColor Yellow
+            try {
+                Stop-Service -Name $svc.Name -Force -ErrorAction Stop
+                Write-Host "  ✅ PostgreSQL service stopped" -ForegroundColor Green
+            } catch {
+                Write-Host "  ⚠️  Cannot stop service (need admin): $($_.Exception.Message)" -ForegroundColor Yellow
+            }
+        }
+    }
+}
+
 # Kill existing port-forwards
 Write-Host "Stopping existing port-forwards..." -ForegroundColor Yellow
 Get-Process | Where-Object {$_.CommandLine -like "*kubectl*port-forward*"} | Stop-Process -Force -ErrorAction SilentlyContinue
@@ -49,12 +81,26 @@ foreach ($port in $requiredPorts) {
             try {
                 $process = Get-Process -Id $processId -ErrorAction SilentlyContinue
                 if ($process) {
-                    Stop-Process -Id $processId -Force -ErrorAction Stop
-                    Write-Host "  ✅ Killed process using port $port (PID: $processId, Name: $($process.Name))" -ForegroundColor Yellow
-                    $killedProcesses++
+                    # Try Stop-Process first
+                    try {
+                        Stop-Process -Id $processId -Force -ErrorAction Stop
+                        Write-Host "  ✅ Killed process using port $port (PID: $processId, Name: $($process.Name))" -ForegroundColor Yellow
+                        $killedProcesses++
+                    } catch {
+                        # If Stop-Process fails, try taskkill
+                        Write-Host "  ⚠️  Stop-Process failed, trying taskkill..." -ForegroundColor Yellow
+                        $taskkillResult = cmd.exe /c "taskkill /F /PID $processId 2>&1"
+                        if ($LASTEXITCODE -eq 0) {
+                            Write-Host "  ✅ Killed with taskkill: port $port (PID: $processId)" -ForegroundColor Green
+                            $killedProcesses++
+                        } else {
+                            Write-Host "  ❌ Failed to kill process on port $port (PID: $processId)" -ForegroundColor Red
+                            Write-Host "     Process: $($process.Name)" -ForegroundColor Gray
+                        }
+                    }
                 }
             } catch {
-                Write-Host "  ❌ Failed to kill process on port $port (PID: $processId): $($_.Exception.Message)" -ForegroundColor Red
+                Write-Host "  ❌ Error handling process on port $port (PID: $processId): $($_.Exception.Message)" -ForegroundColor Red
             }
         }
     }
@@ -79,8 +125,37 @@ foreach ($port in $requiredPorts) {
 if ($stillInUse.Count -gt 0) {
     Write-Host ""
     Write-Host "ERROR: Some ports could not be freed." -ForegroundColor Red
-    Write-Host "Try running: wsl --shutdown" -ForegroundColor Yellow
-    exit 1
+    Write-Host ""
+    Write-Host "Quick fixes:" -ForegroundColor Yellow
+    Write-Host "  1. Run this script as Administrator (Right-click → Run as Administrator)" -ForegroundColor Cyan
+    Write-Host "  2. Or manually stop PostgreSQL service:" -ForegroundColor Cyan
+    Write-Host "     net stop postgresql-x64-15" -ForegroundColor Gray
+    Write-Host "  3. Or use different port for K8s postgres:" -ForegroundColor Cyan
+    Write-Host "     kubectl port-forward -n tiketi svc/postgres 5433:5432" -ForegroundColor Gray
+    Write-Host ""
+
+    # Ask user what to do
+    Write-Host "Do you want to:" -ForegroundColor White
+    Write-Host "  [1] Restart as Administrator (recommended)" -ForegroundColor Green
+    Write-Host "  [2] Continue anyway (may fail)" -ForegroundColor Yellow
+    Write-Host "  [3] Exit" -ForegroundColor Red
+    $choice = Read-Host "Enter choice (1-3)"
+
+    switch ($choice) {
+        "1" {
+            $scriptPath = $MyInvocation.MyCommand.Path
+            Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`"" -Verb RunAs
+            exit
+        }
+        "2" {
+            Write-Host ""
+            Write-Host "⚠️  Continuing anyway..." -ForegroundColor Yellow
+        }
+        default {
+            Write-Host "Exiting..." -ForegroundColor Gray
+            exit 1
+        }
+    }
 }
 
 Write-Host "All ports are available" -ForegroundColor Green

@@ -10,14 +10,16 @@ RUN cd packages/common && npm install --omit=dev --no-package-lock || true
 RUN cd packages/database && npm install --omit=dev --no-package-lock || true
 RUN cd packages/metrics && npm install --omit=dev --no-package-lock || true
 
+# Copy auth service package.json (Source of Truth)
+COPY services/auth-service/package.json ./package.json
+
+# Install external dependencies only (exclude local @tiketi/* packages)
+# The --legacy-peer-deps flag handles file: dependencies gracefully
+RUN npm install --omit=dev --no-package-lock --legacy-peer-deps || \
+    npm install bcrypt@^5.1.1 cors@^2.8.5 dotenv@^16.3.1 express@^4.18.2 google-auth-library@^9.0.0 jsonwebtoken@^9.0.2 --omit=dev --no-package-lock
+
 # Copy auth service source
 COPY services/auth-service/src ./src
-
-# Create package.json
-RUN printf '{"name":"tiketi-auth-service","version":"1.0.0","main":"src/server.js","scripts":{"start":"node src/server.js"},"dependencies":{"bcrypt":"^5.1.1","cors":"^2.8.5","dotenv":"^16.3.1","express":"^4.18.2","google-auth-library":"^9.0.0","jsonwebtoken":"^9.0.2"}}' > package.json
-
-# Install external dependencies
-RUN npm install --omit=dev --no-package-lock
 
 # Copy monorepo packages into node_modules
 RUN mkdir -p node_modules/@tiketi && \

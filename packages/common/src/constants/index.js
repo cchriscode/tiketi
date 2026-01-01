@@ -94,6 +94,12 @@ const ERROR_CODES = {
   UNAUTHORIZED: 'UNAUTHORIZED',
 };
 
+// Development Defaults (DO NOT use in production)
+// These should be overridden by environment variables in production
+const DEV_DEFAULTS = {
+  JWT_SECRET: 'dev-only-secret-change-in-production-f8a7b6c5d4e3f2a1',
+};
+
 module.exports = {
   EVENT_STATUS,
   EVENT_STATUS_MESSAGES,
@@ -105,4 +111,5 @@ module.exports = {
   LOCK_KEYS,
   CACHE_KEYS,
   ERROR_CODES,
+  DEV_DEFAULTS,
 };

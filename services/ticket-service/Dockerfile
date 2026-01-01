@@ -10,14 +10,16 @@ RUN cd packages/common && npm install --omit=dev --no-package-lock || true
 RUN cd packages/database && npm install --omit=dev --no-package-lock || true
 RUN cd packages/metrics && npm install --omit=dev --no-package-lock || true
 
+# Copy ticket service package.json (Source of Truth)
+COPY services/ticket-service/package.json ./package.json
+
+# Install external dependencies only (exclude local @tiketi/* packages)
+# The --legacy-peer-deps flag handles file: dependencies gracefully
+RUN npm install --omit=dev --no-package-lock --legacy-peer-deps || \
+    npm install @socket.io/redis-adapter@^8.2.1 dotenv@^16.0.3 express@^4.18.2 ioredis@^5.3.0 jsonwebtoken@^9.0.3 redis@^4.6.5 socket.io@^4.6.0 uuid@^9.0.0 --omit=dev --no-package-lock
+
 # Copy ticket service source
 COPY services/ticket-service/src ./src
-
-# Create package.json
-RUN printf '{"name":"@tiketi/ticket-service","version":"1.0.0","main":"src/server.js","scripts":{"start":"node src/server.js"},"dependencies":{"@socket.io/redis-adapter":"^8.2.1","dotenv":"^16.0.3","express":"^4.18.2","ioredis":"^5.3.0","jsonwebtoken":"^9.0.3","redis":"^4.6.5","socket.io":"^4.6.0","uuid":"^9.0.0"}}' > package.json
-
-# Install external dependencies
-RUN npm install --omit=dev --no-package-lock
 
 # Copy monorepo packages into node_modules
 RUN mkdir -p node_modules/@tiketi && \
