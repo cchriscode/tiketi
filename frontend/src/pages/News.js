@@ -164,7 +164,7 @@ function News() {
                       </Link>
                     </div>
                     <div className="news-item-author">{news.author}</div>
-                    <div className="news-item-date">{formatDate(news.createdAt)}</div>
+                    <div className="news-item-date">{formatDate(news.created_at)}</div>
                     <div className="news-item-views">{news.views}</div>
                   </div>
                 ))

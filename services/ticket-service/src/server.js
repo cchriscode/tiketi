@@ -3,6 +3,29 @@
  */
 
 require('dotenv').config();
+
+// ============================================================================
+// CRITICAL: Environment Variable Validation (Production)
+// ============================================================================
+if (process.env.NODE_ENV === 'production') {
+  const requiredEnvVars = [
+    'JWT_SECRET',
+    'INTERNAL_API_TOKEN',
+  ];
+
+  const missing = requiredEnvVars.filter(varName => !process.env[varName]);
+
+  if (missing.length > 0) {
+    console.error('❌ CRITICAL: Missing required environment variables in production:');
+    console.error(`   ${missing.join(', ')}`);
+    console.error('');
+    console.error('   Generate secrets with: openssl rand -base64 32');
+    process.exit(1);
+  }
+
+  console.log('✅ Production environment variables validated');
+}
+
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
@@ -19,10 +42,12 @@ const ticketsRoutes = require('./routes/tickets');
 const seatsRoutes = require('./routes/seats');
 const queueRoutes = require('./routes/queue');
 const reservationsRoutes = require('./routes/reservations');
+const internalRoutes = require('./routes/internal');
 
 // Background Services
 const queueProcessor = require('./services/queue-processor');
 const reservationCleaner = require('./services/reservation-cleaner');
+const eventStatusUpdater = require('./services/event-status-updater');
 
 const app = express();
 const server = http.createServer(app);
@@ -103,6 +128,9 @@ app.use('/api/seats', seatsRoutes);
 app.use('/api/queue', queueRoutes);
 app.use('/api/reservations', reservationsRoutes);
 
+// Internal API (for inter-service communication)
+app.use('/internal', internalRoutes);
+
 // Error handler (must be last)
 app.use(errorHandler);
 
@@ -150,6 +178,8 @@ server.listen(PORT, () => {
   queueProcessor.start();
   reservationCleaner.setIO(io);
   reservationCleaner.start();
+  eventStatusUpdater.setIO(io);
+  eventStatusUpdater.start();
 });
 
 // Graceful shutdown
@@ -157,6 +187,7 @@ process.on('SIGTERM', () => {
   console.log('🛑 SIGTERM received, shutting down gracefully...');
   queueProcessor.stop();
   reservationCleaner.stop();
+  eventStatusUpdater.stop();
   server.close(() => {
     console.log('✅ Server closed');
     process.exit(0);
@@ -167,6 +198,7 @@ process.on('SIGINT', () => {
   console.log('🛑 SIGINT received, shutting down gracefully...');
   queueProcessor.stop();
   reservationCleaner.stop();
+  eventStatusUpdater.stop();
   server.close(() => {
     console.log('✅ Server closed');
     process.exit(0);

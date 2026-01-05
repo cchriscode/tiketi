@@ -74,7 +74,10 @@
       "Bash(powershell.exe -Command \"wsl -l -v\")",
       "Bash(powershell.exe -Command \"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; wsl whoami\")",
       "Bash(powershell.exe -Command \"wsl bash -c ''echo $USER''\")",
-      "Bash(powershell.exe -Command \"Get-Process -Id 8296 | Select-Object Name, Id, Path\")"
+      "Bash(powershell.exe -Command \"Get-Process -Id 8296 | Select-Object Name, Id, Path\")",
+      "Bash(wsl kubectl patch:*)",
+      "Bash(powershell.exe -Command \"wsl kubectl get pods -n tiketi\")",
+      "Bash(cmd.exe /c \"wsl kind load docker-image tiketi-ticket-service:local --name tiketi-local && wsl kubectl rollout restart deployment ticket-service -n tiketi\")"
     ]
   }
 }

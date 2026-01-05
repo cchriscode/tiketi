@@ -3,6 +3,29 @@
  */
 
 require('dotenv').config();
+
+// ============================================================================
+// CRITICAL: Environment Variable Validation (Production)
+// ============================================================================
+if (process.env.NODE_ENV === 'production') {
+  const requiredEnvVars = [
+    'JWT_SECRET',
+    'GOOGLE_CLIENT_ID',
+  ];
+
+  const missing = requiredEnvVars.filter(varName => !process.env[varName]);
+
+  if (missing.length > 0) {
+    console.error('❌ CRITICAL: Missing required environment variables in production:');
+    console.error(`   ${missing.join(', ')}`);
+    console.error('');
+    console.error('   Generate secrets with: openssl rand -base64 32');
+    process.exit(1);
+  }
+
+  console.log('✅ Production environment variables validated');
+}
+
 const express = require('express');
 const cors = require('cors');
 const { errorHandler } = require('@tiketi/common');

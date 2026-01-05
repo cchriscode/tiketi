@@ -6,7 +6,8 @@
 const express = require('express');
 const db = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
-const { validate: isUUID } = require('uuid');
+const { NotFoundError, ConflictError, ValidationError } = require('@tiketi/common');
+const { validate: isUUID, v4: uuidv4 } = require('uuid');
 
 const router = express.Router();
 
@@ -43,9 +44,10 @@ const isValidUUID = (value) => typeof value === 'string' && isUUID(value);
  * 예약 생성 (티켓 타입 기반 - 비좌석 이벤트용)
  */
 router.post('/', authenticateToken, async (req, res, next) => {
-  const client = await db.pool.connect();
+  let client;
 
   try {
+    client = await db.pool.connect();
     const { eventId, items } = req.body; // items: [{ ticketTypeId, quantity }]
     const userId = req.user.userId;
 
@@ -110,8 +112,8 @@ router.post('/', authenticateToken, async (req, res, next) => {
       });
     }
 
-    // Create reservation
-    const reservationNumber = `R${Date.now()}`;
+    // Create reservation with unique number (timestamp + short UUID for collision prevention)
+    const reservationNumber = `R${Date.now()}-${uuidv4().slice(0, 8).toUpperCase()}`;
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
     const reservationResult = await client.query(
@@ -150,10 +152,10 @@ router.post('/', authenticateToken, async (req, res, next) => {
       },
     });
   } catch (error) {
-    await client.query('ROLLBACK');
+    if (client) await client.query('ROLLBACK');
     next(error);
   } finally {
-    client.release();
+    if (client) client.release();
   }
 });
 
@@ -213,20 +215,24 @@ router.get('/:id', authenticateToken, async (req, res, next) => {
       `SELECT
         r.id, r.reservation_number, r.total_amount, r.status,
         r.payment_status, r.payment_method, r.expires_at, r.created_at,
-        e.id as event_id, e.title as event_title, e.venue, e.event_date,
+        e.id as event_id, e.title as event_title, e.venue, e.address, e.event_date,
         json_agg(
           json_build_object(
+            'ticketTypeName', COALESCE(tt.name, s.seat_label),
+            'quantity', COALESCE(ri.quantity, 1),
+            'unitPrice', ri.unit_price,
+            'subtotal', ri.subtotal,
             'seatId', s.id,
             'seatLabel', s.seat_label,
             'section', s.section,
             'rowNumber', s.row_number,
-            'seatNumber', s.seat_number,
-            'price', ri.unit_price
+            'seatNumber', s.seat_number
           )
-        ) as seats
+        ) as items
       FROM ticket_schema.reservations r
       JOIN ticket_schema.events e ON r.event_id = e.id
       JOIN ticket_schema.reservation_items ri ON r.id = ri.reservation_id
+      LEFT JOIN ticket_schema.ticket_types tt ON ri.ticket_type_id = tt.id
       LEFT JOIN ticket_schema.seats s ON ri.seat_id = s.id
       WHERE r.id = $1 AND r.user_id = $2
       GROUP BY r.id, e.id`,
@@ -255,14 +261,15 @@ router.get('/:id', authenticateToken, async (req, res, next) => {
  * 예약 취소
  */
 router.post('/:id/cancel', authenticateToken, async (req, res, next) => {
-  const client = await db.pool.connect();
+  let client;
 
   try {
     const { id } = req.params;
     if (!isValidUUID(id)) {
-      return res.status(400).json({ error: ERROR_MESSAGES.INVALID_UUID });
+      throw new ValidationError(ERROR_MESSAGES.INVALID_UUID);
     }
 
+    client = await db.pool.connect();
     const userId = req.user.userId;
 
     await client.query('BEGIN');
@@ -274,13 +281,15 @@ router.post('/:id/cancel', authenticateToken, async (req, res, next) => {
     );
 
     if (reservationResult.rows.length === 0) {
-      throw new Error(ERROR_MESSAGES.RESERVATION_NOT_FOUND);
+      await client.query('ROLLBACK');
+      throw new NotFoundError(ERROR_MESSAGES.RESERVATION_NOT_FOUND);
     }
 
     const reservation = reservationResult.rows[0];
 
     if (reservation.status === RESERVATION_STATUS.CANCELLED) {
-      throw new Error(ERROR_MESSAGES.ALREADY_CANCELLED);
+      await client.query('ROLLBACK');
+      throw new ConflictError(ERROR_MESSAGES.ALREADY_CANCELLED);
     }
 
     // Get reservation items
@@ -318,7 +327,8 @@ router.post('/:id/cancel', authenticateToken, async (req, res, next) => {
 
     await client.query('COMMIT');
 
-    res.json({
+    // Send success response (connection released in finally)
+    return res.status(200).json({
       message: '예약이 취소되었습니다.',
       reservation: {
         id,
@@ -326,10 +336,20 @@ router.post('/:id/cancel', authenticateToken, async (req, res, next) => {
       },
     });
   } catch (error) {
-    await client.query('ROLLBACK');
+    // Rollback transaction if error occurred
+    if (client) {
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Rollback error:', rollbackError);
+      }
+    }
     next(error);
   } finally {
-    client.release();
+    // Always release connection
+    if (client) {
+      client.release();
+    }
   }
 });
 

@@ -6,6 +6,12 @@
 const { CustomError } = require('../errors');
 
 function errorHandler(err, req, res, next) {
+  // Prevent double response if headers already sent
+  if (res.headersSent) {
+    console.error('[Error] Headers already sent, passing to default handler:', err.message);
+    return next(err);
+  }
+
   // Log error for debugging
   console.error('[Error]', {
     message: err.message,

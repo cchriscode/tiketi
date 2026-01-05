@@ -1,4 +1,5 @@
 const express = require('express');
+const axios = require('axios');
 const db = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const { client: redisClient } = require('../config/redis');
@@ -16,6 +17,10 @@ const {
 const { invalidateCachePatterns, withTransaction } = require('../utils/transaction-helpers');
 const { validate: isUUID } = require('uuid');
 
+// Ticket Service URL for internal API calls
+const TICKET_SERVICE_URL = process.env.TICKET_SERVICE_URL || 'http://ticket-service:3002';
+const INTERNAL_API_TOKEN = process.env.INTERNAL_API_TOKEN || 'dev-internal-token-change-in-production';
+
 const router = express.Router();
 
 const ensureUUID = (value, res, field = 'id') => {
@@ -24,6 +29,27 @@ const ensureUUID = (value, res, field = 'id') => {
     return false;
   }
   return true;
+};
+
+/**
+ * Notify ticket-service to reschedule event status updater
+ * Non-blocking - fires and forgets, logs errors only
+ */
+const notifyEventStatusReschedule = async () => {
+  try {
+    await axios.post(
+      `${TICKET_SERVICE_URL}/internal/reschedule-event-status`,
+      {},
+      {
+        headers: { 'x-internal-token': INTERNAL_API_TOKEN },
+        timeout: 3000,
+      }
+    );
+    logger.info('✅ Notified ticket-service to reschedule event status updater');
+  } catch (error) {
+    // Non-blocking - log error but don't fail the request
+    logger.error('⚠️  Failed to notify ticket-service event status reschedule:', error.message);
+  }
 };
 
 // All admin routes require authentication and admin role
@@ -269,10 +295,8 @@ router.post('/events', async (req, res, next) => {
 
     await client.query('COMMIT');
 
-    // 이벤트 상태 업데이터 타이머 재설정
-    const eventStatusUpdater = require('../services/event-status-updater');
-    eventStatusUpdater.reschedule();
-    logger.info('🔄 이벤트 상태 업데이터 타이머 재설정');
+    // 🔄 Notify ticket-service to reschedule event status updater (MSA)
+    notifyEventStatusReschedule();
 
     // Invalidate all event list caches (즉시 반영을 위해 모든 캐시 삭제)
     await invalidateCachePatterns(redisClient, [CACHE_KEYS.EVENTS_PATTERN]);
@@ -429,10 +453,8 @@ router.put('/events/:id', async (req, res, next) => {
       }
     }
 
-    // 이벤트 상태 업데이터 타이머 재설정
-    const eventStatusUpdater = require('../services/event-status-updater');
-    eventStatusUpdater.reschedule();
-    logger.info('🔄 이벤트 상태 업데이터 타이머 재설정');
+    // 🔄 Notify ticket-service to reschedule event status updater (MSA)
+    notifyEventStatusReschedule();
 
     // Invalidate cache - 모든 관련 캐시 삭제 (즉시 반영)
     await invalidateCachePatterns(redisClient, [

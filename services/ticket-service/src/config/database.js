@@ -22,4 +22,9 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
-module.exports = pool;
+// Export with consistent interface like backend
+module.exports = {
+  pool,
+  query: (text, params) => pool.query(text, params),
+  connect: () => pool.connect(),
+};

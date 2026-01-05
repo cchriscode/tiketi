@@ -6,8 +6,9 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 const { initializeAdmin } = require('./config/init-admin');
 const initSeats = require('./config/init-seats');
-const reservationCleaner = require('./services/reservation-cleaner');
-const eventStatusUpdater = require('./services/event-status-updater');
+// Background tasks removed - handled by microservices
+// const reservationCleaner = require('./services/reservation-cleaner');
+// const eventStatusUpdater = require('./services/event-status-updater');
 const { initializeSocketIO } = require('./config/socket');
 const errorHandler = require('./middleware/error-handler');
 const requestLogger = require('./middleware/request-logger');
@@ -17,6 +18,35 @@ const { register } = require('./metrics');
 const metricsAggregator = require('./metrics/aggregator');
 
 dotenv.config();
+
+// ============================================================================
+// CRITICAL: Environment Variable Validation (Production)
+// ============================================================================
+// Prevent starting with insecure default values in production
+if (process.env.NODE_ENV === 'production') {
+  const requiredEnvVars = [
+    'JWT_SECRET',
+    'ADMIN_PASSWORD',
+    'INTERNAL_API_TOKEN',
+  ];
+
+  const missing = requiredEnvVars.filter(varName => !process.env[varName]);
+
+  if (missing.length > 0) {
+    console.error('❌ CRITICAL: Missing required environment variables in production:');
+    console.error(`   ${missing.join(', ')}`);
+    console.error('');
+    console.error('   These variables MUST be set for security:');
+    console.error('   - JWT_SECRET: Strong random secret for JWT signing');
+    console.error('   - ADMIN_PASSWORD: Admin account password');
+    console.error('   - INTERNAL_API_TOKEN: Token for inter-service communication');
+    console.error('');
+    console.error('   Generate secrets with: openssl rand -base64 32');
+    process.exit(1);
+  }
+
+  console.log('✅ Production environment variables validated');
+}
 
 const app = express();
 const server = http.createServer(app);
@@ -108,14 +138,10 @@ server.listen(PORT, async () => {
     logger.error('⚠️  Seat initialization will retry on database connection');
   }
 
-  // Set Socket.IO for reservation cleaner (real-time seat release)
-  reservationCleaner.setIO(io);
-
-  // Start reservation cleaner
-  reservationCleaner.start();
-
-  // Start event status updater
-  eventStatusUpdater.start();
+  // ✅ Background tasks NOT started - handled by Ticket Service
+  // Backend operates as API Gateway only (proxy mode)
+  logger.info('🔀 Backend running in API Gateway mode (proxy-only)');
+  logger.info('   Background tasks (reservation cleaner, event updater) run in Ticket Service');
 });
 
 // ========================================
@@ -139,11 +165,8 @@ async function gracefulShutdown(signal) {
       logger.info('✅ HTTP server closed');
     });
 
-    // 2. Stop background services
-    logger.info('⏸️  Stopping background services...');
-    reservationCleaner.stop();
-    eventStatusUpdater.stop();
-    logger.info('✅ Background services stopped');
+    // 2. Background services not running in proxy mode
+    logger.info('⏸️  No background services to stop (proxy-only mode)');
 
     // 메트릭 집계 중지
     logger.info('⏸️  Stopping metrics aggregator...');
@@ -174,6 +197,7 @@ async function gracefulShutdown(signal) {
     // 6. Close Redis connections
     logger.info('🗄️  Closing Redis connections...');
     const { client: redisClient } = require('./config/redis');
+    // node-redis v4 uses .isOpen or .isReady property (not .status)
     if (redisClient && redisClient.isOpen) {
       await redisClient.quit();
     }

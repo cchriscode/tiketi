@@ -5,10 +5,12 @@ WORKDIR /app
 # Copy monorepo packages
 COPY packages ./packages
 
-# Install dependencies for each package
-RUN cd packages/common && npm install --omit=dev --no-package-lock || true
-RUN cd packages/database && npm install --omit=dev --no-package-lock || true
-RUN cd packages/metrics && npm install --omit=dev --no-package-lock || true
+# Install dependencies for each package (these are needed for @tiketi/* packages)
+# CRITICAL: These packages have dependencies (uuid, winston, pg, ioredis, prom-client)
+# Build MUST fail if these installations fail to prevent runtime MODULE_NOT_FOUND errors
+RUN cd packages/common && npm install --omit=dev --no-package-lock
+RUN cd packages/database && npm install --omit=dev --no-package-lock
+RUN cd packages/metrics && npm install --omit=dev --no-package-lock
 
 # Copy auth service package.json (Source of Truth)
 COPY services/auth-service/package.json ./package.json

@@ -24,11 +24,35 @@ Write-Host ""
 
 # Step 1: Kill port-forward processes
 Write-Host "🔌 Stopping port-forward processes..." -ForegroundColor Cyan
+
+# Kill WSL kubectl processes first
 try {
-    Get-Process | Where-Object {$_.CommandLine -like "*kubectl*port-forward*"} | Stop-Process -Force -ErrorAction SilentlyContinue
-    Write-Host "  ✅ Port forwards stopped" -ForegroundColor Green
+    $wslProcesses = wsl bash -c "ps aux | grep 'kubectl port-forward' | grep -v grep" 2>$null
+    if ($wslProcesses) {
+        $pids = $wslProcesses | ForEach-Object {
+            if ($_ -match '\s+(\d+)\s+') {
+                $matches[1]
+            }
+        }
+        if ($pids) {
+            foreach ($pid in $pids) {
+                wsl bash -c "kill -9 $pid" 2>$null
+            }
+            Write-Host "  ✅ WSL kubectl processes killed" -ForegroundColor Green
+        }
+    }
 } catch {
-    Write-Host "  ℹ️  No port forwards running" -ForegroundColor Gray
+    Write-Host "  ℹ️  No WSL port forwards running" -ForegroundColor Gray
+}
+
+# Kill Windows PowerShell/kubectl processes
+try {
+    Get-Process powershell,pwsh,kubectl -ErrorAction SilentlyContinue | Where-Object {
+        $_.CommandLine -like "*kubectl*port-forward*"
+    } | Stop-Process -Force -ErrorAction SilentlyContinue
+    Write-Host "  ✅ Windows port forwards stopped" -ForegroundColor Green
+} catch {
+    Write-Host "  ℹ️  No Windows port forwards running" -ForegroundColor Gray
 }
 
 Start-Sleep -Seconds 2

@@ -70,11 +70,24 @@ echo
 
 if [[ $REPLY =~ ^[Yy]$ ]]; then
   echo "📦 Deleting node_modules..."
-  echo "  ⚠️  On Windows, use PowerShell cleanup script instead:"
-  echo "      powershell.exe -File cleanup.ps1"
-  echo ""
-  echo "  Attempting WSL deletion (may have permission issues)..."
-  echo ""
+
+  # Detect OS type
+  if [[ "$OSTYPE" == "linux-gnu"* ]] && grep -qi microsoft /proc/version 2>/dev/null; then
+    # WSL detected
+    echo "  ⚠️  WSL detected. For better performance, use PowerShell cleanup script:"
+    echo "      powershell.exe -File cleanup.ps1"
+    echo ""
+    echo "  Attempting WSL deletion (may have permission issues)..."
+    echo ""
+  elif [[ "$OSTYPE" == "darwin"* ]]; then
+    # Mac detected
+    echo "  🍎 Mac detected. Deleting node_modules..."
+    echo ""
+  else
+    # Linux (native)
+    echo "  🐧 Linux detected. Deleting node_modules..."
+    echo ""
+  fi
 
   DIRS=(
     "services/auth-service/node_modules"
@@ -87,7 +100,15 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 
   for dir in "${DIRS[@]}"; do
     if [ -d "$dir" ]; then
-      rm -rf "$dir" 2>/dev/null && echo "  ✅ Deleted: $dir" || echo "  ⚠️  Permission denied: $dir (use PowerShell cleanup)"
+      if rm -rf "$dir" 2>/dev/null; then
+        echo "  ✅ Deleted: $dir"
+      else
+        if [[ "$OSTYPE" == "linux-gnu"* ]] && grep -qi microsoft /proc/version 2>/dev/null; then
+          echo "  ⚠️  Permission denied: $dir (use PowerShell cleanup.ps1)"
+        else
+          echo "  ⚠️  Permission denied: $dir"
+        fi
+      fi
     fi
   done
 else
@@ -108,6 +129,13 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 fi
 echo ""
 echo "To recreate the system:"
-echo "  Windows: .\\setup-tiketi.ps1"
-echo "  Linux:   ./scripts/setup-tiketi.sh"
+# Show OS-specific command
+if [[ "$OSTYPE" == "linux-gnu"* ]] && grep -qi microsoft /proc/version 2>/dev/null; then
+  echo "  WSL:     ./scripts/setup-tiketi.sh"
+  echo "  Windows: .\\setup-tiketi.ps1"
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+  echo "  ./scripts/setup-tiketi.sh"
+else
+  echo "  ./scripts/setup-tiketi.sh"
+fi
 echo ""

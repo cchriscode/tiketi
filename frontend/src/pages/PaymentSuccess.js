@@ -101,11 +101,11 @@ function PaymentSuccess() {
           </div>
 
           <div className="detail-section">
-            <h3>좌석 정보</h3>
+            <h3>티켓 정보</h3>
             <div className="seats-grid">
-              {reservation.seats.map((seat, index) => (
+              {reservation.seats && reservation.seats.map((seat, index) => (
                 <div key={index} className="seat-badge">
-                  {seat.seatLabel}
+                  {seat.seatLabel || `${seat.ticketTypeName} × ${seat.quantity}매`}
                 </div>
               ))}
             </div>

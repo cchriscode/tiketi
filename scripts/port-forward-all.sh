@@ -26,7 +26,11 @@ fi
 cleanup() {
     echo ""
     echo "🛑 Stopping all port forwards..."
-    jobs -p | xargs -r kill 2>/dev/null
+    # Mac-compatible version (BSD xargs doesn't have -r option)
+    PIDS=$(jobs -p)
+    if [ -n "$PIDS" ]; then
+        echo "$PIDS" | xargs kill 2>/dev/null
+    fi
     echo "✅ All port forwards stopped."
     exit 0
 }

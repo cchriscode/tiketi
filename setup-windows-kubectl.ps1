@@ -1,21 +1,6 @@
 # Setup Windows kubectl for TIKETI
 # This allows port-forwarding to Windows localhost instead of WSL IP
 
-# Check if running as Administrator
-$currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-$isAdmin = $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-
-if (-not $isAdmin) {
-    Write-Host "⚠️  Requesting Administrator privileges..." -ForegroundColor Yellow
-    Write-Host "   (Required for kubectl installation and configuration)" -ForegroundColor Gray
-    Write-Host ""
-
-    # Re-launch as administrator
-    $scriptPath = $MyInvocation.MyCommand.Path
-    Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`"" -Verb RunAs
-    exit
-}
-
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  Windows kubectl Setup for TIKETI" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan

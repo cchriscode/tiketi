@@ -153,7 +153,48 @@ router.post('/confirm', authenticateToken, async (req, res, next) => {
       return res.status(400).json({ error: 'Payment already confirmed' });
     }
 
-    // Call TossPayments confirm API
+    // 🔥 CRITICAL: Verify reservation is valid BEFORE calling Toss API
+    // Use FOR UPDATE to prevent race condition with reservation-cleaner
+    const reservationCheck = await client.query(
+      `SELECT id, status, payment_status, expires_at
+       FROM ticket_schema.reservations
+       WHERE id = $1
+       FOR UPDATE`,
+      [payment.reservation_id]
+    );
+
+    if (reservationCheck.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: '예약 정보를 찾을 수 없습니다' });
+    }
+
+    const reservation = reservationCheck.rows[0];
+
+    // Check if reservation is already confirmed
+    if (reservation.status === 'confirmed') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: '이미 확정된 예약입니다' });
+    }
+
+    // Check if reservation is cancelled
+    if (reservation.status === 'cancelled') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: '취소된 예약입니다' });
+    }
+
+    // Check if reservation has expired
+    if (new Date() > new Date(reservation.expires_at)) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: '예약 시간이 만료되었습니다' });
+    }
+
+    // Check if reservation is in pending status
+    if (reservation.status !== 'pending') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: `예약 상태가 유효하지 않습니다 (현재: ${reservation.status})` });
+    }
+
+    // ✅ Reservation validated - now safe to call TossPayments confirm API
     const confirmResult = await tossPaymentsService.confirmPayment(paymentKey, orderId, amount);
 
     // Log API call
@@ -223,6 +264,7 @@ router.post('/confirm', authenticateToken, async (req, res, next) => {
       ]
     );
 
+    // ✅ Reservation already validated above - proceed to update
     // Update reservation status to confirmed
     await client.query(
       `UPDATE ticket_schema.reservations

@@ -319,9 +319,9 @@ router.post('/google', async (req, res, next) => {
   } catch (error) {
     console.error('Google login error:', error);
     if (error.message && error.message.includes('Token')) {
-      throw new AuthenticationError('유효하지 않은 Google 토큰입니다.');
+      return next(new AuthenticationError('유효하지 않은 Google 토큰입니다.'));
     }
-    next(error);
+    return next(error);
   }
 });
 

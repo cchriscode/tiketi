@@ -7,7 +7,7 @@ const express = require('express');
 const db = require('../config/database');
 const { client: redisClient } = require('../config/redis');
 const { authenticateToken } = require('../middleware/auth');
-const { validate: isUUID } = require('uuid');
+const { validate: isUUID, v4: uuidv4 } = require('uuid');
 
 const router = express.Router();
 
@@ -234,7 +234,8 @@ router.post('/reserve', authenticateToken, async (req, res, next) => {
       const expiresAt = new Date(Date.now() + RESERVATION_SETTINGS.TEMPORARY_RESERVATION_MINUTES * 60 * 1000);
 
       // Generate reservation number
-      const reservationNumber = `TK${Date.now()}${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+      // Generate unique reservation number (timestamp + UUID for collision prevention)
+      const reservationNumber = `TK${Date.now()}-${uuidv4().slice(0, 8).toUpperCase()}`;
 
       // Create reservation
       const reservationResult = await client.query(
@@ -337,13 +338,16 @@ router.get('/reservation/:reservationId', authenticateToken, async (req, res, ne
             'section', s.section,
             'rowNumber', s.row_number,
             'seatNumber', s.seat_number,
-            'price', ri.unit_price
+            'price', ri.unit_price,
+            'ticketTypeName', tt.name,
+            'quantity', ri.quantity
           )
         ) as seats
       FROM ticket_schema.reservations r
       JOIN ticket_schema.events e ON r.event_id = e.id
       JOIN ticket_schema.reservation_items ri ON r.id = ri.reservation_id
       LEFT JOIN ticket_schema.seats s ON ri.seat_id = s.id
+      LEFT JOIN ticket_schema.ticket_types tt ON ri.ticket_type_id = tt.id
       WHERE r.id = $1 AND r.user_id = $2
       GROUP BY r.id, e.id`,
       [reservationId, userId]
