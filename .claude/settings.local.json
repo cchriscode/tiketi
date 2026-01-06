@@ -85,7 +85,8 @@
       "Bash(kubectl logs:*)",
       "Bash(kubectl describe:*)",
       "Bash(wsl grep:*)",
-      "Bash(powershell.exe -Command \"kind get clusters\")"
+      "Bash(powershell.exe -Command \"kind get clusters\")",
+      "Bash(wsl kubectl top:*)"
     ]
   }
 }

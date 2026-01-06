@@ -1,227 +1,169 @@
-# TIKETI - 실시간 이벤트 티케팅 플랫폼
+# 🎫 TIKETI - 이벤트 티켓 예매 플랫폼
 
-<div align="center">
+> MSA 기반 실시간 티켓 예매 시스템 with Kubernetes & GitOps
 
-**빠르고 안정적인 대규모 티케팅 시스템**
-
-[![Node.js](https://img.shields.io/badge/Node.js-20+-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-1.28+-326CE5?logo=kubernetes&logoColor=white)](https://kubernetes.io/)
+[![ArgoCD](https://img.shields.io/badge/ArgoCD-GitOps-F05032?logo=argo&logoColor=white)](https://argoproj.github.io/cd/)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-18.2-61DAFB?logo=react&logoColor=black)](https://reactjs.org/)
-[![Kubernetes](https://img.shields.io/badge/Kubernetes-Ready-326CE5?logo=kubernetes&logoColor=white)](https://kubernetes.io/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-[빠른 시작](#-빠른-시작) • [기능](#-주요-기능) • [아키텍처](#-시스템-아키텍처) • [배포](#-배포) • [문서](#-문서)
+## 📖 목차
 
-</div>
+- [소개](#-소개)
+- [주요 기능](#-주요-기능)
+- [기술 스택](#-기술-스택)
+- [시스템 아키텍처](#-시스템-아키텍처)
+- [빠른 시작](#-빠른-시작)
+- [프로젝트 구조](#-프로젝트-구조)
+- [API 문서](#-api-문서)
+- [모니터링](#-모니터링)
+- [배포](#-배포)
+- [문서](#-문서)
+- [기여](#-기여)
+- [라이선스](#-라이선스)
 
 ---
 
-## 📖 소개
+## 🎯 소개
 
-**TIKETI**는 **마이크로서비스 아키텍처(MSA)** 기반의 현대적인 이벤트 티케팅 플랫폼입니다. 대규모 트래픽 상황에서도 안정적인 실시간 좌석 예매, 결제 처리, 대기열 관리 기능을 제공합니다.
+**TIKETI**는 콘서트, 뮤지컬, 스포츠 경기 등 다양한 이벤트의 티켓을 실시간으로 예매할 수 있는 **MSA(Microservices Architecture) 기반 플랫폼**입니다.
 
 ### 핵심 특징
 
-🚀 **고성능 실시간 시스템**
-- WebSocket 기반 실시간 좌석 현황 업데이트
-- Redis Pub/Sub을 통한 멀티 Pod 동기화
-- 10,000+ 동시 접속자 처리 가능
-
-⚡ **지능형 대기열 시스템**
-- 대규모 이벤트를 위한 자동 대기열 관리
-- Redis 기반 공정한 선착순 처리
-- 실시간 대기 순번 및 진입 알림
-
-💳 **안전한 결제 처리**
-- Toss Payments 완전 통합
-- 서버 사이드 결제 검증
-- 전체 결제 흐름 감사 로그
-
-🎯 **확장 가능한 MSA 구조**
-- 4개 독립 마이크로서비스 (Auth, Ticket, Payment, Stats)
-- Kubernetes 네이티브 배포
-- 수평 확장 준비 완료
-
-📊 **실시간 모니터링**
-- Prometheus + Grafana 대시보드
-- Loki 중앙 집중식 로깅
-- 서비스별 메트릭 수집
+- ✨ **Microservices Architecture**: 5개 독립 서비스로 구성
+- 🚀 **GitOps with ArgoCD**: 선언적 배포 및 자동 동기화
+- 🔄 **Real-time Sync**: WebSocket 기반 실시간 좌석 상태 동기화
+- 📊 **Full Observability**: Prometheus, Grafana, Loki 통합 모니터링
+- ☁️ **Cloud Native**: Kubernetes (EKS) & AWS 서비스 완전 활용
+- 🔐 **Secure by Default**: JWT 인증, Secret 관리, HTTPS
+- ⚡ **High Performance**: Redis 캐싱, Connection Pooling, HPA
 
 ---
 
-## 🎯 주요 기능
+## ✨ 주요 기능
 
 ### 사용자 기능
-
-| 기능 | 설명 |
-|------|------|
-| **이벤트 검색** | 한글/영문 퍼지 검색, 아티스트/장소별 필터링 |
-| **실시간 좌석 선택** | WebSocket 기반 실시간 좌석 현황, 5분 좌석 lock |
-| **대기열 시스템** | 고트래픽 이벤트 자동 대기열, 실시간 순번 업데이트 |
-| **간편 결제** | Toss Payments 위젯, 카드/계좌이체/간편결제 |
-| **예매 내역** | 예매 조회, QR 코드, 결제 영수증 |
-| **뉴스** | 이벤트 소식, 공지사항 |
+- 🔐 **회원 인증**: JWT 기반 로그인/회원가입
+- 🔍 **이벤트 검색**: 카테고리, 날짜, 장소별 검색
+- 🪑 **실시간 좌석 선택**: WebSocket 기반 좌석 상태 실시간 동기화
+- ⏳ **대기열 시스템**: Redis 기반 공정한 티켓팅 대기열
+- 💳 **다양한 결제 수단**: Toss Payments, Naver Pay, Kakao Pay
+- 📱 **예약 관리**: 내 예약 조회, 취소, 환불
 
 ### 관리자 기능
-
-| 기능 | 설명 |
-|------|------|
-| **이벤트 관리** | 이벤트 생성/수정/삭제, 좌석 배치 설정 |
-| **예매 모니터링** | 실시간 예매 현황, 취소/환불 처리 |
-| **통계 대시보드** | 일별 매출, 인기 이벤트, 사용자 증가 추이 |
-| **대기열 관리** | 대기열 상태 확인, 강제 진입 허용 |
-| **뉴스 발행** | 공지사항 및 소식 게시 |
-
-### 기술 기능
-
-- ✅ JWT 인증 + Google OAuth 2.0 소셜 로그인
-- ✅ WebSocket 세션 관리 및 자동 재연결
-- ✅ 트랜잭션 기반 결제 처리 (ACID 보장)
-- ✅ PostgreSQL 스키마 기반 서비스 격리
-- ✅ Prometheus 메트릭 수집 및 알림
-- ✅ Graceful shutdown 및 Health check
-- ✅ AWS S3 이미지 업로드 (선택)
+- 📊 **실시간 대시보드**: 매출, 예약, 이벤트 통계
+- 🎭 **이벤트 관리**: 생성, 수정, 삭제, 좌석 배치
+- 👥 **예약 관리**: 전체 예약 조회, 상태 변경
+- 📈 **통계 분석**: 일별/시간별 매출, 전환율, 결제 수단별 분석
 
 ---
 
-## 🏗️ 시스템 아키텍처
-
-### 전체 아키텍처
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                   Kubernetes Cluster (tiketi namespace)              │
-│                                                                       │
-│  ┌─────────────┐    ┌─────────────┐    ┌──────────────┐            │
-│  │  Frontend   │    │   Backend   │    │Auth Service  │            │
-│  │ (Port 3000) │───▶│ (Port 3001) │───▶│ (Port 3005)  │            │
-│  │  React SPA  │    │   Gateway   │    │  JWT + OAuth │            │
-│  │  + Nginx    │    │   + Admin   │    └──────────────┘            │
-│  └─────────────┘    └──────┬──────┘                                 │
-│                            │                                         │
-│         ┌──────────────────┼──────────────────┐                     │
-│         │                  │                  │                     │
-│   ┌─────▼──────┐   ┌──────▼──────┐   ┌──────▼──────┐              │
-│   │  Ticket    │   │  Payment    │   │   Stats     │              │
-│   │  Service   │   │  Service    │   │  Service    │              │
-│   │ (Port 3002)│   │ (Port 3003) │   │ (Port 3004) │              │
-│   │ WebSocket  │   │TossPayments │   │  Analytics  │              │
-│   │ + Queue    │   │Integration  │   │  Dashboard  │              │
-│   └─────┬──────┘   └──────┬──────┘   └──────┬──────┘              │
-│         │                  │                  │                     │
-│         └──────────────────┼──────────────────┘                     │
-│                            │                                         │
-│              ┌─────────────┴─────────────┐                          │
-│              │                           │                          │
-│        ┌─────▼──────┐           ┌───────▼────────┐                 │
-│        │PostgreSQL  │           │   Dragonfly    │                 │
-│        │  (5432)    │           │ Redis (6379)   │                 │
-│        │            │           │                │                 │
-│        │ Schemas:   │           │  • Pub/Sub     │                 │
-│        │ - auth_    │           │  • Cache       │                 │
-│        │ - ticket_  │           │  • Queue       │                 │
-│        │ - payment_ │           └────────────────┘                 │
-│        │ - stats_   │                                               │
-│        └────────────┘           ┌────────────────┐                 │
-│                                  │  Monitoring    │                 │
-│                                  │ Loki+Promtail  │                 │
-│                                  │   + Grafana    │                 │
-│                                  └────────────────┘                 │
-└───────────────────────────────────────────────────────────────────────┘
-```
-
-### 마이크로서비스 구성
-
-| 서비스 | 포트 | 책임 | 주요 기술 |
-|--------|------|------|-----------|
-| **Frontend** | 3000 | 사용자 인터페이스 | React 18, Socket.IO Client |
-| **Backend** | 3001 | API Gateway, 관리자 기능 | Express, Socket.IO Server |
-| **Auth Service** | 3005 | 인증 및 권한 관리 | JWT, bcrypt, Google OAuth |
-| **Ticket Service** | 3002 | 이벤트/좌석/예약/대기열 | WebSocket, Redis, UUID |
-| **Payment Service** | 3003 | 결제 처리 | Toss Payments API, Axios |
-| **Stats Service** | 3004 | 통계 및 분석 | PostgreSQL 집계 쿼리 |
-
-### 데이터베이스 설계
-
-**PostgreSQL 15+ with Schema-based Isolation**
-
-```sql
-auth_schema
-  ├── users (인증 정보, JWT 사용자)
-  └── indexes (email, role)
-
-ticket_schema
-  ├── events (이벤트 정보)
-  ├── seats (개별 좌석: section/row/number/status)
-  ├── seat_layouts (JSONB 좌석 배치 템플릿)
-  ├── ticket_types (티켓 종류: VIP, R석, S석 등)
-  ├── reservations (예약)
-  ├── reservation_items (예약 상세)
-  ├── keyword_mappings (한영 검색 매핑)
-  └── news (뉴스 기사)
-
-payment_schema
-  ├── payments (결제 내역 + Toss API 응답)
-  └── payment_logs (결제 API 호출 감사 로그)
-
-stats_schema
-  ├── daily_stats (일별 통계)
-  └── event_stats (이벤트별 통계)
-```
-
-**주요 특징**:
-- UUID 기본 키 (분산 환경 친화적)
-- JSONB 컬럼으로 유연한 데이터 저장
-- pg_trgm 확장으로 퍼지 검색
-- ON DELETE CASCADE 참조 무결성
-- 자동 updated_at 트리거
-
----
-
-## 🛠️ 기술 스택
-
-### Backend
-
-| 범주 | 기술 | 버전 | 용도 |
-|------|------|------|------|
-| **런타임** | Node.js | 20+ | JavaScript 실행 환경 |
-| **프레임워크** | Express | 4.18 | REST API 서버 |
-| **실시간 통신** | Socket.IO | 4.7.2 | WebSocket 서버 |
-| | @socket.io/redis-adapter | 8.2.1 | 멀티 Pod 동기화 |
-| **데이터베이스** | PostgreSQL | 15+ | 메인 데이터베이스 |
-| | pg | 8.11 | Node.js PostgreSQL 드라이버 |
-| **캐시/큐** | Dragonfly | Latest | Redis 호환 캐시 |
-| | ioredis | 5.3 | Redis 클라이언트 |
-| **인증** | jsonwebtoken | 9.0 | JWT 토큰 발급/검증 |
-| | bcrypt | 5.1 | 비밀번호 해싱 |
-| | google-auth-library | 9.0 | Google OAuth |
-| **결제** | Toss Payments API | v1 | 결제 처리 |
-| **모니터링** | prom-client | 15.1 | Prometheus 메트릭 |
-| | winston | 3.18 | 구조화 로깅 |
+## 🛠 기술 스택
 
 ### Frontend
+![React](https://img.shields.io/badge/React-18.2-61DAFB?logo=react&logoColor=black)
+![Socket.IO](https://img.shields.io/badge/Socket.IO-4.7-010101?logo=socket.io)
+![Recharts](https://img.shields.io/badge/Recharts-3.6-22B5BF)
+![Axios](https://img.shields.io/badge/Axios-1.6-5A29E4)
 
-| 범주 | 기술 | 버전 | 용도 |
-|------|------|------|------|
-| **프레임워크** | React | 18.2 | UI 라이브러리 |
-| | React Router | 6.20 | 클라이언트 라우팅 |
-| **실시간 통신** | socket.io-client | 4.7 | WebSocket 클라이언트 |
-| **결제** | @tosspayments/payment-sdk | 1.9 | Toss 결제 위젯 |
-| **차트** | Recharts | 3.6 | 통계 시각화 |
-| **유틸리티** | date-fns | 3.0 | 날짜 포맷팅 |
-| **웹서버** | Nginx | Alpine | 정적 파일 서빙 |
+- **React 18.2** - UI 프레임워크
+- **React Router 6** - 클라이언트 라우팅
+- **Socket.IO Client** - 실시간 통신
+- **Recharts** - 데이터 시각화
+- **Toss Payments SDK** - 결제 연동
+
+### Backend (Microservices)
+![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=node.js&logoColor=white)
+![Express](https://img.shields.io/badge/Express-4.18-000000?logo=express)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/DragonflyDB-Redis-D82C20)
+
+- **Node.js 18+** - 런타임
+- **Express.js** - 웹 프레임워크
+- **PostgreSQL 15** - 주 데이터베이스 (MSA 스키마 분리)
+- **DragonflyDB** - Redis 호환 캐시/대기열
+- **Socket.IO** - WebSocket 서버
+- **JWT** - 인증 토큰
+- **Winston** - 구조화된 로깅
 
 ### Infrastructure
+![Kubernetes](https://img.shields.io/badge/Kubernetes-1.28+-326CE5?logo=kubernetes&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-24+-2496ED?logo=docker&logoColor=white)
+![ArgoCD](https://img.shields.io/badge/ArgoCD-2.9+-EF7B4D?logo=argo)
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI/CD-2088FF?logo=github-actions&logoColor=white)
 
-| 범주 | 기술 | 용도 |
-|------|------|------|
-| **컨테이너** | Docker | 20.10+ | 컨테이너화 |
-| **오케스트레이션** | Kubernetes | 1.27+ | 컨테이너 오케스트레이션 |
-| **로컬 클러스터** | Kind | 0.20+ | 로컬 Kubernetes 클러스터 |
-| **모니터링** | Prometheus | Latest | 메트릭 수집 |
-| | Loki | Latest | 로그 집계 |
-| | Promtail | Latest | 로그 수집 |
-| | Grafana | Latest | 대시보드 시각화 |
+- **Kubernetes 1.28+** - 컨테이너 오케스트레이션
+- **ArgoCD** - GitOps 배포
+- **GitHub Actions** - CI/CD 자동화
+- **Kustomize** - K8s 매니페스트 관리
+- **Kind** - 로컬 K8s 클러스터
+
+### Monitoring
+![Prometheus](https://img.shields.io/badge/Prometheus-2.47-E6522C?logo=prometheus&logoColor=white)
+![Grafana](https://img.shields.io/badge/Grafana-10.2-F46800?logo=grafana&logoColor=white)
+![Loki](https://img.shields.io/badge/Loki-2.9-F46800)
+
+- **Prometheus** - 메트릭 수집
+- **Grafana** - 시각화 대시보드
+- **Loki** - 로그 집계
+- **Promtail** - 로그 수집
+
+### AWS Services (Production)
+- **EKS** - Managed Kubernetes
+- **RDS (PostgreSQL)** - Managed Database
+- **ElastiCache (Redis)** - Managed Cache
+- **S3** - 이미지 스토리지
+- **ECR** - Docker Registry
+- **ALB** - Load Balancer
+- **Route53** - DNS
+- **CloudWatch** - 추가 모니터링
+
+---
+
+## 🏗 시스템 아키텍처
+
+### MSA 서비스 구성
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                  Frontend (React SPA)                    │
+│                  Nginx + React 18                        │
+└───────────────────────┬─────────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────────┐
+│            Backend API Gateway (Express)                 │
+│              Proxy + Admin API                          │
+└───┬─────────┬─────────┬─────────┬─────────┬────────────┘
+    │         │         │         │         │
+    ▼         ▼         ▼         ▼         ▼
+┌────────┐┌────────┐┌────────┐┌────────┐┌────────┐
+│  Auth  ││ Ticket ││Payment ││ Stats  ││Backend │
+│Service ││Service ││Service ││Service ││(Legacy)│
+│        ││        ││        ││        ││        │
+│ :3005  ││ :3002  ││ :3003  ││ :3004  ││ :3001  │
+└────┬───┘└────┬───┘└────┬───┘└────┬───┘└────┬───┘
+     │         │         │         │         │
+     └─────────┴─────────┴─────────┴─────────┘
+                        │
+        ┌───────────────┼───────────────┐
+        ▼               ▼               ▼
+┌──────────────┐ ┌────────────┐ ┌────────────┐
+│  PostgreSQL  │ │ DragonflyDB│ │     S3     │
+│    (RDS)     │ │  (Redis)   │ │  (Images)  │
+└──────────────┘ └────────────┘ └────────────┘
+```
+
+### 서비스 책임
+
+| 서비스 | 포트 | 책임 | 데이터베이스 |
+|--------|------|------|--------------|
+| **Auth Service** | 3005 | 인증, 회원가입, 사용자 관리 | `auth_schema` |
+| **Ticket Service** | 3002 | 이벤트, 좌석, 예약, 대기열 | `ticket_schema` |
+| **Payment Service** | 3003 | 결제 처리, PG 연동 | `payment_schema` |
+| **Stats Service** | 3004 | 통계, 리포팅 (Read-Only) | `stats_schema` |
+| **Backend** | 3001 | API Gateway, Admin, 이미지 | All schemas |
 
 ---
 
@@ -229,135 +171,304 @@ stats_schema
 
 ### 사전 요구사항
 
-| 항목 | Windows | macOS/Linux |
-|------|---------|-------------|
-| **Docker Desktop** | ✅ 필수 | ✅ 필수 |
-| **Kind** | ✅ 자동 설치 | ✅ 자동 설치 |
-| **kubectl** | ✅ 자동 설치 | ✅ 자동 설치 |
-| **Git** | ✅ 필수 | ✅ 필수 |
-| **WSL2** | ✅ WSL 사용 시 | ❌ 불필요 |
+- **Docker Desktop** (v4.0+)
+- **Kubernetes** (kubectl)
+- **Kind** (로컬) 또는 **EKS** (프로덕션)
+- **Node.js** (v18+)
+- **Git**
 
-### One-Step 설치 (권장)
+### 로컬 환경 설정
 
-**Windows (PowerShell 관리자 권한)**
+#### Windows
 ```powershell
 # 1. 프로젝트 클론
-git clone https://github.com/your-org/project-ticketing.git
+git clone https://github.com/YOUR_ORG/project-ticketing.git
 cd project-ticketing
 
-# 2. Docker Desktop 실행 확인
-
-# 3. 전체 시스템 설치 (5-10분 소요)
+# 2. 자동 설치 (Kind 클러스터 + 전체 배포)
 .\setup-tiketi.ps1
 
-# 4. Windows kubectl 설정 (최초 1회만)
-.\setup-windows-kubectl.ps1
-
-# 5. 포트포워딩 시작
+# 3. 포트 포워딩 시작
 .\start_port_forwards.ps1
+
+# 4. 브라우저에서 접속
+# http://localhost:3000
 ```
 
-**Linux / macOS / WSL**
+#### macOS / Linux
 ```bash
 # 1. 프로젝트 클론
-git clone https://github.com/your-org/project-ticketing.git
+git clone https://github.com/YOUR_ORG/project-ticketing.git
 cd project-ticketing
 
-# 2. Docker Desktop 실행 확인
-
-# 3. 전체 시스템 설치 (5-10분 소요)
+# 2. 자동 설치 (Kind 클러스터 + 전체 배포)
+chmod +x scripts/setup-tiketi.sh
 ./scripts/setup-tiketi.sh
 
-# 4. 포트포워딩 시작
+# 3. 포트 포워딩 시작
 ./scripts/port-forward-all.sh
+
+# 4. 브라우저에서 접속
+# http://localhost:3000
 ```
 
-### 접속 URL
+### 단계별 실행 (선택사항)
+
+```bash
+# 1단계: 클러스터 생성
+./scripts/1-setup-cluster.sh
+
+# 2단계: Database 설정
+./scripts/2-setup-database.sh
+
+# 3단계: 빌드 & 배포
+./scripts/3-build-and-deploy.sh
+```
+
+### 기본 계정
+
+#### 관리자
+- **Email**: `admin@tiketi.gg`
+- **Password**: `admin123`
+- **URL**: http://localhost:3000/admin
+
+---
+
+## 📁 프로젝트 구조
 
 ```
-🌐 Frontend:     http://localhost:3000
-📡 Backend API:  http://localhost:3001
-📊 Grafana:      http://localhost:30006  (admin/admin)
-📚 API Docs:     http://localhost:3001/api-docs
-```
-
-### 기본 관리자 계정
-
-```
-Email:    admin@tiketi.gg
-Password: admin123
+project-ticketing/
+├── .github/workflows/        # GitHub Actions CI/CD
+│   ├── backend-ci-cd.yml
+│   ├── auth-service-ci-cd.yml
+│   ├── ticket-service-ci-cd.yml
+│   ├── payment-service-ci-cd.yml
+│   └── stats-service-ci-cd.yml
+│
+├── argocd/                   # ArgoCD GitOps 설정
+│   ├── projects/             # ArgoCD Projects
+│   └── applications/         # App of Apps
+│
+├── backend/                  # Backend (API Gateway)
+│   ├── src/
+│   │   ├── routes/          # API 라우트 (Proxy + Admin)
+│   │   ├── middleware/      # 인증, 로깅
+│   │   └── services/        # 비즈니스 로직
+│   └── Dockerfile
+│
+├── services/                 # 마이크로서비스
+│   ├── auth-service/        # 인증 서비스
+│   ├── ticket-service/      # 티켓 서비스 (핵심)
+│   ├── payment-service/     # 결제 서비스
+│   └── stats-service/       # 통계 서비스
+│
+├── frontend/                 # React Frontend
+│   ├── src/
+│   │   ├── pages/           # 페이지 컴포넌트
+│   │   ├── components/      # 재사용 컴포넌트
+│   │   ├── services/        # API 클라이언트
+│   │   └── hooks/           # 커스텀 훅 (Socket.IO)
+│   └── Dockerfile
+│
+├── packages/                 # 공유 패키지 (Monorepo)
+│   ├── common/              # 공통 유틸리티
+│   ├── database/            # DB 연결 풀
+│   └── metrics/             # Prometheus 메트릭
+│
+├── database/                 # Database 스크립트
+│   ├── init.sql             # 초기 데이터
+│   └── migrations/          # MSA 스키마 마이그레이션
+│
+├── k8s/                      # Kubernetes 매니페스트
+│   ├── base/                # Kustomize Base
+│   └── overlays/            # 환경별 오버레이
+│       ├── dev/
+│       ├── staging/
+│       └── prod/
+│
+├── scripts/                  # 자동화 스크립트
+│   ├── 1-setup-cluster.sh
+│   ├── 2-setup-database.sh
+│   └── 3-build-and-deploy.sh
+│
+├── QUICK_START.md           # 빠른 시작 (Windows)
+├── QUICK_START_MAC.md       # 빠른 시작 (macOS)
+├── PROJECT_SPECIFICATION.md # 프로젝트 상세 명세서
+└── README.md                # 본 문서
 ```
 
 ---
 
-## 📚 주요 설치 스크립트
+## 📚 API 문서
 
-### setup-tiketi.sh / setup-tiketi.ps1
+### 주요 엔드포인트
 
-**자동으로 수행하는 작업**:
+#### 인증 (Auth Service)
+```
+POST /api/auth/register      # 회원가입
+POST /api/auth/login         # 로그인
+GET  /api/auth/me            # 내 정보 조회
+```
 
-1. ✅ **Kind 클러스터 생성** (`tiketi-local`)
-   - 3-node 클러스터 (1 control-plane, 2 workers)
-   - HostPort 매핑 설정
+#### 이벤트 (Ticket Service)
+```
+GET  /api/events             # 이벤트 목록
+GET  /api/events/:id         # 이벤트 상세
+GET  /api/seats/events/:id   # 좌석 조회
+POST /api/seats/reserve      # 좌석 예약
+```
 
-2. ✅ **PostgreSQL 배포**
-   - StatefulSet 기반 배포
-   - 10Gi 영구 볼륨
-   - Health check 대기
+#### 예약 (Ticket Service)
+```
+GET  /api/reservations/my           # 내 예약 목록
+GET  /api/reservations/:id          # 예약 상세
+POST /api/reservations/:id/cancel   # 예약 취소
+```
 
-3. ✅ **데이터베이스 스키마 생성**
-   - 4개 서비스 스키마 (auth_, ticket_, payment_, stats_)
-   - 마이그레이션 실행
-   - 초기 데이터 로드 (25개 이벤트, 관리자 계정)
+#### 결제 (Payment Service)
+```
+POST /api/payments/prepare   # 결제 준비
+POST /api/payments/confirm   # 결제 승인
+POST /api/payments/process   # 간편 결제 처리
+```
 
-4. ✅ **Docker 이미지 빌드 (6개)**
-   - tiketi-backend:local
-   - tiketi-frontend:local
-   - tiketi-auth-service:local
-   - tiketi-ticket-service:local
-   - tiketi-payment-service:local
-   - tiketi-stats-service:local
+#### 통계 (Stats Service)
+```
+GET  /api/stats/overview     # 전체 통계
+GET  /api/stats/daily        # 일별 통계
+GET  /api/stats/events       # 이벤트별 통계
+```
 
-5. ✅ **Kind 클러스터에 이미지 로드**
-   - 모든 이미지를 클러스터 내부로 로드
+### Swagger UI
+```
+http://localhost:3001/api-docs
+```
 
-6. ✅ **인프라 서비스 배포**
-   - Dragonfly (Redis)
-   - Loki (로그 집계)
-   - Promtail (로그 수집)
-   - Grafana (대시보드)
+자세한 API 명세는 [PROJECT_SPECIFICATION.md](./PROJECT_SPECIFICATION.md#7-api-명세)를 참고하세요.
 
-7. ✅ **애플리케이션 서비스 배포**
-   - Backend + Frontend
-   - 4개 마이크로서비스
+---
 
-8. ✅ **Pod 준비 상태 확인**
-   - 모든 Pod가 Running 상태가 될 때까지 대기
+## 📊 모니터링
 
-### 배포 확인
+### Grafana 대시보드
+```
+URL: http://localhost:30006
+기본 계정: admin / admin
+```
 
+#### 대시보드
+- **시스템 개요**: Pod 상태, CPU/Memory, 네트워크
+- **애플리케이션 메트릭**: Request Rate, Response Time, Error Rate
+- **비즈니스 메트릭**: 매출, 예약 건수, 전환율
+- **로그 검색**: Loki 통합 로그 뷰어
+
+### Prometheus Metrics
+```
+URL: http://localhost:3001/metrics  (각 서비스별)
+```
+
+#### 주요 메트릭
+- `http_request_duration_seconds` - API 응답 시간
+- `tiketi_daily_revenue` - 일별 매출
+- `tiketi_reservations_total` - 총 예약 건수
+- `tiketi_seats_available` - 이벤트별 잔여 좌석
+
+---
+
+## 🚢 배포
+
+### GitOps with ArgoCD
+
+#### 배포 흐름
+```
+1. 코드 Push (main/develop)
+   ↓
+2. GitHub Actions 실행
+   - Docker 이미지 빌드
+   - ECR에 푸시
+   - Kustomize 매니페스트 업데이트
+   ↓
+3. Git 커밋 & 푸시
+   ↓
+4. ArgoCD가 변경 감지 (3분마다 폴링)
+   ↓
+5. 자동 배포 (dev/staging) 또는 수동 승인 (prod)
+   ↓
+6. Kubernetes에 Apply (Rolling Update)
+```
+
+#### ArgoCD 설치
 ```bash
-# Pod 상태 확인
-kubectl get pods -n tiketi
+# ArgoCD 설치
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
-# 예상 출력:
-# NAME                               READY   STATUS    RESTARTS   AGE
-# auth-service-xxxxx                 1/1     Running   0          2m
-# backend-xxxxx                      1/1     Running   0          2m
-# dragonfly-xxxxx                    1/1     Running   0          3m
-# frontend-xxxxx                     1/1     Running   0          2m
-# grafana-xxxxx                      1/1     Running   0          3m
-# loki-xxxxx                         1/1     Running   0          3m
-# payment-service-xxxxx              1/1     Running   0          2m
-# postgres-0                         1/1     Running   0          5m
-# promtail-xxxxx (x2)                1/1     Running   0          3m
-# stats-service-xxxxx                1/1     Running   0          2m
-# ticket-service-xxxxx               1/1     Running   0          2m
+# App of Apps 배포
+kubectl apply -f argocd/applications/app-of-apps.yaml
 
-# 서비스 확인
-kubectl get svc -n tiketi
+# ArgoCD UI 접속
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+# URL: https://localhost:8080
+```
 
-# Health Check
+### CI/CD 환경 변수
+
+GitHub Secrets에 다음 변수 설정 필요:
+
+```
+AWS_ACCOUNT_ID          # AWS 계정 ID
+AWS_ROLE_ARN            # OIDC Role ARN
+DISCORD_WEBHOOK         # Discord 알림 (선택)
+```
+
+---
+
+## 📖 문서
+
+### 주요 문서
+- **[QUICK_START.md](./QUICK_START.md)** - Windows 환경 빠른 시작
+- **[QUICK_START_MAC.md](./QUICK_START_MAC.md)** - macOS 환경 빠른 시작
+- **[PROJECT_SPECIFICATION.md](./PROJECT_SPECIFICATION.md)** - 프로젝트 상세 명세서
+  - 기술 스택, 아키텍처, API 명세, DB 설계
+  - 포트/네트워크, Kubernetes, CI/CD, GitOps
+  - 모니터링, 보안, 성능 최적화
+- **[KIND_DEPLOYMENT_GUIDE.md](./KIND_DEPLOYMENT_GUIDE.md)** - Kind 배포 가이드
+- **[TROUBLESHOOTING_COMPLETE_GUIDE.md](./TROUBLESHOOTING_COMPLETE_GUIDE.md)** - 문제 해결
+
+### 기술 문서 (claudedocs/)
+- `MSA_SYSTEM_SPEC.md` - MSA 상세 스펙
+- `ARGOCD_IMPLEMENTATION_ROADMAP.md` - ArgoCD 구현 로드맵
+- `K8S_KUSTOMIZE_MIGRATION_COMPLETE.md` - Kustomize 마이그레이션
+- `GITHUB_ACTIONS_ARGOCD_COMPLETE.md` - GitHub Actions + ArgoCD
+
+---
+
+## 🧪 테스트
+
+### 단위 테스트
+```bash
+# Backend
+cd backend
+npm test
+
+# Frontend
+cd frontend
+npm test
+
+# 각 서비스
+cd services/ticket-service
+npm test
+```
+
+### E2E 테스트 (향후 구현)
+```bash
+# Playwright 또는 Cypress 사용 예정
+npm run test:e2e
+```
+
+### 헬스 체크
+```bash
+# 모든 서비스 Health 확인
 curl http://localhost:3001/health  # Backend
 curl http://localhost:3005/health  # Auth
 curl http://localhost:3002/health  # Ticket
@@ -367,369 +478,68 @@ curl http://localhost:3004/health  # Stats
 
 ---
 
-## 🔧 개발 가이드
-
-### 로컬 개발 환경
-
-**서비스 재빌드**
-```bash
-# 특정 서비스만 재빌드
-docker build -t tiketi-ticket-service:local -f services/ticket-service/Dockerfile .
-kind load docker-image tiketi-ticket-service:local --name tiketi-local
-kubectl rollout restart deployment/ticket-service -n tiketi
-
-# 모든 서비스 재빌드
-./scripts/build-all-images.sh
-```
-
-**로그 확인**
-```bash
-# 특정 Pod 로그
-kubectl logs -f deployment/ticket-service -n tiketi
-
-# 모든 서비스 로그 (tail)
-kubectl logs -f -l app=backend -n tiketi
-kubectl logs -f -l app=ticket-service -n tiketi
-
-# Loki 통합 로그 (Grafana)
-http://localhost:30006 → Explore → Loki
-```
-
-**데이터베이스 접속**
-```bash
-# PostgreSQL CLI
-kubectl exec -it postgres-0 -n tiketi -- psql -U tiketi_user -d tiketi
-
-# 스키마 확인
-\dn
-
-# 테이블 확인
-\dt auth_schema.*
-\dt ticket_schema.*
-
-# 쿼리 실행
-SELECT * FROM ticket_schema.events LIMIT 5;
-```
-
-**Redis 접속**
-```bash
-# Dragonfly CLI
-kubectl exec -it deployment/dragonfly -n tiketi -- redis-cli
-
-# 대기열 확인
-ZRANGE queue:event-id 0 -1 WITHSCORES
-
-# 활성 사용자 확인
-SMEMBERS active:event-id
-```
-
-### 환경 변수 설정
-
-**ConfigMap 수정**
-```bash
-kubectl edit configmap tiketi-config -n tiketi
-# 수정 후 Pod 재시작
-kubectl rollout restart deployment/<service-name> -n tiketi
-```
-
-**Secret 수정**
-```bash
-kubectl edit secret tiketi-secret -n tiketi
-# Base64 인코딩 필요
-echo -n "new-secret-value" | base64
-```
-
----
-
-## 📦 배포
-
-### 로컬 환경 (Kind)
-
-상세 가이드: [QUICK_START.md](QUICK_START.md)
-
-### 정리 (Cleanup)
-
-```bash
-# Windows
-.\cleanup.ps1
-
-# Linux/WSL/macOS
-./scripts/cleanup.sh
-```
-
----
-
-## 📊 모니터링 & 운영
-
-### Prometheus 메트릭
-
-**수집 메트릭**:
-- HTTP 요청 지연시간 (p50, p95, p99)
-- 요청 처리량 (RPS)
-- 에러율 (4xx, 5xx)
-- 데이터베이스 쿼리 시간
-- WebSocket 연결 수
-- Redis 명령어 실행 시간
-
-**접속**: Grafana → http://localhost:30006
-
-### Grafana 대시보드
-
-**제공 대시보드**:
-1. **System Overview** - 전체 시스템 상태
-2. **Service Health** - 서비스별 Health Check
-3. **API Performance** - API 지연시간/처리량
-4. **Database Metrics** - DB 커넥션/쿼리 시간
-5. **Redis Metrics** - Redis 메모리/커맨드
-6. **Application Logs** - Loki 통합 로그
-
----
-
-## 🎯 핵심 워크플로우
-
-### 티켓 예매 플로우
-
-```
-1. 사용자: 이벤트 선택
-   ↓
-2. 시스템: 대기열 체크
-   ├─ 활성 사용자 < 1000 → 즉시 입장
-   └─ 활성 사용자 ≥ 1000 → 대기열 진입
-   ↓
-3. 사용자: 좌석 선택 (WebSocket 실시간 업데이트)
-   - 좌석 클릭 → 5분간 Lock
-   - 다른 사용자에게 실시간 반영
-   ↓
-4. 사용자: 결제 정보 입력
-   - Toss Payments 위젯 호출
-   ↓
-5. 결제 처리
-   - Frontend: Toss SDK로 결제
-   - Backend: Toss API 검증
-   - DB: 트랜잭션으로 예약 확정 + 좌석 예약됨 처리
-   ↓
-6. 완료: 예매 확정 + QR 코드 + 영수증
-```
-
-### 대기열 시스템 작동 방식
-
-```
-[이벤트 페이지 접속]
-         ↓
-   활성 사용자 수 체크
-         ↓
-    ┌─────┴─────┐
-    │           │
-   < 1000     ≥ 1000
-    │           │
-    ↓           ↓
-즉시 입장    대기열 등록
-            (Redis Sorted Set)
-                │
-                ↓
-        Queue Processor (10초마다)
-                │
-                ↓
-        사용 가능 슬롯 계산
-                │
-                ↓
-        선착순 사용자에게 WebSocket 알림
-                │
-                ↓
-        사용자: 좌석 선택 화면 진입
-```
-
-### 실시간 좌석 업데이트 플로우
-
-```
-User A: 좌석 선택
-    ↓
-Ticket Service: DB 업데이트 (status = locked)
-    ↓
-Redis Pub/Sub: 모든 Pod에 이벤트 브로드캐스트
-    ↓
-Socket.IO: event:${eventId} Room에 emit
-    ↓
-All Connected Clients: 좌석 상태 업데이트
-    ↓
-User B: 화면에서 좌석이 회색으로 변경 (선택 불가)
-```
-
----
-
-## 🔐 보안
-
-### 인증 & 권한
-
-**JWT 토큰**:
-- Algorithm: HS256
-- Expiry: 7일
-- Storage: localStorage (클라이언트)
-- Transmission: Authorization 헤더 (`Bearer <token>`)
-
-**비밀번호 보안**:
-- bcrypt 해싱 (10 salt rounds)
-- 평문 저장 절대 금지
-- OAuth 사용자: 더미 해시 저장
-
-**RBAC (Role-Based Access Control)**:
-- Roles: `user`, `admin`
-- Admin-only routes: 토큰에서 role 검증
-
-### 결제 보안
-
-- ✅ 서버 사이드 금액 검증 (클라이언트 금액 무시)
-- ✅ Payment Key 검증 (Toss API)
-- ✅ 멱등성 보장 (중복 결제 방지)
-- ✅ 카드 정보 미저장 (PCI DSS 준수)
-- ✅ 전체 결제 흐름 감사 로그
-
----
-
-## 📖 문서
-
-| 문서 | 설명 |
-|------|------|
-| [QUICK_START.md](QUICK_START.md) | Windows 빠른 시작 가이드 |
-| [QUICK_START_MAC.md](QUICK_START_MAC.md) | macOS 빠른 시작 가이드 |
-| [KIND_DEPLOYMENT_GUIDE.md](KIND_DEPLOYMENT_GUIDE.md) | Kind 배포 상세 가이드 |
-| [claudedocs/TROUBLESHOOTING_SUMMARY.md](claudedocs/TROUBLESHOOTING_SUMMARY.md) | 트러블슈팅 가이드 |
-| [claudedocs/MSA_GATEWAY_FIXES.md](claudedocs/MSA_GATEWAY_FIXES.md) | MSA Gateway 프록시 설명 |
-| [CHANGELOG.md](CHANGELOG.md) | 버전 히스토리 |
-| [API Documentation](http://localhost:3001/api-docs) | Swagger API 문서 (실행 중일 때) |
-
----
-
-## 🗂️ 프로젝트 구조
-
-```
-project-ticketing/
-├── backend/                      # Legacy 모놀리스 (MSA 전환 중)
-│   ├── src/
-│   │   ├── config/              # DB, Redis, Socket.IO 설정
-│   │   ├── routes/              # API 라우트 (4,190+ LOC)
-│   │   ├── services/            # 백그라운드 서비스
-│   │   ├── middleware/          # 인증, 로깅, 에러 핸들링
-│   │   └── server.js            # 메인 진입점
-│   └── Dockerfile
-│
-├── frontend/                     # React SPA
-│   ├── src/
-│   │   ├── components/          # 재사용 가능 컴포넌트
-│   │   ├── pages/               # 페이지 컴포넌트
-│   │   ├── hooks/               # 커스텀 훅
-│   │   ├── services/            # API 클라이언트
-│   │   └── App.js
-│   └── Dockerfile (multi-stage)
-│
-├── services/                     # Microservices
-│   ├── auth-service/            # 인증 서비스
-│   ├── ticket-service/          # 티켓/이벤트/대기열 서비스
-│   ├── payment-service/         # 결제 서비스
-│   └── stats-service/           # 통계 서비스
-│
-├── packages/                     # 공유 라이브러리
-│   ├── common/                  # 공통 유틸리티
-│   ├── database/                # DB 연결 풀
-│   └── metrics/                 # Prometheus 메트릭
-│
-├── database/                     # 데이터베이스
-│   └── migrations/              # SQL 마이그레이션 파일
-│
-├── k8s/                         # Kubernetes 매니페스트 (21개)
-│
-├── scripts/                     # 자동화 스크립트
-│   ├── setup-tiketi.sh          # 전체 설치 스크립트
-│   ├── port-forward-all.sh      # 포트포워딩
-│   ├── cleanup.sh               # 정리
-│   └── verify-services.sh       # 검증
-│
-├── monitoring/                  # 모니터링 설정
-│
-├── docs/                        # 추가 문서
-├── claudedocs/                  # 분석 문서
-└── README.md
-```
-
----
-
-## 🤝 기여하기
-
-프로젝트에 기여를 환영합니다!
+## 🤝 기여
 
 ### 브랜치 전략
+- `main` - Production 배포
+- `develop` - Staging 배포
+- `feature/*` - 기능 개발
+- `bugfix/*` - 버그 수정
 
-- `main` - 프로덕션 준비 코드
-- `mono-kind2` - 개발 브랜치 (현재)
-- `feature/*` - 기능 개발 브랜치
-
-### 커밋 메시지 규칙
-
+### 커밋 컨벤션
 ```
-type: description
-
-Types:
-- feat: 새로운 기능
-- fix: 버그 수정
-- docs: 문서 변경
-- refactor: 리팩토링
-- test: 테스트 추가/수정
-- chore: 빌드 설정 등
+feat: 새로운 기능 추가
+fix: 버그 수정
+docs: 문서 수정
+style: 코드 포맷팅
+refactor: 코드 리팩토링
+test: 테스트 코드
+chore: 빌드, 설정 변경
 ```
 
----
-
-## 🛣️ 로드맵
-
-### ✅ Phase 1: MSA 기반 구축 (완료)
-- [x] Auth Service 분리
-- [x] Ticket Service 분리
-- [x] Payment Service 분리
-- [x] Stats Service 분리
-- [x] Kubernetes 배포 자동화
-
-### 🚧 Phase 2: 프로덕션 준비 (진행 중)
-- [ ] AWS EKS 배포
-- [ ] RDS PostgreSQL 마이그레이션
-- [ ] ElastiCache Redis 전환
-- [ ] ALB + HTTPS 설정
-- [ ] CI/CD 파이프라인 (GitHub Actions)
-
-### 🔮 Phase 3: 기능 확장 (계획 중)
-- [ ] 이메일 알림 (AWS SES)
-- [ ] SMS 알림 (AWS SNS)
-- [ ] 모바일 앱 (React Native)
-- [ ] 추천 시스템
-- [ ] 다국어 지원
-- [ ] 소셜 미디어 공유
+### Pull Request
+1. Feature 브랜치 생성
+2. 변경사항 커밋
+3. PR 생성 (develop 브랜치로)
+4. 코드 리뷰 & CI 통과
+5. Merge
 
 ---
 
-## 📄 라이선스
+## 📝 라이선스
 
-이 프로젝트는 [MIT License](LICENSE) 하에 배포됩니다.
+MIT License
 
----
-
-## 🙏 감사의 말
-
-이 프로젝트는 다음 오픈소스 프로젝트들을 사용합니다:
-
-- [Node.js](https://nodejs.org/)
-- [React](https://reactjs.org/)
-- [Express](https://expressjs.com/)
-- [Socket.IO](https://socket.io/)
-- [PostgreSQL](https://www.postgresql.org/)
-- [Kubernetes](https://kubernetes.io/)
-- [Prometheus](https://prometheus.io/)
-- [Grafana](https://grafana.com/)
+Copyright (c) 2024 TIKETI Team
 
 ---
 
-<div align="center">
+## 🔗 링크
 
-**Made with ❤️ by TIKETI Team**
+- **프로젝트 Wiki**: [GitHub Wiki](https://github.com/YOUR_ORG/project-ticketing/wiki)
+- **Issue Tracker**: [GitHub Issues](https://github.com/YOUR_ORG/project-ticketing/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/YOUR_ORG/project-ticketing/discussions)
 
-⭐ Star us on GitHub — it motivates us a lot!
+---
 
-</div>
+## 👥 팀
+
+### Contributors
+- 프로젝트 관리 & 아키텍처 설계
+- Backend/MSA 개발
+- Frontend 개발
+- DevOps & Infrastructure
+
+---
+
+## 📞 문의
+
+- **Email**: support@tiketi.gg
+- **Slack**: [TIKETI Workspace](https://tiketi.slack.com)
+- **Discord**: [TIKETI Community](https://discord.gg/tiketi)
+
+---
+
+**Built with ❤️ by TIKETI Team**
+
+*Powered by Kubernetes, ArgoCD, and Cloud Native Technologies*
