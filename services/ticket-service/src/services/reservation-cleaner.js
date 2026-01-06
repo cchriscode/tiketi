@@ -156,6 +156,7 @@ class ReservationCleaner {
         if (updateResult.rowCount > 0) {
           try {
             await redisClient.srem(`active:${reservation.event_id}`, reservation.user_id);
+            await redisClient.zrem(`active:seen:${reservation.event_id}`, reservation.user_id);
           } catch (redisError) {
             console.log('Redis error (removeActiveUser):', redisError.message);
           }

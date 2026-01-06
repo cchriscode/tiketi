@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useQueueUpdates } from '../hooks/useSocket';
 import ConnectionStatus from './ConnectionStatus';
 import api from '../services/api';
+import { setQueueState, clearQueueState } from '../utils/queueState';
 import './WaitingRoomModal.css';
 
 /**
@@ -28,13 +29,22 @@ function WaitingRoomModal({ eventId, onEntryAllowed, onClose }) {
 
       const data = response.data;
       setQueueInfo(data);
+      if (data.status === "queued") {
+        setQueueState(eventId, "queued");
+      }
       setLoading(false);
 
       // 대기열에 없으면 (이미 입장한 경우) 모달 닫기
-      if (!data.queued) {
-        console.log('✅ Entry allowed, closing modal...');
+      if (data.status === "active") {
+        setQueueState(eventId, "active");
+        console.log('Entry allowed, closing modal...');
         if (onEntryAllowed) {
           onEntryAllowed();
+        }
+      } else if (data.status === "not_in_queue") {
+        clearQueueState(eventId);
+        if (onClose) {
+          onClose();
         }
       }
     } catch (err) {
@@ -42,7 +52,7 @@ function WaitingRoomModal({ eventId, onEntryAllowed, onClose }) {
       setError('대기열 상태를 불러오는데 실패했습니다.');
       setLoading(false);
     }
-  }, [eventId, token, onEntryAllowed]);
+  }, [eventId, token, onEntryAllowed, onClose]);
 
   // 대기열 업데이트 콜백
   const handleQueueUpdate = useCallback((data) => {
@@ -59,6 +69,7 @@ function WaitingRoomModal({ eventId, onEntryAllowed, onClose }) {
       return;
     }
     console.log('✅ Entry allowed from socket!', data);
+    setQueueState(eventId, "active");
 
     // 축하 메시지
     setTimeout(() => {
@@ -121,6 +132,7 @@ function WaitingRoomModal({ eventId, onEntryAllowed, onClose }) {
         await api.post(`/queue/leave/${eventId}`, {}, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        clearQueueState(eventId);
         if (onClose) {
           onClose();
         }

@@ -5,10 +5,12 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useCountdown } from '../hooks/useCountdown';
 import { useTicketUpdates } from '../hooks/useSocket';
+import { useQueueHeartbeat } from '../hooks/useQueueHeartbeat';
 import WaitingRoomModal from '../components/WaitingRoomModal';
 import ConnectionStatus from '../components/ConnectionStatus';
 import api from '../services/api';
 import { EVENT_STATUS, EVENT_STATUS_MESSAGES } from '../shared/constants';
+import { setQueueState } from '../utils/queueState';
 import './EventDetail.css';
 
 function EventDetail() {
@@ -51,7 +53,10 @@ function EventDetail() {
 
       // 대기열에 있으면 모달 표시
       if (data.queued) {
+        setQueueState(id, 'queued');
         setShowQueueModal(true);
+      } else {
+        setQueueState(id, 'active');
       }
     } catch (err) {
       console.error('Queue check error:', err);
@@ -66,6 +71,7 @@ function EventDetail() {
 
   // 대기열 입장 허용 시
   const handleQueueEntryAllowed = () => {
+    setQueueState(id, 'active');
     setShowQueueModal(false);
     fetchEventDetail(); // 최신 데이터 다시 로드
   };
@@ -93,6 +99,7 @@ function EventDetail() {
 
   // WebSocket 연결 및 실시간 업데이트 구독
   const { isConnected, isReconnecting } = useTicketUpdates(id, handleTicketUpdate);
+  useQueueHeartbeat(id);
 
   // 카운트다운 훅 - 콜백 없이 사용 (1초마다 리렌더링되면서 자동으로 버튼 활성화)
   // API 호출 없이 클라이언트에서만 상태 계산하므로 서버 부하 없음

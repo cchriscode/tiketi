@@ -290,6 +290,7 @@ router.post('/confirm', authenticateToken, async (req, res, next) => {
     try {
       if (reservation.event_id) {
         await redisClient.srem(`active:${reservation.event_id}`, userId);
+        await redisClient.zrem(`active:seen:${reservation.event_id}`, userId);
       }
     } catch (redisError) {
       console.log('Redis error (removeActiveUser):', redisError.message);
@@ -447,6 +448,7 @@ router.post('/:paymentKey/cancel', authenticateToken, async (req, res, next) => 
     try {
       if (payment.event_id) {
         await redisClient.srem(`active:${payment.event_id}`, userId);
+        await redisClient.zrem(`active:seen:${payment.event_id}`, userId);
       }
     } catch (redisError) {
       console.log('Redis error (removeActiveUser):', redisError.message);

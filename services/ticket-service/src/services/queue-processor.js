@@ -10,6 +10,9 @@ class QueueProcessor {
   constructor() {
     this.interval = null;
     this.processingIntervalMs = parseInt(process.env.QUEUE_PROCESSOR_INTERVAL) || 10000; // 10초
+    this.idleTimeoutMs = parseInt(process.env.QUEUE_IDLE_TIMEOUT_MS) || 90000; // 90초
+    this.activeTtlSeconds = parseInt(process.env.QUEUE_ACTIVE_TTL_SECONDS) || 600; // 10분
+    this.seenTtlSeconds = parseInt(process.env.QUEUE_SEEN_TTL_SECONDS) || 600; // 10분
     this.isRunning = false;
     this.errorCount = 0;
     this.maxErrors = 5;
@@ -70,23 +73,100 @@ class QueueProcessor {
   async processAllQueues() {
     try {
       // Redis SCAN을 사용하여 모든 queue:* 키 찾기 (KEYS 대신 - 성능 개선)
+      const queueKeys = await this.scanQueueKeys();
+      const activeSeenKeys = await this.scanActiveSeenKeys();
+      const queueKeySet = new Set(queueKeys);
+      const eventIds = new Set([
+        ...queueKeys.map(key => key.replace('queue:', '')),
+        ...activeSeenKeys.map(key => key.replace('active:seen:', '')),
+      ]);
+
+      if (eventIds.size === 0) {
+        return;
+      }
+
+      console.log(`🔄 Processing ${eventIds.size} event(s) with queues/active users...`);
+
+      for (const eventId of eventIds) {
+        await this.cleanStaleUsers(eventId);
+        if (queueKeySet.has(`queue:${eventId}`)) {
+          await this.processQueue(eventId);
+        }
+      }
+    } catch (error) {
+      console.error('Error processing queues:', error.message);
+    }
+  }
+
+  async scanQueueKeys() {
+    if (typeof redisClient.scanIterator === 'function') {
       const queueKeys = [];
       for await (const key of redisClient.scanIterator({ MATCH: 'queue:*', COUNT: 100 })) {
         queueKeys.push(key);
       }
+      return queueKeys;
+    }
 
-      if (queueKeys.length === 0) {
-        return;
+    if (typeof redisClient.scan !== 'function') {
+      return typeof redisClient.keys === 'function' ? await redisClient.keys('queue:*') : [];
+    }
+
+    const queueKeys = [];
+    let cursor = '0';
+    do {
+      const [nextCursor, keys] = await redisClient.scan(cursor, 'MATCH', 'queue:*', 'COUNT', 100);
+      if (Array.isArray(keys) && keys.length > 0) {
+        queueKeys.push(...keys);
       }
+      cursor = nextCursor;
+    } while (cursor !== '0');
 
-      console.log(`🔄 Processing ${queueKeys.length} queue(s)...`);
+    return queueKeys;
+  }
 
-      for (const queueKey of queueKeys) {
-        const eventId = queueKey.replace('queue:', '');
-        await this.processQueue(eventId);
+  async scanActiveSeenKeys() {
+    if (typeof redisClient.scanIterator === 'function') {
+      const seenKeys = [];
+      for await (const key of redisClient.scanIterator({ MATCH: 'active:seen:*', COUNT: 100 })) {
+        seenKeys.push(key);
       }
-    } catch (error) {
-      console.error('Error processing queues:', error.message);
+      return seenKeys;
+    }
+
+    if (typeof redisClient.scan !== 'function') {
+      return typeof redisClient.keys === 'function' ? await redisClient.keys('active:seen:*') : [];
+    }
+
+    const seenKeys = [];
+    let cursor = '0';
+    do {
+      const [nextCursor, keys] = await redisClient.scan(cursor, 'MATCH', 'active:seen:*', 'COUNT', 100);
+      if (Array.isArray(keys) && keys.length > 0) {
+        seenKeys.push(...keys);
+      }
+      cursor = nextCursor;
+    } while (cursor !== '0');
+
+    return seenKeys;
+  }
+
+  async cleanStaleUsers(eventId) {
+    const queueKey = `queue:${eventId}`;
+    const activeKey = `active:${eventId}`;
+    const queueSeenKey = `queue:seen:${eventId}`;
+    const activeSeenKey = `active:seen:${eventId}`;
+    const staleBefore = Date.now() - this.idleTimeoutMs;
+
+    const staleQueueUsers = await redisClient.zrangebyscore(queueSeenKey, 0, staleBefore);
+    if (staleQueueUsers.length > 0) {
+      await redisClient.zrem(queueKey, ...staleQueueUsers);
+      await redisClient.zrem(queueSeenKey, ...staleQueueUsers);
+    }
+
+    const staleActiveUsers = await redisClient.zrangebyscore(activeSeenKey, 0, staleBefore);
+    if (staleActiveUsers.length > 0) {
+      await redisClient.srem(activeKey, ...staleActiveUsers);
+      await redisClient.zrem(activeSeenKey, ...staleActiveUsers);
     }
   }
 
@@ -95,8 +175,12 @@ class QueueProcessor {
    */
   async processQueue(eventId) {
     try {
+      await this.cleanStaleUsers(eventId);
+
       const queueKey = `queue:${eventId}`;
       const activeKey = `active:${eventId}`;
+      const queueSeenKey = `queue:seen:${eventId}`;
+      const activeSeenKey = `active:seen:${eventId}`;
 
       // 현재 활성 사용자 수
       const currentUsers = await redisClient.scard(activeKey) || 0;
@@ -121,7 +205,9 @@ class QueueProcessor {
       // 사용자들을 활성 상태로 전환
       for (const userId of users) {
         await redisClient.sadd(activeKey, userId);
-        await redisClient.expire(activeKey, 300); // 5분 타임아웃
+        await redisClient.expire(activeKey, this.activeTtlSeconds);
+        await redisClient.zadd(activeSeenKey, Date.now(), userId);
+        await redisClient.expire(activeSeenKey, this.seenTtlSeconds);
 
         // Emit 'queue-entry-allowed' event to specific user
         const entryPayload = {
@@ -137,6 +223,7 @@ class QueueProcessor {
 
       // 대기열에서 제거
       await redisClient.zremrangebyrank(queueKey, 0, users.length - 1);
+      await redisClient.zrem(queueSeenKey, ...users);
 
       // Emit 'queue-updated' event to all users in queue
       const remainingCount = await redisClient.zcard(queueKey) || 0;

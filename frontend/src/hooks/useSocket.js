@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
+import { clearQueueState } from '../utils/queueState';
 
 // Use relative URL for production (works with nginx proxy)
 // Falls back to localhost for local development without proxy
@@ -299,6 +300,7 @@ export function useQueueUpdates(eventId, onQueueUpdate, onEntryAllowed) {
     socket.on('queue-cleared', (data) => {
       console.log('🧹 Queue cleared:', data);
       alert(data.message);
+      clearQueueState(eventId);
     });
 
     return () => {

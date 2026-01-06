@@ -12,6 +12,9 @@ const { publishQueueEvent } = require('../services/queue-event-publisher');
 
 const router = express.Router();
 
+const ACTIVE_TTL_SECONDS = parseInt(process.env.QUEUE_ACTIVE_TTL_SECONDS, 10) || 600;
+const SEEN_TTL_SECONDS = parseInt(process.env.QUEUE_SEEN_TTL_SECONDS, 10) || 600;
+
 const ensureValidEventId = (eventId, res) => {
   if (!isUUID(eventId)) {
     res.status(400).json({ error: 'Invalid event ID format' });
@@ -73,6 +76,14 @@ const QueueManager = {
     }
   },
 
+  getQueueSeenKey(eventId) {
+    return `queue:seen:${eventId}`;
+  },
+
+  getActiveSeenKey(eventId) {
+    return `active:seen:${eventId}`;
+  },
+
   async isInQueue(eventId, userId) {
     try {
       const key = `queue:${eventId}`;
@@ -110,6 +121,7 @@ const QueueManager = {
       const key = `queue:${eventId}`;
       const timestamp = Date.now();
       await redisClient.zadd(key, timestamp, userId);
+      await this.touchQueueUser(eventId, userId);
     } catch (error) {
       console.log('Redis error (addToQueue):', error.message);
     }
@@ -119,9 +131,31 @@ const QueueManager = {
     try {
       const key = `active:${eventId}`;
       await redisClient.sadd(key, userId);
-      await redisClient.expire(key, 300); // 5분 후 만료
+      await redisClient.expire(key, ACTIVE_TTL_SECONDS);
+      await this.touchActiveUser(eventId, userId);
     } catch (error) {
       console.log('Redis error (addActiveUser):', error.message);
+    }
+  },
+
+  async touchQueueUser(eventId, userId) {
+    try {
+      const key = this.getQueueSeenKey(eventId);
+      await redisClient.zadd(key, Date.now(), userId);
+      await redisClient.expire(key, SEEN_TTL_SECONDS);
+    } catch (error) {
+      console.log('Redis error (touchQueueUser):', error.message);
+    }
+  },
+
+  async touchActiveUser(eventId, userId) {
+    try {
+      const key = this.getActiveSeenKey(eventId);
+      await redisClient.zadd(key, Date.now(), userId);
+      await redisClient.expire(key, SEEN_TTL_SECONDS);
+      await redisClient.expire(`active:${eventId}`, ACTIVE_TTL_SECONDS);
+    } catch (error) {
+      console.log('Redis error (touchActiveUser):', error.message);
     }
   },
 
@@ -129,6 +163,7 @@ const QueueManager = {
     try {
       const key = `queue:${eventId}`;
       await redisClient.zrem(key, userId);
+      await redisClient.zrem(this.getQueueSeenKey(eventId), userId);
     } catch (error) {
       console.log('Redis error (removeFromQueue):', error.message);
     }
@@ -138,6 +173,7 @@ const QueueManager = {
     try {
       const key = `active:${eventId}`;
       await redisClient.srem(key, userId);
+      await redisClient.zrem(this.getActiveSeenKey(eventId), userId);
     } catch (error) {
       console.log('Redis error (removeActiveUser):', error.message);
     }
@@ -147,8 +183,12 @@ const QueueManager = {
     try {
       const queueKey = `queue:${eventId}`;
       const activeKey = `active:${eventId}`;
+      const queueSeenKey = this.getQueueSeenKey(eventId);
+      const activeSeenKey = this.getActiveSeenKey(eventId);
       await redisClient.del(queueKey);
       await redisClient.del(activeKey);
+      await redisClient.del(queueSeenKey);
+      await redisClient.del(activeSeenKey);
     } catch (error) {
       console.log('Redis error (clearQueue):', error.message);
     }
@@ -179,6 +219,7 @@ router.post('/check/:eventId', authenticateToken, async (req, res, next) => {
       const estimatedWait = QueueManager.getEstimatedWait(eventId, position);
       const currentUsers = await QueueManager.getCurrentUsers(eventId);
       const threshold = await QueueManager.getThreshold(eventId);
+      await QueueManager.touchQueueUser(eventId, userId);
 
       return res.json({
         queued: true,
@@ -195,6 +236,7 @@ router.post('/check/:eventId', authenticateToken, async (req, res, next) => {
     if (isActive) {
       const currentUsers = await QueueManager.getCurrentUsers(eventId);
       const threshold = await QueueManager.getThreshold(eventId);
+      await QueueManager.touchActiveUser(eventId, userId);
 
       return res.json({
         queued: false,
@@ -259,6 +301,7 @@ router.get('/status/:eventId', authenticateToken, async (req, res, next) => {
       const position = await QueueManager.getQueuePosition(eventId, userId);
       const estimatedWait = QueueManager.getEstimatedWait(eventId, position);
       const queueSize = await QueueManager.getQueueSize(eventId);
+      await QueueManager.touchQueueUser(eventId, userId);
 
       return res.json({
         status: 'queued',
@@ -269,6 +312,7 @@ router.get('/status/:eventId', authenticateToken, async (req, res, next) => {
         queueSize,
       });
     } else if (isActive) {
+      await QueueManager.touchActiveUser(eventId, userId);
       return res.json({
         status: 'active',
         queued: false,
@@ -283,6 +327,34 @@ router.get('/status/:eventId', authenticateToken, async (req, res, next) => {
         message: '대기열에 없습니다.',
       });
     }
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /queue/heartbeat/:eventId
+ * Queue heartbeat to keep position/active status
+ */
+router.post('/heartbeat/:eventId', authenticateToken, async (req, res, next) => {
+  try {
+    const { eventId } = req.params;
+    if (!ensureValidEventId(eventId, res)) return;
+
+    const userId = req.user.userId;
+    const inQueue = await QueueManager.isInQueue(eventId, userId);
+    if (inQueue) {
+      await QueueManager.touchQueueUser(eventId, userId);
+      return res.json({ status: 'queued', queued: true });
+    }
+
+    const isActive = await QueueManager.isActiveUser(eventId, userId);
+    if (isActive) {
+      await QueueManager.touchActiveUser(eventId, userId);
+      return res.json({ status: 'active', queued: false });
+    }
+
+    return res.json({ status: 'not_in_queue', queued: false });
   } catch (error) {
     next(error);
   }

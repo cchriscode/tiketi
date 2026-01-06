@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api, { paymentsAPI } from '../services/api';
+import { useQueueHeartbeat } from '../hooks/useQueueHeartbeat';
+import { setQueueState } from '../utils/queueState';
 import {
   PAYMENT_METHODS,
   PAYMENT_METHOD_DISPLAY,
@@ -19,22 +21,27 @@ function Payment() {
   const [processing, setProcessing] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [error, setError] = useState(null);
+  useQueueHeartbeat(reservation?.event_id);
 
   const fetchReservation = useCallback(async () => {
     try {
       setLoading(true);
       const response = await api.get(API_ENDPOINTS.GET_RESERVATION(reservationId));
-      setReservation(response.data.reservation);
+      const reservationData = response.data.reservation;
+      setReservation(reservationData);
+      if (reservationData?.event_id) {
+        setQueueState(reservationData.event_id, "active");
+      }
       
       // Check if expired
-      if (response.data.reservation.isExpired) {
+      if (reservationData.isExpired) {
         alert('예약 시간이 만료되었습니다.');
         navigate('/');
         return;
       }
 
       // Check if already paid
-      if (response.data.reservation.payment_status === 'completed') {
+      if (reservationData.payment_status === 'completed') {
         navigate(`/payment-success/${reservationId}`);
         return;
       }

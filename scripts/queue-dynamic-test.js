@@ -6,6 +6,8 @@
  *
  * 사용법:
  *   node scripts/queue-dynamic-test.js --eventId <UUID>
+ *   node scripts/queue-dynamic-test.js --eventId <UUID> --clearQueue true --adminEmail <email> --adminPassword <password>
+ *   node scripts/queue-dynamic-test.js --eventId <UUID> --clearQueue true --adminToken <token>
  *
  * 예시:
  *   node scripts/queue-dynamic-test.js --eventId f19b2439-fc50-434e-b9e6-72b090f1c27c
@@ -19,6 +21,7 @@ const getArg = (name, defaultValue) => {
   const index = args.indexOf(name);
   return index !== -1 && args[index + 1] ? args[index + 1] : defaultValue;
 };
+const isTruthy = (value) => ['1', 'true', 'yes', 'y'].includes(String(value).toLowerCase());
 
 const CONFIG = {
   eventId: getArg('--eventId', 'f19b2439-fc50-434e-b9e6-72b090f1c27c'),
@@ -27,6 +30,10 @@ const CONFIG = {
   queueUsers: 5,   // 대기열 사용자 수
   exitInterval: 3000, // 3초마다 한 명씩 나감
   maxDrainIterations: parseInt(getArg('--maxDrainIterations', '200'), 10),
+  clearQueue: isTruthy(getArg('--clearQueue', process.env.CLEAR_QUEUE || 'false')),
+  adminEmail: getArg('--adminEmail', process.env.ADMIN_EMAIL),
+  adminPassword: getArg('--adminPassword', process.env.ADMIN_PASSWORD),
+  adminToken: getArg('--adminToken', process.env.ADMIN_TOKEN),
 };
 
 const users = [];
@@ -126,6 +133,53 @@ async function checkQueueStatus(user) {
   }
 }
 
+async function getAdminToken() {
+  if (CONFIG.adminToken) {
+    return CONFIG.adminToken;
+  }
+
+  if (!CONFIG.adminEmail || !CONFIG.adminPassword) {
+    console.log('⚠️  Admin credentials missing. Use --adminEmail/--adminPassword or ADMIN_EMAIL/ADMIN_PASSWORD.');
+    return null;
+  }
+
+  try {
+    const loginResponse = await axios.post(`${CONFIG.apiUrl}/api/auth/login`, {
+      email: CONFIG.adminEmail,
+      password: CONFIG.adminPassword,
+    });
+    return loginResponse.data?.token || null;
+  } catch (error) {
+    console.log('⚠️  Admin login failed:', error.response?.data || error.message);
+    return null;
+  }
+}
+
+async function clearQueueIfRequested() {
+  if (!CONFIG.clearQueue) {
+    return;
+  }
+
+  const adminToken = await getAdminToken();
+  if (!adminToken) {
+    console.log('⚠️  Skipping queue clear (no admin token).');
+    return;
+  }
+
+  try {
+    await axios.post(
+      `${CONFIG.apiUrl}/api/queue/admin/clear/${CONFIG.eventId}`,
+      {},
+      {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      }
+    );
+    console.log('🧹 Cleared existing queue/active users for this event');
+  } catch (error) {
+    console.log('⚠️  Failed to clear queue:', error.response?.data || error.message);
+  }
+}
+
 async function getAllStatuses() {
   const results = await Promise.all(
     users.map(async (user) => {
@@ -149,7 +203,13 @@ async function runDynamicTest() {
   console.log(`   - Initial Active Users: ${CONFIG.activeUsers}`);
   console.log(`   - Queue Users: ${CONFIG.queueUsers}`);
   console.log(`   - Exit Interval: ${CONFIG.exitInterval}ms`);
+  console.log(`   - Clear Queue: ${CONFIG.clearQueue}`);
+  if (CONFIG.clearQueue && CONFIG.adminEmail) {
+    console.log(`   - Admin Email: ${CONFIG.adminEmail}`);
+  }
   console.log('='.repeat(60) + '\n');
+
+  await clearQueueIfRequested();
 
   // 1단계: 사용자 생성
   console.log('📝 Step 1: Creating users...\n');

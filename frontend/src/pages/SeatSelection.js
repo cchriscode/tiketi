@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useSeatUpdates } from '../hooks/useSocket';
+import { useQueueHeartbeat } from '../hooks/useQueueHeartbeat';
 import {
   SEAT_STATUS,
   SEAT_STATUS_DISPLAY,
@@ -44,6 +45,7 @@ function SeatSelection() {
 
   // WebSocket 연결 및 실시간 업데이트 구독
   useSeatUpdates(eventId, handleSeatUpdate);
+  useQueueHeartbeat(eventId);
 
   const fetchSeats = useCallback(async () => {
     try {
