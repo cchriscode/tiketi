@@ -52,6 +52,12 @@ function WaitingRoomModal({ eventId, onEntryAllowed, onClose }) {
 
   // 입장 허용 콜백
   const handleEntryAllowedSocket = useCallback((data) => {
+    if (data?.eventId && data.eventId !== eventId) {
+      return;
+    }
+    if (data?.userId && userId && data.userId !== userId) {
+      return;
+    }
     console.log('✅ Entry allowed from socket!', data);
 
     // 축하 메시지
@@ -60,7 +66,7 @@ function WaitingRoomModal({ eventId, onEntryAllowed, onClose }) {
         onEntryAllowed();
       }
     }, 500);
-  }, [onEntryAllowed]);
+  }, [eventId, onEntryAllowed, userId]);
 
   // WebSocket 연결 (userId는 서버가 JWT에서 추출)
   const { isConnected, isReconnecting } = useQueueUpdates(

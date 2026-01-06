@@ -8,6 +8,7 @@ const { client: redisClient } = require('../config/redis');
 const db = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const { validate: isUUID } = require('uuid');
+const { publishQueueEvent } = require('../services/queue-event-publisher');
 
 const router = express.Router();
 
@@ -203,11 +204,12 @@ router.post('/check/:eventId', authenticateToken, async (req, res, next) => {
       });
     }
 
-    // New user - check threshold
+    // New user - check threshold and existing queue
     const currentUsers = await QueueManager.getCurrentUsers(eventId);
     const threshold = await QueueManager.getThreshold(eventId);
+    const queueSize = await QueueManager.getQueueSize(eventId);
 
-    if (currentUsers >= threshold) {
+    if (queueSize > 0 || currentUsers >= threshold) {
       // Add to queue
       await QueueManager.addToQueue(eventId, userId);
       const position = await QueueManager.getQueuePosition(eventId, userId);
@@ -343,14 +345,16 @@ router.post('/admin/clear/:eventId', authenticateToken, requireAdmin, async (req
 
     // Emit 'queue-cleared' event to all users in queue
     const io = req.app.locals.io;
+    const clearPayload = {
+      eventId,
+      message: '대기열이 초기화되었습니다.',
+    };
     if (io) {
-      io.to(`queue:${eventId}`).emit('queue-cleared', {
-        eventId,
-        message: '대기열이 초기화되었습니다.',
-      });
+      io.to(`queue:${eventId}`).emit('queue-cleared', clearPayload);
     }
+    void publishQueueEvent('queue-cleared', clearPayload);
 
-    res.json({ message: '대기열이 초기화되었습니다.' });
+    res.json({ message: clearPayload.message });
   } catch (error) {
     next(error);
   }

@@ -4,6 +4,7 @@
  */
 
 const db = require('../config/database');
+const { client: redisClient } = require('../config/redis');
 
 const CLEANUP_INTERVAL_SECONDS = 30; // Run every 30 seconds
 
@@ -72,7 +73,7 @@ class ReservationCleaner {
       // Use FOR UPDATE SKIP LOCKED to avoid race condition with payment confirm
       // Only process reservations that are both payment_status='pending' AND status='pending'
       const expiredReservations = await client.query(
-        `SELECT id, event_id
+        `SELECT id, event_id, user_id
          FROM ticket_schema.reservations
          WHERE payment_status = $1
          AND status = $1
@@ -143,7 +144,7 @@ class ReservationCleaner {
 
         // Mark reservation as expired
         // Defensive WHERE: only update if still pending (prevent overwriting confirmed status)
-        await client.query(
+        const updateResult = await client.query(
           `UPDATE ticket_schema.reservations
            SET status = $1, updated_at = NOW()
            WHERE id = $2
@@ -151,6 +152,14 @@ class ReservationCleaner {
            AND payment_status = 'pending'`,
           ['expired', reservation.id]
         );
+
+        if (updateResult.rowCount > 0) {
+          try {
+            await redisClient.srem(`active:${reservation.event_id}`, reservation.user_id);
+          } catch (redisError) {
+            console.log('Redis error (removeActiveUser):', redisError.message);
+          }
+        }
       }
 
       await client.query('COMMIT');

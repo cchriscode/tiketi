@@ -10,6 +10,7 @@ const initSeats = require('./config/init-seats');
 // const reservationCleaner = require('./services/reservation-cleaner');
 // const eventStatusUpdater = require('./services/event-status-updater');
 const { initializeSocketIO } = require('./config/socket');
+const { startQueueEventSubscriber } = require('./services/queue-event-subscriber');
 const errorHandler = require('./middleware/error-handler');
 const requestLogger = require('./middleware/request-logger');
 const { logger } = require('./utils/logger');
@@ -114,6 +115,15 @@ const io = initializeSocketIO(server);
 // Make io available to routes via app.locals
 app.locals.io = io;
 
+let queueEventSubscriber = null;
+startQueueEventSubscriber(io)
+  .then((subscriber) => {
+    queueEventSubscriber = subscriber;
+  })
+  .catch((error) => {
+    logger.error('Failed to start queue event subscriber:', error);
+  });
+
 server.listen(PORT, async () => {
   logger.info(`🚀 Server running on port ${PORT}`);
   logger.info(`📡 Health check: http://localhost:${PORT}/health`);
@@ -184,6 +194,15 @@ async function gracefulShutdown(signal) {
     // 4. Wait for ongoing operations (max 5 seconds)
     logger.info('⏳ Waiting for ongoing operations to complete...');
     await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    // Stop queue event subscriber
+    if (queueEventSubscriber) {
+      try {
+        await queueEventSubscriber.quit();
+      } catch (error) {
+        logger.error('Queue event subscriber shutdown error:', error);
+      }
+    }
 
     // 5. Close database connections
     logger.info('💾 Closing database connections...');

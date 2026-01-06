@@ -5,6 +5,7 @@
 
 const express = require('express');
 const db = require('../config/database');
+const { client: redisClient } = require('../config/redis');
 const { authenticateToken } = require('../middleware/auth');
 const { NotFoundError, ConflictError, ValidationError } = require('@tiketi/common');
 const { validate: isUUID, v4: uuidv4 } = require('uuid');
@@ -326,6 +327,12 @@ router.post('/:id/cancel', authenticateToken, async (req, res, next) => {
     );
 
     await client.query('COMMIT');
+
+    try {
+      await redisClient.srem(`active:${reservation.event_id}`, userId);
+    } catch (redisError) {
+      console.log('Redis error (removeActiveUser):', redisError.message);
+    }
 
     // Send success response (connection released in finally)
     return res.status(200).json({

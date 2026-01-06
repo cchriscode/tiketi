@@ -5,6 +5,7 @@
 
 const express = require('express');
 const db = require('../config/database');
+const { client: redisClient } = require('../config/redis');
 const tossPaymentsService = require('../services/tosspayments');
 const { authenticateToken } = require('../middleware/auth');
 const { validate: isUUID } = require('uuid');
@@ -156,7 +157,7 @@ router.post('/confirm', authenticateToken, async (req, res, next) => {
     // 🔥 CRITICAL: Verify reservation is valid BEFORE calling Toss API
     // Use FOR UPDATE to prevent race condition with reservation-cleaner
     const reservationCheck = await client.query(
-      `SELECT id, status, payment_status, expires_at
+      `SELECT id, status, payment_status, expires_at, event_id
        FROM ticket_schema.reservations
        WHERE id = $1
        FOR UPDATE`,
@@ -286,6 +287,14 @@ router.post('/confirm', authenticateToken, async (req, res, next) => {
 
     await client.query('COMMIT');
 
+    try {
+      if (reservation.event_id) {
+        await redisClient.srem(`active:${reservation.event_id}`, userId);
+      }
+    } catch (redisError) {
+      console.log('Redis error (removeActiveUser):', redisError.message);
+    }
+
     res.json({
       success: true,
       payment: {
@@ -370,7 +379,10 @@ router.post('/:paymentKey/cancel', authenticateToken, async (req, res, next) => 
 
     // Get payment
     const paymentResult = await client.query(
-      `SELECT id, user_id, amount, status FROM payment_schema.payments WHERE payment_key = $1 FOR UPDATE`,
+      `SELECT id, user_id, amount, status, event_id
+       FROM payment_schema.payments
+       WHERE payment_key = $1
+       FOR UPDATE`,
       [paymentKey]
     );
 
@@ -431,6 +443,14 @@ router.post('/:paymentKey/cancel', authenticateToken, async (req, res, next) => 
     );
 
     await client.query('COMMIT');
+
+    try {
+      if (payment.event_id) {
+        await redisClient.srem(`active:${payment.event_id}`, userId);
+      }
+    } catch (redisError) {
+      console.log('Redis error (removeActiveUser):', redisError.message);
+    }
 
     res.json({
       success: true,

@@ -4,6 +4,7 @@
  */
 
 const { client: redisClient } = require('../config/redis');
+const { publishQueueEvent } = require('./queue-event-publisher');
 
 class QueueProcessor {
   constructor() {
@@ -123,28 +124,32 @@ class QueueProcessor {
         await redisClient.expire(activeKey, 300); // 5분 타임아웃
 
         // Emit 'queue-entry-allowed' event to specific user
+        const entryPayload = {
+          eventId,
+          userId,
+          message: '입장이 허용되었습니다. 좌석을 선택해주세요.',
+        };
         if (this.io) {
-          this.io.to(`queue:${eventId}`).emit('queue-entry-allowed', {
-            eventId,
-            userId,
-            message: '입장이 허용되었습니다. 좌석을 선택해주세요.',
-          });
+          this.io.to(`queue:${eventId}`).emit('queue-entry-allowed', entryPayload);
         }
+        void publishQueueEvent('queue-entry-allowed', entryPayload);
       }
 
       // 대기열에서 제거
       await redisClient.zremrangebyrank(queueKey, 0, users.length - 1);
 
       // Emit 'queue-updated' event to all users in queue
+      const remainingCount = await redisClient.zcard(queueKey) || 0;
+      const updatePayload = {
+        eventId,
+        queueSize: remainingCount,
+        currentUsers,
+        threshold,
+      };
       if (this.io) {
-        const remainingCount = await redisClient.zcard(queueKey) || 0;
-        this.io.to(`queue:${eventId}`).emit('queue-updated', {
-          eventId,
-          queueSize: remainingCount,
-          currentUsers,
-          threshold,
-        });
+        this.io.to(`queue:${eventId}`).emit('queue-updated', updatePayload);
       }
+      void publishQueueEvent('queue-updated', updatePayload);
 
       console.log(`✅ Admitted ${users.length} user(s) from queue for event ${eventId}`);
 

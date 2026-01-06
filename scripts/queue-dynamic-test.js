@@ -26,9 +26,11 @@ const CONFIG = {
   activeUsers: 10, // 초기 active 사용자 수
   queueUsers: 5,   // 대기열 사용자 수
   exitInterval: 3000, // 3초마다 한 명씩 나감
+  maxDrainIterations: parseInt(getArg('--maxDrainIterations', '200'), 10),
 };
 
 const users = [];
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
  * 테스트 사용자 생성 또는 로그인
@@ -124,6 +126,17 @@ async function checkQueueStatus(user) {
   }
 }
 
+async function getAllStatuses() {
+  const results = await Promise.all(
+    users.map(async (user) => {
+      const statusData = await checkQueueStatus(user);
+      if (!statusData) return null;
+      return { user, statusData };
+    })
+  );
+  return results.filter(Boolean);
+}
+
 /**
  * 메인 테스트 실행
  */
@@ -178,48 +191,46 @@ async function runDynamicTest() {
 
   console.log('\n✅ Queue users added\n');
 
-  // 4단계: 주기적으로 Active 사용자 나가기
-  console.log('🔄 Step 4: Simulating user exits...\n');
+  // 4단계: Active + Queue 전부 비우기
+  console.log('🔄 Step 4: Draining active and queued users...\n');
   console.log('👀 Watch the queue positions decrease!\n');
 
-  let exitIndex = 0;
-  const exitInterval = setInterval(async () => {
-    if (exitIndex >= CONFIG.activeUsers) {
-      clearInterval(exitInterval);
-      console.log('\n✅ All active users exited\n');
+  let iterations = 0;
+  while (iterations < CONFIG.maxDrainIterations) {
+    const statuses = await getAllStatuses();
+    const activeUsers = statuses.filter(s => s.statusData.status === 'active');
+    const queuedUsers = statuses.filter(s => s.statusData.status === 'queued');
 
-      // 최종 상태 확인
-      console.log('📊 Final Queue Status:\n');
-      for (let i = CONFIG.activeUsers; i < users.length; i++) {
-        const status = await checkQueueStatus(users[i]);
-        if (status && status.queued) {
-          console.log(`User ${i}: Position ${status.position}/${status.queueSize}`);
-        } else if (status && !status.queued) {
-          console.log(`User ${i}: ✅ Entered!`);
-        }
-      }
-
-      console.log('\n✅ Test completed!\n');
-      process.exit(0);
-      return;
+    if (activeUsers.length === 0 && queuedUsers.length === 0) {
+      console.log('\n✅ All users cleared (active: 0, queued: 0)\n');
+      break;
     }
 
-    // Active 사용자 나가기
-    await leaveQueue(users[exitIndex]);
+    if (activeUsers.length > 0) {
+      const target = activeUsers[0].user;
+      await leaveQueue(target);
+      console.log(`👋 User ${target.index} left (active: ${Math.max(activeUsers.length - 1, 0)}, queued: ${queuedUsers.length})`);
+    } else {
+      console.log(`⏳ Waiting for queue to admit users... (queued: ${queuedUsers.length})`);
+    }
 
-    // 대기열 상태 확인
-    if (users.length > CONFIG.activeUsers) {
-      const sampleUser = users[CONFIG.activeUsers];
-      const status = await checkQueueStatus(sampleUser);
-      if (status && status.queued) {
-        console.log(`📊 Queue Status: Position ${status.position}/${status.queueSize}`);
-      } else if (status && !status.queued) {
-        console.log(`✅ Sample user entered!`);
+    if (queuedUsers.length > 0) {
+      const sample = queuedUsers[0].statusData;
+      if (sample && sample.position && sample.queueSize) {
+        console.log(`📊 Queue Status: Position ${sample.position}/${sample.queueSize}`);
       }
     }
 
-    exitIndex++;
-  }, CONFIG.exitInterval);
+    iterations += 1;
+    await sleep(CONFIG.exitInterval);
+  }
+
+  if (iterations >= CONFIG.maxDrainIterations) {
+    console.log('\n⚠️  Drain timed out. Some users may still be queued or active.\n');
+  }
+
+  console.log('\n✅ Test completed!\n');
+  process.exit(0);
 }
 
 // 에러 핸들링
