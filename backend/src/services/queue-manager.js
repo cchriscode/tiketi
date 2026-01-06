@@ -18,8 +18,8 @@ class QueueManager {
    */
   async getThreshold(eventId) {
     // TODO: 나중에 events 테이블에서 queue_threshold 값 가져오기
-    // 현재는 기본값 1000명
-    return 1000;
+    // 현재는 환경변수 또는 기본값 1000명
+    return parseInt(process.env.QUEUE_THRESHOLD) || 1000;
   }
 
   /**

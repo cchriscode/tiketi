@@ -20,10 +20,10 @@ const authenticateToken = async (req, res, next) => {
       return res.status(403).json({ error: '유효하지 않은 토큰입니다.' });
     }
 
-    // Verify user still exists in database (search_path will find correct schema)
+    // Verify user still exists in database (explicitly use auth_schema)
     try {
       const result = await db.query(
-        'SELECT id, email, name, role FROM users WHERE id = $1',
+        'SELECT id, email, name, role FROM auth_schema.users WHERE id = $1',
         [user.userId]
       );
 

@@ -18,10 +18,11 @@ const errorHandler = (err, req, res, next) => {
   // Winston으로 에러 로그 출력
   logger.error(logFormat(req, res, errorLog));
 
-  // 클라이언트에게 응답
+  // 클라이언트에게 응답 (common 포맷과 통일)
   res.status(statusCode).json({
-    success: false,
-    message: errorLog.clientMessage, // client 메시지만 전송
+    error: errorLog.clientMessage, // client 메시지만 전송
+    code: err.code || 'INTERNAL_ERROR',
+    ...(process.env.NODE_ENV === 'development' && { stack: originErr.stack }),
   });
 };
 

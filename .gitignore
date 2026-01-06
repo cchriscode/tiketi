@@ -52,6 +52,9 @@ backend/dist/
 .cache
 .temp
 
+# Local agent settings
+.claude/settings.local.json
+
 # Credentials
 credentials.txt
 *.key

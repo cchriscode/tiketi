@@ -21,6 +21,37 @@ const getUserInfo = req => {
   };
 }
 
+/**
+ * 민감 데이터 마스킹 처리
+ */
+const sanitizeSensitiveData = (data) => {
+  if (!data || typeof data !== 'object') return data;
+
+  const sensitiveFields = [
+    'password', 'passwordConfirm', 'currentPassword', 'newPassword',
+    'cardNumber', 'cvv', 'cvc', 'cardCvv',
+    'phone', 'phoneNumber', 'mobilePhone',
+    'ssn', 'socialSecurityNumber',
+    'accountNumber', 'bankAccount',
+    'secret', 'apiKey', 'token', 'accessToken', 'refreshToken'
+  ];
+
+  const sanitized = Array.isArray(data) ? [...data] : { ...data };
+
+  for (const key in sanitized) {
+    // 민감 필드는 마스킹
+    if (sensitiveFields.some(field => key.toLowerCase().includes(field.toLowerCase()))) {
+      sanitized[key] = '***REDACTED***';
+    }
+    // 중첩 객체도 재귀적으로 처리
+    else if (typeof sanitized[key] === 'object' && sanitized[key] !== null) {
+      sanitized[key] = sanitizeSensitiveData(sanitized[key]);
+    }
+  }
+
+  return sanitized;
+}
+
 const logFormat = (req, res, args) => ({
   headers: {
     clientIp: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
@@ -29,7 +60,7 @@ const logFormat = (req, res, args) => ({
   request: {
     method: req.method,
     url: req.originalUrl,
-    body: Object.keys(req.body || {}).length ? req.body : undefined,
+    body: Object.keys(req.body || {}).length ? sanitizeSensitiveData(req.body) : undefined,
     query: Object.keys(req.query || {}).length ? req.query : undefined,
     params: Object.keys(req.params || {}).length ? req.params : undefined,
   },

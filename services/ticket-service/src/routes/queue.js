@@ -48,8 +48,8 @@ async function getEventInfo(eventId) {
 // Simple queue manager functions
 const QueueManager = {
   async getThreshold(eventId) {
-    // Default threshold: 1000 concurrent users
-    return 1000;
+    // Read from environment variable, default to 1000
+    return parseInt(process.env.QUEUE_THRESHOLD) || 1000;
   },
 
   async getCurrentUsers(eventId) {

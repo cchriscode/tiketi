@@ -68,8 +68,11 @@ class QueueProcessor {
    */
   async processAllQueues() {
     try {
-      // Redis에서 모든 queue:* 키 찾기
-      const queueKeys = await redisClient.keys('queue:*');
+      // Redis SCAN을 사용하여 모든 queue:* 키 찾기 (KEYS 대신 - 성능 개선)
+      const queueKeys = [];
+      for await (const key of redisClient.scanIterator({ MATCH: 'queue:*', COUNT: 100 })) {
+        queueKeys.push(key);
+      }
 
       if (queueKeys.length === 0) {
         return;
@@ -97,8 +100,8 @@ class QueueProcessor {
       // 현재 활성 사용자 수
       const currentUsers = await redisClient.scard(activeKey) || 0;
 
-      // 임계값 (기본 1000)
-      const threshold = 1000;
+      // 임계값 (환경변수로 설정 가능, 기본 1000)
+      const threshold = parseInt(process.env.QUEUE_THRESHOLD) || 1000;
 
       // 입장 가능한 인원
       const available = threshold - currentUsers;

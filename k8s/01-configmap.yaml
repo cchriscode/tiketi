@@ -41,6 +41,10 @@ data:
   # Monitoring
   LOKI_URL: "http://loki-service:3100"
 
+  # Queue Configuration
+  QUEUE_THRESHOLD: "1000"  # 동시 접속 임계값 (초과 시 대기열 진입)
+  QUEUE_PROCESSOR_INTERVAL: "10000"  # 대기열 처리 주기 (밀리초)
+
   # Google OAuth Configuration
   GOOGLE_CLIENT_ID: "721028631258-dhjgd4gquphib49fsoitiubusbo3t9e9.apps.googleusercontent.com"
   REACT_APP_GOOGLE_CLIENT_ID: "721028631258-dhjgd4gquphib49fsoitiubusbo3t9e9.apps.googleusercontent.com"
