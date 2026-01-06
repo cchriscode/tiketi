@@ -1,0 +1,49 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: tiketi
+
+# Base configurations
+bases:
+  - ../../base
+
+# ConfigMap from env file
+configMapGenerator:
+  - name: tiketi-config
+    envs:
+      - config.env
+
+# Image replacements for ECR
+images:
+  - name: backend
+    newName: <AWS-ACCOUNT-ID>.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/backend
+    newTag: v1.0.0
+  - name: auth-service
+    newName: <AWS-ACCOUNT-ID>.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/auth-service
+    newTag: v1.0.0
+  - name: ticket-service
+    newName: <AWS-ACCOUNT-ID>.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/ticket-service
+    newTag: v1.0.0
+  - name: payment-service
+    newName: <AWS-ACCOUNT-ID>.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/payment-service
+    newTag: v1.0.0
+  - name: stats-service
+    newName: <AWS-ACCOUNT-ID>.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/stats-service
+    newTag: v1.0.0
+
+# Patches for production
+patchesStrategicMerge:
+  - ingress.yaml
+
+# Resource configurations
+replicas:
+  - name: backend
+    count: 2
+  - name: auth-service
+    count: 2
+  - name: ticket-service
+    count: 2
+  - name: payment-service
+    count: 2
+  - name: stats-service
+    count: 1

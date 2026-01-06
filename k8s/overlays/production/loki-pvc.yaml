@@ -1,0 +1,29 @@
+---
+# Loki PVC for AWS EKS
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: loki-pvc
+  namespace: tiketi
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi  # 프로덕션: 로그 데이터 증가 고려
+  storageClassName: gp3  # AWS EBS gp3 (빠르고 비용 효율적)
+
+---
+# Grafana PVC for AWS EKS
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-pvc
+  namespace: tiketi
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi  # 프로덕션: 대시보드/설정 저장
+  storageClassName: gp3

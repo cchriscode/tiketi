@@ -1,77 +1,18 @@
-# ArgoCD Project for Tiketi
-# Provides resource isolation and RBAC for the ticketing system
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
   name: tiketi
   namespace: argocd
-  # Finalizers ensure project cleanup
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
 spec:
-  description: Tiketi - Event Ticketing Platform
-
-  # Source repositories allowed for this project
+  description: Tiketi production deployment
   sourceRepos:
-    - 'https://github.com/ORGANIZATION/project-ticketing.git'  # UPDATE: Replace with actual repo URL
-    - '*'  # Allow all repos (can be restricted in production)
-
-  # Destination clusters and namespaces allowed for this project
+    - 'https://github.com/<ORG>/project-ticketing.git'
   destinations:
-    # Dev environment (Kind cluster)
     - namespace: tiketi
-      server: https://kubernetes.default.svc  # In-cluster
-
-    # Staging environment (EKS)
-    - namespace: tiketi-staging
-      server: https://kubernetes.default.svc  # UPDATE: Replace with actual EKS cluster API server
-
-    # Production environment (EKS)
-    - namespace: tiketi
-      server: https://kubernetes.default.svc  # UPDATE: Replace with actual EKS cluster API server
-
-    # Allow all namespaces and clusters (can be restricted)
-    - namespace: '*'
-      server: '*'
-
-  # Cluster resource whitelist - defines which cluster-scoped resources can be managed
+      server: 'https://kubernetes.default.svc'
   clusterResourceWhitelist:
     - group: ''
       kind: Namespace
-    - group: rbac.authorization.k8s.io
-      kind: ClusterRole
-    - group: rbac.authorization.k8s.io
-      kind: ClusterRoleBinding
-    - group: apiextensions.k8s.io
-      kind: CustomResourceDefinition
-
-  # Namespace resource blacklist - prevent management of certain resources
-  namespaceResourceBlacklist:
-    - group: ''
-      kind: ResourceQuota
-    - group: ''
-      kind: LimitRange
-
-  # Roles for RBAC within this project (optional)
-  roles:
-    # Developer role - can sync applications, view resources
-    - name: developer
-      description: Developers working on Tiketi
-      policies:
-        - p, proj:tiketi:developer, applications, get, tiketi/*, allow
-        - p, proj:tiketi:developer, applications, sync, tiketi/*, allow
-      groups:
-        - tiketi-developers
-
-    # Admin role - full access to project resources
-    - name: admin
-      description: Project administrators
-      policies:
-        - p, proj:tiketi:admin, applications, *, tiketi/*, allow
-        - p, proj:tiketi:admin, repositories, *, *, allow
-      groups:
-        - tiketi-admins
-
-  # Orphaned resources monitoring
-  orphanedResources:
-    warn: true
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'

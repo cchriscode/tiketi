@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: tiketi-prod
+  name: tiketi-apps
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -10,10 +10,10 @@ spec:
   source:
     repoURL: 'https://github.com/<ORG>/project-ticketing.git'
     targetRevision: main
-    path: k8s/overlays/prod
+    path: argocd/applications
   destination:
     server: 'https://kubernetes.default.svc'
-    namespace: tiketi
+    namespace: argocd
   syncPolicy:
     automated:
       prune: true
@@ -21,10 +21,3 @@ spec:
       allowEmpty: false
     syncOptions:
       - CreateNamespace=true
-      - PrunePropagationPolicy=foreground
-      - PruneLast=true
-  ignoreDifferences:
-    - group: apps
-      kind: Deployment
-      jsonPointers:
-        - /spec/replicas
