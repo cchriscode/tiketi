@@ -407,7 +407,7 @@ kubectl apply -f argocd/applications/
 ### 기본 계정
 
 #### 관리자
-- **Email**: `admin@tiketi.com`
+- **Email**: `admin@tiketi.gg`
 - **Password**: `admin123`
 - **관리자 페이지**: http://localhost:3000/admin
 
