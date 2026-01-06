@@ -1,0 +1,92 @@
+# ArgoCD Application - Staging Environment (EKS)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tiketi-staging
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    environment: staging
+    team: tiketi
+spec:
+  project: tiketi
+
+  source:
+    repoURL: https://github.com/ORGANIZATION/project-ticketing.git  # UPDATE: Replace with actual repo URL
+    targetRevision: develop  # Staging tracks develop branch
+    path: k8s/overlays/staging
+
+    kustomize:
+      commonLabels:
+        app.kubernetes.io/instance: tiketi-staging
+        app.kubernetes.io/managed-by: argocd
+
+      commonAnnotations:
+        argocd.argoproj.io/tracking-id: tiketi-staging
+
+  destination:
+    server: https://kubernetes.default.svc  # UPDATE: Replace with actual EKS cluster API server
+    namespace: tiketi-staging
+
+  syncPolicy:
+    # Automated sync for staging (with safety measures)
+    automated:
+      prune: true      # Auto-prune old resources
+      selfHeal: true   # Auto-heal drift
+      allowEmpty: false
+
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+      - ApplyOutOfSyncOnly=true
+      - ServerSideApply=true
+      # Respect PodDisruptionBudgets during sync
+      - RespectIgnoreDifferences=true
+
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 5m
+
+  ignoreDifferences:
+    # Ignore replicas for Deployments managed by HPA
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+
+    # Ignore HPA status
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler
+      jsonPointers:
+        - /status
+
+    # Ignore certain Ingress fields managed by AWS ALB Controller
+    - group: networking.k8s.io
+      kind: Ingress
+      jsonPointers:
+        - /status/loadBalancer
+
+  # Sync windows - define when syncs are allowed (optional)
+  # syncWindow:
+  #   - kind: allow
+  #     schedule: '0 9-17 * * 1-5'  # Business hours Mon-Fri
+  #     duration: 8h
+  #     applications:
+  #       - tiketi-staging
+
+  info:
+    - name: Environment
+      value: Staging (EKS)
+    - name: Purpose
+      value: Pre-production testing and validation
+    - name: Auto-sync
+      value: Enabled
+    - name: Database
+      value: RDS PostgreSQL
+    - name: Cache
+      value: ElastiCache Redis

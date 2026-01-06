@@ -1,0 +1,117 @@
+# ArgoCD Application - Production Environment (EKS)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tiketi-prod
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    environment: production
+    team: tiketi
+    criticality: high
+  annotations:
+    # ArgoCD notifications (requires ArgoCD Notifications controller)
+    notifications.argoproj.io/subscribe.on-deployed.slack: tiketi-prod-deployments
+    notifications.argoproj.io/subscribe.on-health-degraded.slack: tiketi-prod-alerts
+spec:
+  project: tiketi
+
+  source:
+    repoURL: https://github.com/ORGANIZATION/project-ticketing.git  # UPDATE: Replace with actual repo URL
+    targetRevision: main  # Production tracks main branch
+    path: k8s/overlays/prod
+
+    kustomize:
+      commonLabels:
+        app.kubernetes.io/instance: tiketi-prod
+        app.kubernetes.io/managed-by: argocd
+
+      commonAnnotations:
+        argocd.argoproj.io/tracking-id: tiketi-prod
+
+  destination:
+    server: https://kubernetes.default.svc  # UPDATE: Replace with actual EKS cluster API server
+    namespace: tiketi
+
+  syncPolicy:
+    # MANUAL sync for production (safety first)
+    # automated:
+    #   prune: false     # No auto-prune in production
+    #   selfHeal: false  # No auto-heal in production
+
+    # Manual sync requires approval via ArgoCD UI or CLI
+    # To enable automated sync after validation, uncomment the automated section above
+
+    syncOptions:
+      - CreateNamespace=false  # Namespace must already exist
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+      - ApplyOutOfSyncOnly=true
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 10m
+
+  ignoreDifferences:
+    # Ignore replicas for Deployments managed by HPA
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+
+    # Ignore HPA status
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler
+      jsonPointers:
+        - /status
+        - /spec/behavior  # HPA may modify behavior at runtime
+
+    # Ignore PDB status
+    - group: policy
+      kind: PodDisruptionBudget
+      jsonPointers:
+        - /status
+
+    # Ignore certain Ingress fields managed by AWS ALB Controller
+    - group: networking.k8s.io
+      kind: Ingress
+      jsonPointers:
+        - /status/loadBalancer
+        - /metadata/annotations/alb.ingress.kubernetes.io~1load-balancer-attributes
+
+    # Ignore Secret data changes (managed externally)
+    - group: ""
+      kind: Secret
+      jsonPointers:
+        - /data
+
+  # Sync windows - define when syncs are allowed
+  # Recommended: Only allow production syncs during maintenance windows
+  # syncWindow:
+  #   - kind: allow
+  #     schedule: '0 2-4 * * 0'  # Sunday 2-4 AM maintenance window
+  #     duration: 2h
+  #     applications:
+  #       - tiketi-prod
+
+  info:
+    - name: Environment
+      value: Production (EKS)
+    - name: Purpose
+      value: Live production workload
+    - name: Auto-sync
+      value: DISABLED (Manual sync required)
+    - name: Database
+      value: RDS PostgreSQL Multi-AZ
+    - name: Cache
+      value: ElastiCache Redis
+    - name: HA
+      value: Enabled (PDB, HPA, Multi-AZ)
+    - name: Sync Approval
+      value: Required via ArgoCD UI/CLI

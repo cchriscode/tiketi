@@ -15,11 +15,11 @@ nodes:
         hostPort: 3001
         protocol: TCP
       # Frontend (optional)
-      - containerPort: 30001
+      - containerPort: 30005
         hostPort: 3000
         protocol: TCP
       # Grafana Dashboard
-      - containerPort: 30002
+      - containerPort: 30006
         hostPort: 3002
         protocol: TCP
       # PostgreSQL (for debugging)

@@ -64,6 +64,8 @@ spec:
                 - pg_isready
                 - -U
                 - tiketi_user
+                - -d
+                - tiketi
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
@@ -72,6 +74,8 @@ spec:
                 - pg_isready
                 - -U
                 - tiketi_user
+                - -d
+                - tiketi
             initialDelaySeconds: 5
             periodSeconds: 5
       volumes:

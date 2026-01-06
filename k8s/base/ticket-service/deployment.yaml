@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ticket-service
+  labels:
+    app: ticket-service
+    tier: microservice
+spec:
+  replicas: 1  # Override in overlays
+  selector:
+    matchLabels:
+      app: ticket-service
+  template:
+    metadata:
+      labels:
+        app: ticket-service
+        tier: microservice
+    spec:
+      containers:
+        - name: ticket-service
+          image: tiketi-ticket-service:latest  # Tag will be updated by Kustomize
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3002
+              name: http
+          envFrom:
+            - configMapRef:
+                name: tiketi-config
+            - secretRef:
+                name: tiketi-secret
+          env:
+            - name: PORT
+              value: "3002"
+            - name: SERVICE_NAME
+              value: "ticket-service"
+            - name: REDIS_URL
+              value: "redis://dragonfly-service:6379"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3002
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3002
+            initialDelaySeconds: 20
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "1000m"

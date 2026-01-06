@@ -1,0 +1,85 @@
+# ArgoCD Application - Dev Environment (Kind)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tiketi-dev
+  namespace: argocd
+  # Finalizers ensure proper cleanup
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  # Labels for organization
+  labels:
+    environment: dev
+    team: tiketi
+spec:
+  # Project this application belongs to
+  project: tiketi
+
+  # Source repository configuration
+  source:
+    repoURL: https://github.com/ORGANIZATION/project-ticketing.git  # UPDATE: Replace with actual repo URL
+    targetRevision: develop  # Dev environment tracks develop branch
+    path: k8s/overlays/dev
+
+    # Kustomize-specific options
+    kustomize:
+      # Common labels applied to all resources
+      commonLabels:
+        app.kubernetes.io/instance: tiketi-dev
+        app.kubernetes.io/managed-by: argocd
+
+      # Common annotations
+      commonAnnotations:
+        argocd.argoproj.io/tracking-id: tiketi-dev
+
+  # Destination cluster and namespace
+  destination:
+    server: https://kubernetes.default.svc  # In-cluster deployment
+    namespace: tiketi
+
+  # Sync policy - defines how ArgoCD syncs the application
+  syncPolicy:
+    # Automated sync for dev environment
+    automated:
+      prune: true      # Delete resources that are no longer defined in Git
+      selfHeal: true   # Auto-sync when cluster state drifts from Git
+      allowEmpty: false # Prevent syncing if no resources are generated
+
+    # Sync options
+    syncOptions:
+      - CreateNamespace=true     # Create namespace if it doesn't exist
+      - PrunePropagationPolicy=foreground  # Wait for resources to be deleted
+      - PruneLast=true           # Prune resources after new resources are healthy
+      - ApplyOutOfSyncOnly=true  # Only sync resources that are out of sync
+      - ServerSideApply=true     # Use server-side apply for better conflict resolution
+
+    # Retry configuration
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  # Ignore differences for certain fields (prevents constant drift)
+  ignoreDifferences:
+    # Ignore replicas for Deployments managed by HPA
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+
+    # Ignore certain secret fields that may be auto-generated
+    - group: ""
+      kind: Secret
+      jsonPointers:
+        - /data
+
+  # Info section for additional metadata
+  info:
+    - name: Environment
+      value: Development (Kind)
+    - name: Purpose
+      value: Local development and testing
+    - name: Auto-sync
+      value: Enabled

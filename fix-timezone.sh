@@ -16,13 +16,12 @@ cd /mnt/c/Users/USER/project-ticketing
 
 # 1. ConfigMap 업데이트
 echo "1️⃣  ConfigMap 업데이트 중..."
-kubectl apply -f k8s/01-configmap.yaml
+kubectl apply -k k8s/overlays/dev
 echo "   ✅ ConfigMap 업데이트 완료"
 echo ""
 
 # 2. PostgreSQL 재시작
 echo "2️⃣  PostgreSQL 재시작 중..."
-kubectl apply -f k8s/04-postgres.yaml
 kubectl rollout restart deployment/postgres -n tiketi
 kubectl rollout status deployment/postgres -n tiketi --timeout=120s
 echo "   ✅ PostgreSQL 재시작 완료"

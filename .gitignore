@@ -9,6 +9,9 @@ node_modules/
 .env.test.local
 .env.production.local
 
+# Kubernetes Secrets (Dev overlay)
+k8s/overlays/dev/secrets.env
+
 # Logs
 npm-debug.log*
 yarn-debug.log*

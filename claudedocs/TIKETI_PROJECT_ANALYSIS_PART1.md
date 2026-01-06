@@ -190,12 +190,12 @@ C:\Users\USER\project-ticketing\
 
 | 서비스 | 내부 포트 | NodePort | URL |
 |--------|-----------|----------|-----|
-| Frontend (Nginx) | 3000 | 30001 | http://localhost:30001 |
+| Frontend (Nginx) | 3000 | 30005 | http://localhost:30005 |
 | Backend (Legacy) | 3001 | 30000 | http://localhost:30000 |
-| Auth Service | 3002 | 30006 | http://localhost:30006 |
-| Payment Service | 3003 | - | (미설정) |
+| Auth Service | 3002 | 30001 | http://localhost:30001 |
+| Payment Service | 3003 | 30003 | http://localhost:30003 |
 | Ticket Service | 3004 | 30004 | http://localhost:30004 |
-| Stats Service | 3005 | 30005 | http://localhost:30005 |
+| Stats Service | 3005 | 30002 | http://localhost:30002 |
 | PostgreSQL | 5432 | - | (ClusterIP) |
 | DragonflyDB (Redis) | 6379 | - | (ClusterIP) |
 

@@ -5,9 +5,9 @@ const { logger } = require('../utils/logger');
 
 async function initializeAdmin() {
   try {
-    // Check if admin already exists
+    // Check if admin already exists (use auth_schema after MSA migration)
     const existingAdmin = await db.query(
-      'SELECT id FROM users WHERE email = $1',
+      'SELECT id FROM auth_schema.users WHERE email = $1',
       [CONFIG.DEFAULT_ADMIN_EMAIL]
     );
 
@@ -23,7 +23,7 @@ async function initializeAdmin() {
     );
 
     await db.query(
-      `INSERT INTO users (email, password_hash, name, phone, role) 
+      `INSERT INTO auth_schema.users (email, password_hash, name, phone, role)
        VALUES ($1, $2, $3, $4, $5)`,
       [
         CONFIG.DEFAULT_ADMIN_EMAIL,
@@ -39,6 +39,7 @@ async function initializeAdmin() {
       Password: ${CONFIG.DEFAULT_ADMIN_PASSWORD}`);
   } catch (error) {
     logger.error('❌ Failed to initialize admin account:', error.message);
+    throw error; // Re-throw to trigger retry
   }
 }
 

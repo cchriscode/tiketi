@@ -54,13 +54,13 @@ router.get('/', async (req, res, next) => {
 
     const result = await db.query(
       `SELECT id, title, content, author, author_id, views, is_pinned, created_at, updated_at
-       FROM news
+       FROM ticket_schema.news
        ORDER BY is_pinned DESC, created_at DESC
        LIMIT $1 OFFSET $2`,
       [parseInt(limit), offset]
     );
 
-    const countResult = await db.query('SELECT COUNT(*) FROM news');
+    const countResult = await db.query('SELECT COUNT(*) FROM ticket_schema.news');
     const total = parseInt(countResult.rows[0].count);
 
     res.json({
@@ -111,14 +111,14 @@ router.get('/:id', async (req, res, next) => {
 
     // Increment views
     await db.query(
-      'UPDATE news SET views = views + 1 WHERE id = $1',
+      'UPDATE ticket_schema.news SET views = views + 1 WHERE id = $1',
       [id]
     );
 
     // Get news
     const result = await db.query(
       `SELECT id, title, content, author, author_id, views, is_pinned, created_at, updated_at
-       FROM news
+       FROM ticket_schema.news
        WHERE id = $1`,
       [id]
     );
@@ -182,14 +182,14 @@ router.post('/', authenticateToken, async (req, res, next) => {
         return res.status(400).json({ error: 'Invalid author_id format' });
       }
       // Ensure author exists to avoid FK violation
-      const userCheck = await db.query('SELECT 1 FROM users WHERE id = $1', [author_id]);
+      const userCheck = await db.query('SELECT 1 FROM auth_schema.users WHERE id = $1', [author_id]);
       if (userCheck.rows.length === 0) {
         return res.status(400).json({ error: '존재하지 않는 작성자입니다.' });
       }
     }
 
     const result = await db.query(
-      `INSERT INTO news (title, content, author, author_id, is_pinned)
+      `INSERT INTO ticket_schema.news (title, content, author, author_id, is_pinned)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING id, title, content, author, author_id, views, is_pinned, created_at, updated_at`,
       [title, content, author, author_id || null, is_pinned]
@@ -256,7 +256,7 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
 
     // Check if news exists and verify ownership
     const newsCheck = await db.query(
-      'SELECT author_id FROM news WHERE id = $1',
+      'SELECT author_id FROM ticket_schema.news WHERE id = $1',
       [id]
     );
 
@@ -274,13 +274,13 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
     // Build dynamic query based on whether is_pinned is provided
     let query, params;
     if (is_pinned !== undefined) {
-      query = `UPDATE news
+      query = `UPDATE ticket_schema.news
                SET title = $1, content = $2, is_pinned = $3
                WHERE id = $4
                RETURNING id, title, content, author, author_id, views, is_pinned, created_at, updated_at`;
       params = [title, content, is_pinned, id];
     } else {
-      query = `UPDATE news
+      query = `UPDATE ticket_schema.news
                SET title = $1, content = $2
                WHERE id = $3
                RETURNING id, title, content, author, author_id, views, is_pinned, created_at, updated_at`;
@@ -326,7 +326,7 @@ router.delete('/:id', authenticateToken, async (req, res, next) => {
 
     // Check if news exists and verify ownership
     const newsCheck = await db.query(
-      'SELECT author_id FROM news WHERE id = $1',
+      'SELECT author_id FROM ticket_schema.news WHERE id = $1',
       [id]
     );
 
@@ -343,7 +343,7 @@ router.delete('/:id', authenticateToken, async (req, res, next) => {
     }
 
     // Delete news
-    await db.query('DELETE FROM news WHERE id = $1', [id]);
+    await db.query('DELETE FROM ticket_schema.news WHERE id = $1', [id]);
 
     res.json({ message: '뉴스가 삭제되었습니다.' });
   } catch (error) {

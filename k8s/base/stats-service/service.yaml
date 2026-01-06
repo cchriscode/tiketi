@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: stats-service
+  labels:
+    app: stats-service
+spec:
+  type: ClusterIP
+  selector:
+    app: stats-service
+  ports:
+    - port: 3004
+      targetPort: 3004
+      protocol: TCP
+      name: http

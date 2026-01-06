@@ -449,14 +449,18 @@ apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
   - role: control-plane
     extraPortMappings:
-      - containerPort: 30000
-        hostPort: 30000
-      - containerPort: 30001
-        hostPort: 30001
-      - containerPort: 30004
-        hostPort: 30004
-      - containerPort: 30005
-        hostPort: 30005
+        - containerPort: 30000
+          hostPort: 30000
+        - containerPort: 30001
+          hostPort: 30001
+        - containerPort: 30002
+          hostPort: 30002
+        - containerPort: 30003
+          hostPort: 30003
+        - containerPort: 30004
+          hostPort: 30004
+        - containerPort: 30005
+          hostPort: 30005
       - containerPort: 30006
         hostPort: 30006
   - role: worker
@@ -496,7 +500,7 @@ data:
   DB_PORT: "5432"
   DB_NAME: "tiketi"
   REDIS_URL: "redis://dragonfly-service:6379"
-  FRONTEND_URL: "http://localhost:30001"
+  FRONTEND_URL: "http://localhost:30005"
   BACKEND_URL: "http://localhost:30000"
 ```
 
@@ -665,7 +669,7 @@ spec:
   ports:
     - port: 3002
       targetPort: 3002
-      nodePort: 30006
+      nodePort: 30001
 ```
 
 **주요 특징:**
@@ -674,7 +678,7 @@ spec:
    - Liveness Probe: Pod가 살아있는지 확인 (실패 시 재시작)
    - Readiness Probe: 트래픽 수신 준비 완료 확인
 3. **Resource Limits**: CPU/메모리 제한으로 리소스 보호
-4. **NodePort**: 외부에서 `localhost:30006`으로 직접 접근 가능
+4. **NodePort**: 외부에서 `localhost:30001`으로 직접 접근 가능
 
 #### 7.5.2 Ticket Service 배포
 
@@ -760,7 +764,7 @@ spec:
   ports:
     - port: 80
       targetPort: 80
-      nodePort: 30001
+      nodePort: 30005
 ```
 
 **Dockerfile (Multi-stage build):**
@@ -1367,11 +1371,11 @@ graph TB
             end
 
             subgraph "Services"
-                FESVC[frontend-service<br/>NodePort: 30001]
-                AUTHSVC[auth-service<br/>NodePort: 30006]
+                FESVC[frontend-service<br/>NodePort: 30005]
+                AUTHSVC[auth-service<br/>NodePort: 30001]
                 TICKSVC[ticket-service<br/>NodePort: 30004]
                 PAYSVC[payment-service<br/>ClusterIP]
-                STATSSVC[stats-service<br/>NodePort: 30005]
+                STATSSVC[stats-service<br/>NodePort: 30002]
                 PGSVC[postgres-service<br/>ClusterIP: 5432]
                 DFSVC[dragonfly-service<br/>ClusterIP: 6379]
             end
@@ -1400,10 +1404,10 @@ graph TB
 
     TICK -->|cache/queue| DFSVC
 
-    FESVC -.->|NodePort<br/>30001| EXT[External<br/>localhost:30001]
-    AUTHSVC -.->|NodePort<br/>30006| EXT
+    FESVC -.->|NodePort<br/>30005| EXT[External<br/>localhost:30005]
+    AUTHSVC -.->|NodePort<br/>30001| EXT
     TICKSVC -.->|NodePort<br/>30004| EXT
-    STATSSVC -.->|NodePort<br/>30005| EXT
+    STATSSVC -.->|NodePort<br/>30002| EXT
 
     style PG fill:#e1f5ff
     style FESVC fill:#fff4e6
@@ -2352,7 +2356,7 @@ test('should create reservation', async () => {
 3. **E2E 테스트 (Playwright):**
 ```javascript
 test('user can reserve ticket', async ({ page }) => {
-  await page.goto('http://localhost:30001');
+  await page.goto('http://localhost:30005');
   await page.click('text=Login');
   await page.fill('input[name=email]', 'user@example.com');
   await page.fill('input[name=password]', 'password');

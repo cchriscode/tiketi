@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: tiketi
+
+resources:
+  - ../dev/namespace.yaml
+  - ../../base/postgres
+  - ../../base/dragonfly
+
+configMapGenerator:
+  - name: tiketi-config
+    envs:
+      - ../dev/config.env
+
+secretGenerator:
+  - name: tiketi-secret
+    envs:
+      - ../dev/secrets.env
+
+commonLabels:
+  environment: development

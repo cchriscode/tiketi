@@ -1,150 +1,150 @@
-# TIKETI Quick Start Guide for Mac 🚀
+# TIKETI Quick Start Guide for Mac ??
 
-> Mac 사용자를 위한 완벽한 설치 가이드
+> Mac ?�용?��? ?�한 ?�벽???�치 가?�드
 
-## 📋 목차
+## ?�� 목차
 
-1. [빠른 시작 (자동 설치)](#빠른-시작-자동-설치) ⚡ **권장**
-2. [사전 요구사항](#사전-요구사항)
-3. [수동 설치 (상세)](#수동-설치-상세)
-4. [접속 및 테스트](#접속-및-테스트)
-5. [문제 해결](#문제-해결)
+1. [빠른 ?�작 (?�동 ?�치)](#빠른-?�작-?�동-?�치) ??**권장**
+2. [?�전 ?�구?�항](#?�전-?�구?�항)
+3. [?�동 ?�치 (?�세)](#?�동-?�치-?�세)
+4. [?�속 �??�스??(#?�속-�??�스??
+5. [문제 ?�결](#문제-?�결)
 
 ---
 
-## ⚠️ 시작하기 전에
+## ?�️ ?�작?�기 ?�에
 
-**필수 확인사항:**
-1. ✅ Docker Desktop 실행 중
-2. ✅ 터미널 열기
-3. ✅ 프로젝트 디렉토리로 이동: `cd ~/project-ticketing` (또는 클론한 경로)
+**?�수 ?�인?�항:**
+1. ??Docker Desktop ?�행 �?
+2. ???��????�기
+3. ???�로?�트 ?�렉?�리�??�동: `cd ~/project-ticketing` (?�는 ?�론??경로)
 
-**전체 정리 후 재시작하려면:**
+**?�체 ?�리 ???�시?�하?�면:**
 ```bash
 ./scripts/cleanup.sh
 ```
 
 ---
 
-## 빠른 시작 (자동 설치)
+## 빠른 ?�작 (?�동 ?�치)
 
-### 원스텝 설치 🎯
+### ?�스???�치 ?��
 
-Mac에서는 간단합니다! 터미널에서 한 줄만 실행하세요:
+Mac?�서??간단?�니?? ?��??�에????줄만 ?�행?�세??
 
 ```bash
-# 프로젝트 루트에서 실행
+# ?�로?�트 루트?�서 ?�행
 ./scripts/setup-tiketi.sh
 ```
 
-이 스크립트는 다음을 자동으로 수행합니다:
-1. ✅ Kind 클러스터 생성
-2. ✅ PostgreSQL 배포 및 스키마 설정
-3. ✅ 모든 Docker 이미지 빌드
-4. ✅ 모든 서비스 배포
-5. ✅ 준비 완료 확인
+???�크립트???�음???�동?�로 ?�행?�니??
+1. ??Kind ?�러?�터 ?�성
+2. ??PostgreSQL 배포 �??�키�??�정
+3. ??모든 Docker ?��?지 빌드
+4. ??모든 ?�비??배포
+5. ??준�??�료 ?�인
 
-**소요 시간**: 약 5-10분 (M1/M2는 더 빠름!)
+**?�요 ?�간**: ??5-10�?(M1/M2????빠름!)
 
-### 접속하기
+### ?�속?�기
 
-설치 완료 후:
+?�치 ?�료 ??
 
 ```bash
-# 포트포워딩 시작
+# ?�트?�워???�작
 ./scripts/port-forward-all.sh
 ```
 
-**브라우저에서 접속:**
+**브라?��??�서 ?�속:**
 ```
 http://localhost:3000
 ```
 
-✅ **끝!** 이제 TIKETI를 사용할 수 있습니다.
+??**??** ?�제 TIKETI�??�용?????�습?�다.
 
 ---
 
-## 사전 요구사항
+## ?�전 ?�구?�항
 
-### 필수 소프트웨어
+### ?�수 ?�프?�웨??
 
-Mac에서는 **WSL이 필요 없습니다!** 다음만 설치하면 됩니다:
+Mac?�서??**WSL???�요 ?�습?�다!** ?�음�??�치?�면 ?�니??
 
-1. **Homebrew** (Mac 패키지 관리자)
+1. **Homebrew** (Mac ?�키지 관리자)
 2. **Docker Desktop for Mac**
 3. **kubectl** (Kubernetes CLI)
 4. **Kind** (Kubernetes in Docker)
-5. **Node.js** v18 이상
+5. **Node.js** v18 ?�상
 
-### 1. Homebrew 설치
+### 1. Homebrew ?�치
 
 ```bash
-# Homebrew가 없다면 설치
+# Homebrew가 ?�다�??�치
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-# 설치 확인
+# ?�치 ?�인
 brew --version
 ```
 
-### 2. Docker Desktop for Mac 설치
+### 2. Docker Desktop for Mac ?�치
 
-**방법 A: Homebrew 사용 (권장)**
+**방법 A: Homebrew ?�용 (권장)**
 ```bash
 brew install --cask docker
 
-# Docker Desktop 실행
+# Docker Desktop ?�행
 open -a Docker
 ```
 
-**방법 B: 공식 사이트에서 다운로드**
+**방법 B: 공식 ?�이?�에???�운로드**
 - Intel Mac: https://docs.docker.com/desktop/install/mac-install/
-- M1/M2 (Apple Silicon): Docker Desktop for Mac (Apple Silicon) 다운로드
+- M1/M2 (Apple Silicon): Docker Desktop for Mac (Apple Silicon) ?�운로드
 
-**Docker 시작 확인:**
+**Docker ?�작 ?�인:**
 ```bash
 docker --version
-docker ps  # 에러 없이 실행되어야 함
+docker ps  # ?�러 ?�이 ?�행?�어????
 ```
 
-### 3. kubectl 설치
+### 3. kubectl ?�치
 
 ```bash
-# Homebrew로 설치
+# Homebrew�??�치
 brew install kubectl
 
-# 설치 확인
+# ?�치 ?�인
 kubectl version --client
 ```
 
-### 4. Kind 설치
+### 4. Kind ?�치
 
 ```bash
-# Homebrew로 설치
+# Homebrew�??�치
 brew install kind
 
-# 설치 확인
+# ?�치 ?�인
 kind version
 ```
 
-### 5. Node.js 설치
+### 5. Node.js ?�치
 
 ```bash
-# Homebrew로 설치 (v18 이상)
+# Homebrew�??�치 (v18 ?�상)
 brew install node@18
 
-# 또는 nvm 사용 (권장)
+# ?�는 nvm ?�용 (권장)
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
 nvm install 18
 nvm use 18
 
-# 설치 확인
-node --version  # v18 이상
+# ?�치 ?�인
+node --version  # v18 ?�상
 npm --version
 ```
 
-### 설치 확인
+### ?�치 ?�인
 
-모든 도구가 설치되었는지 확인:
+모든 ?�구가 ?�치?�었?��? ?�인:
 
 ```bash
 docker --version      # Docker version 24.x.x
@@ -156,35 +156,35 @@ npm --version         # 9.x.x
 
 ---
 
-## 수동 설치 (상세)
+## ?�동 ?�치 (?�세)
 
-> 💡 **권장**: 위의 [빠른 시작](#빠른-시작-자동-설치) 자동화 스크립트를 사용하세요.
+> ?�� **권장**: ?�의 [빠른 ?�작](#빠른-?�작-?�동-?�치) ?�동???�크립트�??�용?�세??
 >
-> 아래는 각 단계를 수동으로 실행하려는 경우를 위한 상세 가이드입니다.
+> ?�래??�??�계�??�동?�로 ?�행?�려??경우�??�한 ?�세 가?�드?�니??
 
-### 1. 프로젝트 클론
+### 1. ?�로?�트 ?�론
 
 ```bash
-# 원하는 디렉토리로 이동
-cd ~/Projects  # 또는 원하는 경로
+# ?�하???�렉?�리�??�동
+cd ~/Projects  # ?�는 ?�하??경로
 
-# 프로젝트 클론
+# ?�로?�트 ?�론
 git clone https://github.com/your-org/project-ticketing.git
 cd project-ticketing
 ```
 
-### 2. Kind 클러스터 생성
+### 2. Kind ?�러?�터 ?�성
 
 ```bash
-# Kind 클러스터 생성 (3-node cluster)
+# Kind ?�러?�터 ?�성 (3-node cluster)
 kind create cluster --name tiketi-local --config k8s/kind-config.yaml
 
-# 클러스터 확인
+# ?�러?�터 ?�인
 kubectl cluster-info --context kind-tiketi-local
 kubectl get nodes
 ```
 
-**예상 결과:**
+**?�상 결과:**
 ```
 NAME                         STATUS   ROLES           AGE   VERSION
 tiketi-local-control-plane   Ready    control-plane   1m    v1.27.0
@@ -192,69 +192,65 @@ tiketi-local-worker          Ready    <none>          1m    v1.27.0
 tiketi-local-worker2         Ready    <none>          1m    v1.27.0
 ```
 
-### 3. Kubernetes Namespace & Config 생성
+### 3. Kubernetes Namespace & Config ?�성
 
 ```bash
-# Namespace 생성
-kubectl create namespace tiketi
+# Dev environment (namespace + config + secrets + postgres/dragonfly + services)
+kubectl apply -k k8s/overlays/dev
 
-# ConfigMap & Secret 생성
-kubectl apply -f k8s/01-configmap.yaml
-kubectl apply -f k8s/02-secret.yaml
 ```
 
 ### 4. PostgreSQL 배포
 
 ```bash
-# PVC 및 PostgreSQL 배포
-kubectl apply -f k8s/03-pvc.yaml
-kubectl apply -f k8s/04-postgres.yaml
+# PVC �?PostgreSQL 배포 (Kustomize�?통합 배포?�므�??�미 ?�성?�었?�면 SKIP)
+kubectl apply -k k8s/overlays/dev
 
-# Pod 실행 대기 (약 30초)
+# Pod ?�행 ?��?(??30�?
 kubectl wait --for=condition=ready pod -l app=postgres -n tiketi --timeout=120s
 
-# 상태 확인
+# ?�태 ?�인
 kubectl get pods -n tiketi
 ```
 
-### 5. Database 초기화
+### 5. Database 초기??
 
-**중요**: 반드시 아래 순서대로 실행하세요!
+**중요**: 반드???�래 ?�서?��??�행?�세??
 
 ```bash
-# Pod 이름 변수 저장 (간편함)
+# Pod ?�름 변???�??(간편??
 POSTGRES_POD=$(kubectl get pod -n tiketi -l app=postgres -o jsonpath='{.items[0].metadata.name}')
 
-# 1. 기본 스키마 및 샘플 데이터 생성
+# 1. 기본 ?�키�?�??�플 ?�이???�성
 cat database/init.sql | kubectl exec -i -n tiketi $POSTGRES_POD -- psql -U tiketi_user -d tiketi
 
-# 2. MSA 스키마 마이그레이션
+# 2. MSA ?�키�?마이그레?�션
 cat database/migrations/auth-service-schema.sql | kubectl exec -i -n tiketi $POSTGRES_POD -- psql -U tiketi_user -d tiketi
 cat database/migrations/ticket-service-schema.sql | kubectl exec -i -n tiketi $POSTGRES_POD -- psql -U tiketi_user -d tiketi
 cat database/migrations/stats-service-schema.sql | kubectl exec -i -n tiketi $POSTGRES_POD -- psql -U tiketi_user -d tiketi
 cat database/migrations/payment-service-schema.sql | kubectl exec -i -n tiketi $POSTGRES_POD -- psql -U tiketi_user -d tiketi
 
-# 3. Search Path 설정
+# 3. Search Path ?�정
 cat database/set_search_path.sql | kubectl exec -i -n tiketi $POSTGRES_POD -- psql -U tiketi_user -d tiketi
 ```
 
-**결과 확인:**
+**결과 ?�인:**
 ```bash
-# 이벤트 데이터 확인
+# ?�벤???�이???�인
 kubectl exec -n tiketi $POSTGRES_POD -- psql -U tiketi_user -d tiketi -c "SELECT COUNT(*) FROM events"
-# 25개 이상의 샘플 이벤트가 있어야 함
+# 25�??�상???�플 ?�벤?��? ?�어????
 ```
 
-### 6. 공통 패키지 설치
+### 6. 공통 ?�키지 ?�치
 
 ```bash
-# Monorepo 패키지 설치
+# Monorepo ?�키지 ?�치
 cd packages/common && npm install && cd ../..
 cd packages/database && npm install && cd ../..
 cd packages/metrics && npm install && cd ../..
 ```
 
-### 7. Docker 이미지 빌드
+### 7. Docker ?��?지 빌드
 
 ```bash
 # Auth Service
@@ -282,62 +278,57 @@ docker build -t tiketi-frontend:local -f frontend/Dockerfile frontend
 kind load docker-image tiketi-frontend:local --name tiketi-local
 ```
 
-**💡 Tip**: 모든 이미지를 한 번에 빌드하려면:
+**?�� Tip**: 모든 ?��?지�???번에 빌드?�려�?
 ```bash
 chmod +x scripts/build-all-images.sh
 ./scripts/build-all-images.sh
 ```
 
-**M1/M2 Mac 사용자 주의사항:**
-- Docker 이미지가 ARM64 아키텍처로 빌드됩니다
-- 호환성 문제는 거의 없지만, 일부 Node.js 네이티브 모듈에서 발생 가능
-- 문제 발생 시: `docker build --platform linux/amd64` 옵션 추가
+**M1/M2 Mac ?�용??주의?�항:**
+- Docker ?��?지가 ARM64 ?�키?�처�?빌드?�니??
+- ?�환??문제??거의 ?��?�? ?��? Node.js ?�이?�브 모듈?�서 발생 가??
+- 문제 발생 ?? `docker build --platform linux/amd64` ?�션 추�?
 
-### 8. 인프라 서비스 배포
+### 8. ?�프???�비??배포
 
 ```bash
-# Dragonfly (Redis), 모니터링 스택
-kubectl apply -f k8s/05-dragonfly.yaml
+# Monitoring stack (optional)
 kubectl apply -f k8s/08-loki.yaml
 kubectl apply -f k8s/09-promtail.yaml
 kubectl apply -f k8s/10-grafana.yaml
 ```
 
-### 9. 애플리케이션 서비스 배포
+### 9. ?�플리�??�션 ?�비??배포
 
 ```bash
-# Backend & MSA 서비스 배포
-kubectl apply -f k8s/06-backend.yaml
-kubectl apply -f k8s/12-auth-service.yaml
-kubectl apply -f k8s/13-ticket-service.yaml
-kubectl apply -f k8s/14-stats-service.yaml
-kubectl apply -f k8s/11-payment-service.yaml
+# Backend & MSA ?�비??배포
+kubectl apply -k k8s/overlays/dev
 kubectl apply -f k8s/07-frontend.yaml
 
-# 배포 상태 확인 (모든 Pod가 Running 될 때까지 대기)
+# 배포 ?�태 ?�인 (모든 Pod가 Running ???�까지 ?��?
 kubectl get pods -n tiketi -w
 ```
 
-**Ctrl+C로 종료 후 최종 확인:**
+**Ctrl+C�?종료 ??최종 ?�인:**
 ```bash
 kubectl get pods -n tiketi
 ```
 
-**모든 Pod가 Running 상태여야 합니다!**
+**모든 Pod가 Running ?�태?�야 ?�니??**
 
 ---
 
-## 접속 및 테스트
+## ?�속 �??�스??
 
-### 1. Port-Forward 설정
+### 1. Port-Forward ?�정
 
-**자동 스크립트 사용 (권장):**
+**?�동 ?�크립트 ?�용 (권장):**
 ```bash
 chmod +x scripts/port-forward-all.sh
 ./scripts/port-forward-all.sh
 ```
 
-이 스크립트는 백그라운드로 실행되며, 다음 포트를 포워딩합니다:
+???�크립트??백그?�운?�로 ?�행?�며, ?�음 ?�트�??�워?�합?�다:
 - PostgreSQL: 5432
 - Backend: 3001
 - Auth: 3005
@@ -346,9 +337,9 @@ chmod +x scripts/port-forward-all.sh
 - Stats: 3004
 - Frontend: 3000
 
-**수동 설정 (선택사항):**
+**?�동 ?�정 (?�택?�항):**
 ```bash
-# 각각 별도의 터미널에서 실행하거나 백그라운드로 실행
+# 각각 별도???��??�에???�행?�거??백그?�운?�로 ?�행
 kubectl port-forward -n tiketi svc/postgres-service 5432:5432 &
 kubectl port-forward -n tiketi svc/backend-service 3001:3001 &
 kubectl port-forward -n tiketi svc/auth-service 3005:3005 &
@@ -358,23 +349,23 @@ kubectl port-forward -n tiketi svc/stats-service 3004:3004 &
 kubectl port-forward -n tiketi svc/frontend-service 3000:3000 &
 ```
 
-### 2. 접속 URL
+### 2. ?�속 URL
 
-| 서비스 | URL | 설명 |
+| ?�비??| URL | ?�명 |
 |--------|-----|------|
-| **Frontend** | http://localhost:3000 | 메인 사용자 웹사이트 |
-| **Backend API** | http://localhost:3001 | Legacy API (Admin 등) |
-| **Auth Service** | http://localhost:3005 | 인증 서비스 (MSA) |
-| **Payment Service** | http://localhost:3003 | 결제 서비스 |
-| **Ticket Service** | http://localhost:3002 | 티켓 예매 서비스 |
-| **Stats Service** | http://localhost:3004 | 통계 서비스 |
+| **Frontend** | http://localhost:3000 | 메인 ?�용???�사?�트 |
+| **Backend API** | http://localhost:3001 | Legacy API (Admin ?? |
+| **Auth Service** | http://localhost:3005 | ?�증 ?�비??(MSA) |
+| **Payment Service** | http://localhost:3003 | 결제 ?�비??|
+| **Ticket Service** | http://localhost:3002 | ?�켓 ?�매 ?�비??|
+| **Stats Service** | http://localhost:3004 | ?�계 ?�비??|
 
-### 3. 기본 테스트
+### 3. 기본 ?�스??
 
 #### A. Health Check
 
 ```bash
-# 모든 서비스 Health 확인
+# 모든 ?�비??Health ?�인
 curl http://localhost:3001/health  # Backend
 curl http://localhost:3005/health  # Auth
 curl http://localhost:3003/health  # Payment
@@ -382,163 +373,163 @@ curl http://localhost:3002/health  # Ticket
 curl http://localhost:3004/health  # Stats
 ```
 
-모든 서비스가 `{"status":"ok"}` 응답을 반환해야 합니다.
+모든 ?�비?��? `{"status":"ok"}` ?�답??반환?�야 ?�니??
 
-#### B. 회원가입 & 로그인
+#### B. ?�원가??& 로그??
 
-1. 브라우저에서 http://localhost:3000 접속
-2. 우측 상단 "회원가입" 클릭
-3. 정보 입력 후 가입
-4. 로그인
+1. 브라?��??�서 http://localhost:3000 ?�속
+2. ?�측 ?�단 "?�원가?? ?�릭
+3. ?�보 ?�력 ??가??
+4. 로그??
 
-#### C. 티켓 예매 플로우
+#### C. ?�켓 ?�매 ?�로??
 
-1. 메인 페이지에서 이벤트 선택
-2. 좌석 선택 (실시간 동기화 확인 - 여러 탭에서 동시 접속 테스트)
+1. 메인 ?�이지?�서 ?�벤???�택
+2. 좌석 ?�택 (?�시�??�기???�인 - ?�러 ??��???�시 ?�속 ?�스??
 3. 결제 진행
-4. "내 예약" 페이지에서 확인
+4. "???�약" ?�이지?�서 ?�인
 
 #### D. 관리자 기능
 
-1. http://localhost:3000/admin 접속
-2. Admin 로그인:
+1. http://localhost:3000/admin ?�속
+2. Admin 로그??
    - Email: `admin@tiketi.gg`
    - Password: `admin123`
-3. Dashboard 확인
-4. Statistics 페이지에서 통계 확인
+3. Dashboard ?�인
+4. Statistics ?�이지?�서 ?�계 ?�인
 
 ---
 
-## 문제 해결
+## 문제 ?�결
 
-### Docker Desktop이 시작되지 않을 때
+### Docker Desktop???�작?��? ?�을 ??
 
 ```bash
-# Docker Desktop 재시작
+# Docker Desktop ?�시??
 killall Docker
 open -a Docker
 
-# 또는 시스템 재부팅 후 다시 시도
+# ?�는 ?�스???��??????�시 ?�도
 ```
 
-### Pod가 CrashLoopBackOff 상태일 때
+### Pod가 CrashLoopBackOff ?�태????
 
 ```bash
-# 로그 확인
+# 로그 ?�인
 kubectl logs -n tiketi <pod-name>
 
-# 이전 컨테이너 로그 확인
+# ?�전 컨테?�너 로그 ?�인
 kubectl logs -n tiketi <pod-name> --previous
 
-# Pod 상세 정보
+# Pod ?�세 ?�보
 kubectl describe pod -n tiketi <pod-name>
 ```
 
-**일반적인 원인:**
-- Database 연결 실패 → PostgreSQL Pod 상태 확인
-- 환경 변수 누락 → ConfigMap/Secret 확인
-- 이미지 Pull 실패 → `kind load docker-image` 재실행
+**?�반?�인 ?�인:**
+- Database ?�결 ?�패 ??PostgreSQL Pod ?�태 ?�인
+- ?�경 변???�락 ??ConfigMap/Secret ?�인
+- ?��?지 Pull ?�패 ??`kind load docker-image` ?�실??
 
-### Database 연결 실패
+### Database ?�결 ?�패
 
 ```bash
-# PostgreSQL Pod 로그 확인
+# PostgreSQL Pod 로그 ?�인
 kubectl logs -n tiketi -l app=postgres
 
-# PostgreSQL 직접 접속 테스트
+# PostgreSQL 직접 ?�속 ?�스??
 POSTGRES_POD=$(kubectl get pod -n tiketi -l app=postgres -o jsonpath='{.items[0].metadata.name}')
 kubectl exec -it -n tiketi $POSTGRES_POD -- psql -U tiketi_user -d tiketi
 
-# 스키마 확인
+# ?�키�??�인
 \dn
 
-# 테이블 확인
+# ?�이�??�인
 SET search_path TO auth_schema, ticket_schema, stats_schema, payment_schema, public;
 \dt
 ```
 
-### Port-Forward 끊김
+### Port-Forward ?��?
 
-Mac에서는 네트워크 변경 시 (Wi-Fi 변경 등) 포트 포워딩이 끊어질 수 있습니다.
+Mac?�서???�트?�크 변�???(Wi-Fi 변�??? ?�트 ?�워?�이 ?�어�????�습?�다.
 
 ```bash
-# 모든 port-forward 프로세스 종료
+# 모든 port-forward ?�로?�스 종료
 pkill -f "kubectl port-forward"
 
-# 또는
+# ?�는
 killall kubectl
 
-# 재시작
+# ?�시??
 ./scripts/port-forward-all.sh
 ```
 
-### M1/M2 특정 이슈
+### M1/M2 ?�정 ?�슈
 
-**ARM64 아키텍처 문제:**
+**ARM64 ?�키?�처 문제:**
 ```bash
-# 일부 이미지는 AMD64로 빌드 필요할 수 있음
+# ?��? ?��?지??AMD64�?빌드 ?�요?????�음
 docker build --platform linux/amd64 -t tiketi-auth-service:local -f services/auth-service/Dockerfile .
 ```
 
-**Node.js 네이티브 모듈 문제:**
+**Node.js ?�이?�브 모듈 문제:**
 ```bash
-# node_modules 재설치
+# node_modules ?�설�?
 cd services/auth-service
 rm -rf node_modules package-lock.json
 npm install
 ```
 
-### Frontend가 백엔드 API 호출 실패
+### Frontend가 백엔??API ?�출 ?�패
 
 ```bash
-# Frontend 로그 확인
+# Frontend 로그 ?�인
 kubectl logs -n tiketi -l app=frontend
 
-# 브라우저 개발자 도구에서 네트워크 탭 확인
-# CORS 에러인 경우: ConfigMap에서 FRONTEND_URL 확인
+# 브라?��? 개발???�구?�서 ?�트?�크 ???�인
+# CORS ?�러??경우: ConfigMap?�서 FRONTEND_URL ?�인
 ```
 
-### 전체 재시작
+### ?�체 ?�시??
 
 ```bash
-# 모든 Deployment 재시작
+# 모든 Deployment ?�시??
 kubectl rollout restart deployment -n tiketi
 
-# 특정 서비스만 재시작
+# ?�정 ?�비?�만 ?�시??
 kubectl rollout restart deployment/auth-service -n tiketi
 ```
 
 ---
 
-## 전체 초기화 & 재시작
+## ?�체 초기??& ?�시??
 
-시스템을 완전히 초기화하고 다시 시작하려면:
+?�스?�을 ?�전??초기?�하�??�시 ?�작?�려�?
 
-### Cleanup 스크립트 사용 (권장)
+### Cleanup ?�크립트 ?�용 (권장)
 
 ```bash
 ./scripts/cleanup.sh
 ```
 
-이 스크립트는 다음을 정리합니다:
-- ✅ 실행 중인 port-forward 프로세스
-- ✅ Kind cluster 삭제
-- ✅ Docker images 삭제 (선택사항)
-- ✅ node_modules 폴더 삭제 (선택사항)
+???�크립트???�음???�리?�니??
+- ???�행 중인 port-forward ?�로?�스
+- ??Kind cluster ??��
+- ??Docker images ??�� (?�택?�항)
+- ??node_modules ?�더 ??�� (?�택?�항)
 
-### 수동 정리
+### ?�동 ?�리
 
 ```bash
-# 1. 포트 포워딩 중지
+# 1. ?�트 ?�워??중�?
 pkill -f "kubectl port-forward"
 
-# 2. Kind 클러스터 삭제
+# 2. Kind ?�러?�터 ??��
 kind delete cluster --name tiketi-local
 
-# 3. Docker 이미지 정리 (선택사항)
+# 3. Docker ?��?지 ?�리 (?�택?�항)
 docker images | grep tiketi | awk '{print $3}' | xargs docker rmi -f
 
-# 4. 처음부터 다시 시작
+# 4. 처음부???�시 ?�작
 ./scripts/setup-tiketi.sh
 ```
 
@@ -546,119 +537,119 @@ docker images | grep tiketi | awk '{print $3}' | xargs docker rmi -f
 
 ## 개발 모드
 
-Kubernetes 없이 로컬에서 직접 실행 (개발 시 유용):
+Kubernetes ?�이 로컬?�서 직접 ?�행 (개발 ???�용):
 
-### 1. PostgreSQL만 K8s에서 실행
+### 1. PostgreSQL�?K8s?�서 ?�행
 
 ```bash
-# PostgreSQL 포트포워딩
+# PostgreSQL ?�트?�워??
 kubectl port-forward -n tiketi svc/postgres-service 5432:5432 &
 ```
 
-### 2. 각 서비스 로컬 실행
+### 2. �??�비??로컬 ?�행
 
-**새 터미널 탭/윈도우를 각각 열어서 실행:**
+**???��??????�도?��? 각각 ?�어???�행:**
 
 ```bash
-# 탭 1: Backend
+# ??1: Backend
 cd backend
 npm install
 npm run dev  # Port 3001
 
-# 탭 2: Auth Service
+# ??2: Auth Service
 cd services/auth-service
 npm install
 npm run dev  # Port 3005
 
-# 탭 3: Ticket Service
+# ??3: Ticket Service
 cd services/ticket-service
 npm install
 npm run dev  # Port 3002
 
-# 탭 4: Payment Service
+# ??4: Payment Service
 cd services/payment-service
 npm install
 npm run dev  # Port 3003
 
-# 탭 5: Stats Service
+# ??5: Stats Service
 cd services/stats-service
 npm install
 npm run dev  # Port 3004
 
-# 탭 6: Frontend
+# ??6: Frontend
 cd frontend
 npm install
 npm start  # Port 3000
 ```
 
-**장점:**
-- 코드 수정 시 즉시 반영 (Hot Reload)
-- 디버깅 쉬움
-- 빠른 개발 사이클
+**?�점:**
+- 코드 ?�정 ??즉시 반영 (Hot Reload)
+- ?�버�??��?
+- 빠른 개발 ?�이??
 
-**단점:**
-- 여러 터미널 관리 필요
-- Redis가 필요한 기능은 별도 설정 필요
+**?�점:**
+- ?�러 ?��???관�??�요
+- Redis가 ?�요??기능?� 별도 ?�정 ?�요
 
 ---
 
-## 유용한 명령어 모음
+## ?�용??명령??모음
 
 ```bash
-# 모든 Pod 상태 확인
+# 모든 Pod ?�태 ?�인
 kubectl get pods -n tiketi
 
-# 모든 Service 확인
+# 모든 Service ?�인
 kubectl get svc -n tiketi
 
-# 특정 서비스 로그 실시간 확인
+# ?�정 ?�비??로그 ?�시�??�인
 kubectl logs -n tiketi -f deployment/auth-service
 
-# ConfigMap 확인
+# ConfigMap ?�인
 kubectl get configmap tiketi-config -n tiketi -o yaml
 
-# Secret 확인 (Base64 디코딩)
+# Secret ?�인 (Base64 ?�코??
 kubectl get secret tiketi-secret -n tiketi -o jsonpath='{.data.DB_PASSWORD}' | base64 -d
 
-# 리소스 사용량 확인
+# 리소???�용???�인
 kubectl top pods -n tiketi
 kubectl top nodes
 
-# 클러스터 전체 정보
+# ?�러?�터 ?�체 ?�보
 kubectl get all -n tiketi
 
-# Pod에 직접 접속
+# Pod??직접 ?�속
 kubectl exec -it -n tiketi <pod-name> -- /bin/sh
 
-# PostgreSQL 접속
+# PostgreSQL ?�속
 POSTGRES_POD=$(kubectl get pod -n tiketi -l app=postgres -o jsonpath='{.items[0].metadata.name}')
 kubectl exec -it -n tiketi $POSTGRES_POD -- psql -U tiketi_user -d tiketi
 ```
 
 ---
 
-## Mac 특화 팁
+## Mac ?�화 ??
 
-### iTerm2 사용자
+### iTerm2 ?�용??
 
-iTerm2를 사용하면 더 편리합니다:
+iTerm2�??�용?�면 ???�리?�니??
 
-**Split Panes로 여러 로그 동시 확인:**
+**Split Panes�??�러 로그 ?�시 ?�인:**
 ```bash
-# Cmd+D로 수직 분할, Cmd+Shift+D로 수평 분할
+# Cmd+D�??�직 분할, Cmd+Shift+D�??�평 분할
 
-# 각 Pane에서:
+# �?Pane?�서:
 kubectl logs -n tiketi -f deployment/auth-service
 kubectl logs -n tiketi -f deployment/ticket-service
 kubectl logs -n tiketi -f deployment/payment-service
 ```
 
-### Oh My Zsh 사용자
+### Oh My Zsh ?�용??
 
-`.zshrc`에 alias 추가:
+`.zshrc`??alias 추�?:
 
 ```bash
-# ~/.zshrc에 추가
+# ~/.zshrc??추�?
 alias k='kubectl'
 alias kgp='kubectl get pods -n tiketi'
 alias kgs='kubectl get svc -n tiketi'
@@ -667,58 +658,58 @@ alias tiketi-start='cd ~/Projects/project-ticketing && ./scripts/setup-tiketi.sh
 alias tiketi-port='cd ~/Projects/project-ticketing && ./scripts/port-forward-all.sh'
 alias tiketi-clean='cd ~/Projects/project-ticketing && ./scripts/cleanup.sh'
 
-# 적용
+# ?�용
 source ~/.zshrc
 ```
 
-### Docker Desktop 메모리 설정
+### Docker Desktop 메모�??�정
 
-Mac에서 Docker Desktop 메모리 부족 시:
+Mac?�서 Docker Desktop 메모�?부�???
 
-1. Docker Desktop 설정 열기
-2. Resources → Advanced
-3. Memory를 4GB 이상으로 설정 (권장: 6GB)
+1. Docker Desktop ?�정 ?�기
+2. Resources ??Advanced
+3. Memory�?4GB ?�상?�로 ?�정 (권장: 6GB)
 4. Apply & Restart
 
-### M1/M2 성능 최적화
+### M1/M2 ?�능 최적??
 
-Apple Silicon Mac은 매우 빠르지만, Rosetta 에뮬레이션을 피하기 위해:
+Apple Silicon Mac?� 매우 빠르지�? Rosetta ?��??�이?�을 ?�하�??�해:
 
 ```bash
-# ARM64 네이티브 이미지 사용 확인
+# ARM64 ?�이?�브 ?��?지 ?�용 ?�인
 docker images --format "{{.Repository}}:{{.Tag}}" | xargs -I {} docker inspect {} | grep Architecture
 
-# 모두 "arm64"여야 최적
+# 모두 "arm64"?�야 최적
 ```
 
 ---
 
-## 추가 문서
+## 추�? 문서
 
-- **프로젝트 분석 보고서**: [claudedocs/TIKETI_PROJECT_ANALYSIS_PART1.md](./claudedocs/TIKETI_PROJECT_ANALYSIS_PART1.md)
-- **MSA 아키텍처**: [MSA_ARCHITECTURE.md](./MSA_ARCHITECTURE.md)
-- **면접 준비 QnA**: [claudedocs/TIKETI_PROJECT_ANALYSIS_PART2.md](./claudedocs/TIKETI_PROJECT_ANALYSIS_PART2.md)
-
----
-
-## Windows 팀원과 협업
-
-Windows 팀원은 `QUICK_START.md`를 참고하세요.
-
-주요 차이점:
-- Mac: bash 스크립트 사용 (`./scripts/*.sh`)
-- Windows: PowerShell 스크립트 사용 (`.\*.ps1`)
-- Mac: WSL 불필요, 네이티브 Unix 환경
-- Windows: WSL2 + Docker Desktop 필요
+- **?�로?�트 분석 보고??*: [claudedocs/TIKETI_PROJECT_ANALYSIS_PART1.md](./claudedocs/TIKETI_PROJECT_ANALYSIS_PART1.md)
+- **MSA ?�키?�처**: [MSA_ARCHITECTURE.md](./MSA_ARCHITECTURE.md)
+- **면접 준�?QnA**: [claudedocs/TIKETI_PROJECT_ANALYSIS_PART2.md](./claudedocs/TIKETI_PROJECT_ANALYSIS_PART2.md)
 
 ---
 
-## 라이선스
+## Windows ?�?�과 ?�업
+
+Windows ?�?��? `QUICK_START.md`�?참고?�세??
+
+주요 차이??
+- Mac: bash ?�크립트 ?�용 (`./scripts/*.sh`)
+- Windows: PowerShell ?�크립트 ?�용 (`.\*.ps1`)
+- Mac: WSL 불필?? ?�이?�브 Unix ?�경
+- Windows: WSL2 + Docker Desktop ?�요
+
+---
+
+## ?�이?�스
 
 MIT License
 
 ---
 
-**Happy Ticketing! 🎫**
+**Happy Ticketing! ?��**
 
-*Made with ❤️ for Mac*
+*Made with ?�️ for Mac*

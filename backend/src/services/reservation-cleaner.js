@@ -76,8 +76,8 @@ class ReservationCleaner {
 
       // Find expired reservations
       const expiredReservations = await client.query(
-        `SELECT id, event_id 
-         FROM reservations
+        `SELECT id, event_id
+         FROM ticket_schema.reservations
          WHERE payment_status = $1
          AND expires_at < NOW()
          AND status != $2`,
@@ -93,7 +93,7 @@ class ReservationCleaner {
       for (const reservation of expiredReservations.rows) {
         // Get seat IDs for this reservation
         const seatsResult = await client.query(
-          `SELECT seat_id FROM reservation_items 
+          `SELECT seat_id FROM ticket_schema.reservation_items
            WHERE reservation_id = $1 AND seat_id IS NOT NULL`,
           [reservation.id]
         );
@@ -103,7 +103,7 @@ class ReservationCleaner {
           const seatIds = seatsResult.rows.map(row => row.seat_id);
 
           const releaseResult = await client.query(
-            `UPDATE seats
+            `UPDATE ticket_schema.seats
              SET status = $1, updated_at = NOW()
              WHERE id = ANY($2) AND status = $3
              RETURNING id`,
@@ -135,7 +135,7 @@ class ReservationCleaner {
         }
         // Mark as expired so the cleaner doesn't reprocess this reservation
         await client.query(
-          `UPDATE reservations 
+          `UPDATE ticket_schema.reservations
            SET status = $1, payment_status = $2, updated_at = NOW()
            WHERE id = $3`,
           [RESERVATION_STATUS.EXPIRED, PAYMENT_STATUS.FAILED, reservation.id]
@@ -170,7 +170,7 @@ class ReservationCleaner {
 
       // Get seat IDs
       const seatsResult = await client.query(
-        `SELECT seat_id FROM reservation_items 
+        `SELECT seat_id FROM ticket_schema.reservation_items
          WHERE reservation_id = $1 AND seat_id IS NOT NULL`,
         [reservationId]
       );
@@ -180,7 +180,7 @@ class ReservationCleaner {
         const seatIds = seatsResult.rows.map(row => row.seat_id);
 
         await client.query(
-          `UPDATE seats 
+          `UPDATE ticket_schema.seats
            SET status = $1, updated_at = NOW()
            WHERE id = ANY($2)`,
           [SEAT_STATUS.AVAILABLE, seatIds]
@@ -189,7 +189,7 @@ class ReservationCleaner {
 
       // Update reservation
       await client.query(
-        `UPDATE reservations 
+        `UPDATE ticket_schema.reservations
          SET status = $1, updated_at = NOW()
          WHERE id = $2`,
         [RESERVATION_STATUS.EXPIRED, reservationId]

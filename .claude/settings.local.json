@@ -77,7 +77,15 @@
       "Bash(powershell.exe -Command \"Get-Process -Id 8296 | Select-Object Name, Id, Path\")",
       "Bash(wsl kubectl patch:*)",
       "Bash(powershell.exe -Command \"wsl kubectl get pods -n tiketi\")",
-      "Bash(cmd.exe /c \"wsl kind load docker-image tiketi-ticket-service:local --name tiketi-local && wsl kubectl rollout restart deployment ticket-service -n tiketi\")"
+      "Bash(cmd.exe /c \"wsl kind load docker-image tiketi-ticket-service:local --name tiketi-local && wsl kubectl rollout restart deployment ticket-service -n tiketi\")",
+      "Bash(powershell.exe -Command \"wsl kubectl get pods -n tiketi | grep ticket-service\")",
+      "Bash(kubectl kustomize:*)",
+      "Bash(kubectl delete:*)",
+      "Bash(kubectl apply:*)",
+      "Bash(kubectl logs:*)",
+      "Bash(kubectl describe:*)",
+      "Bash(wsl grep:*)",
+      "Bash(powershell.exe -Command \"kind get clusters\")"
     ]
   }
 }

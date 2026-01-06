@@ -35,12 +35,35 @@ function ReservationDetail() {
       return;
     }
 
+    // Prevent double-click
+    if (cancelling) {
+      return;
+    }
+
     try {
       setCancelling(true);
       await reservationsAPI.cancel(id);
       alert('예매가 취소되었습니다.');
       navigate('/my-reservations');
     } catch (err) {
+      console.error('Cancel error:', err);
+
+      // 에러 발생 시 실제 상태 재확인 (중복 요청이나 네트워크 이슈 대응)
+      try {
+        const response = await reservationsAPI.getById(id);
+        const currentStatus = response.data.reservation.status;
+
+        // 실제로는 취소되어 있으면 성공으로 처리
+        if (currentStatus === 'cancelled') {
+          alert('예매가 취소되었습니다.');
+          navigate('/my-reservations');
+          return;
+        }
+      } catch (recheckErr) {
+        console.error('Status recheck error:', recheckErr);
+      }
+
+      // 실제로 취소 안 된 경우에만 실패 메시지 표시
       const message = err.response?.data?.error || '예매 취소에 실패했습니다.';
       alert(message);
     } finally {

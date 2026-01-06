@@ -18,11 +18,11 @@ async function initSeats() {
     // Find events with seat_layout_id but no seats
     const result = await client.query(
       `SELECT e.id, e.title, e.seat_layout_id, sl.layout_config
-       FROM events e
-       JOIN seat_layouts sl ON e.seat_layout_id = sl.id
+       FROM ticket_schema.events e
+       JOIN ticket_schema.seat_layouts sl ON e.seat_layout_id = sl.id
        WHERE e.seat_layout_id IS NOT NULL
        AND NOT EXISTS (
-         SELECT 1 FROM seats s WHERE s.event_id = e.id
+         SELECT 1 FROM ticket_schema.seats s WHERE s.event_id = e.id
        )`
     );
 
@@ -48,7 +48,7 @@ async function initSeats() {
               const seatLabel = `${section.name}-${rowNumber}-${seatNum}`;
 
               await client.query(
-                `INSERT INTO seats (event_id, section, row_number, seat_number, seat_label, price, status)
+                `INSERT INTO ticket_schema.seats (event_id, section, row_number, seat_number, seat_label, price, status)
                  VALUES ($1, $2, $3, $4, $5, $6, $7)`,
                 [event.id, section.name, rowNumber, seatNum, seatLabel, section.price, SEAT_STATUS.AVAILABLE]
               );

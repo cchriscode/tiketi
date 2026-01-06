@@ -1,0 +1,98 @@
+# App of Apps Pattern - Manages all Tiketi environments
+# This is a meta-application that deploys and manages dev/staging/prod applications
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tiketi-app-of-apps
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    app.kubernetes.io/name: tiketi
+    app.kubernetes.io/component: app-of-apps
+spec:
+  project: tiketi
+
+  source:
+    repoURL: https://github.com/ORGANIZATION/project-ticketing.git  # UPDATE: Replace with actual repo URL
+    targetRevision: main
+    path: argocd/applications
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+
+  syncPolicy:
+    automated:
+      prune: false     # Don't auto-delete applications
+      selfHeal: true   # Auto-sync application definitions
+      allowEmpty: false
+
+    syncOptions:
+      - CreateNamespace=false  # argocd namespace must already exist
+      - ApplyOutOfSyncOnly=true
+
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  info:
+    - name: Purpose
+      value: Meta-application managing all Tiketi environments
+    - name: Pattern
+      value: App of Apps
+    - name: Manages
+      value: tiketi-dev, tiketi-staging, tiketi-prod
+
+---
+# Alternative: ApplicationSet for dynamic environment management
+# Uncomment this if you prefer ApplicationSet pattern over App of Apps
+# apiVersion: argoproj.io/v1alpha1
+# kind: ApplicationSet
+# metadata:
+#   name: tiketi-environments
+#   namespace: argocd
+# spec:
+#   generators:
+#     # List generator - define environments
+#     - list:
+#         elements:
+#           - environment: dev
+#             namespace: tiketi
+#             branch: develop
+#             server: https://kubernetes.default.svc
+#             autoSync: "true"
+#           - environment: staging
+#             namespace: tiketi-staging
+#             branch: develop
+#             server: https://kubernetes.default.svc
+#             autoSync: "true"
+#           - environment: prod
+#             namespace: tiketi
+#             branch: main
+#             server: https://kubernetes.default.svc
+#             autoSync: "false"
+#
+#   template:
+#     metadata:
+#       name: 'tiketi-{{environment}}'
+#       labels:
+#         environment: '{{environment}}'
+#     spec:
+#       project: tiketi
+#       source:
+#         repoURL: https://github.com/ORGANIZATION/project-ticketing.git
+#         targetRevision: '{{branch}}'
+#         path: 'k8s/overlays/{{environment}}'
+#       destination:
+#         server: '{{server}}'
+#         namespace: '{{namespace}}'
+#       syncPolicy:
+#         automated:
+#           prune: '{{autoSync}}'
+#           selfHeal: '{{autoSync}}'
+#         syncOptions:
+#           - CreateNamespace=true

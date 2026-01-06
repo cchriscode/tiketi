@@ -27,7 +27,7 @@ class SeatGenerator {
 
       // Get layout configuration
       const layoutResult = await client.query(
-        'SELECT layout_config FROM seat_layouts WHERE id = $1',
+        'SELECT layout_config FROM ticket_schema.seat_layouts WHERE id = $1',
         [seatLayoutId]
       );
 
@@ -59,7 +59,7 @@ class SeatGenerator {
             const seatLabel = this._generateSeatLabel(sectionName, rowNumber, seatNum);
 
             await client.query(
-              `INSERT INTO seats (
+              `INSERT INTO ticket_schema.seats (
                 event_id, section, row_number, seat_number, seat_label, price, status
               ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
               [
@@ -116,7 +116,7 @@ class SeatGenerator {
    */
   async seatsExist(eventId) {
     const result = await db.query(
-      'SELECT COUNT(*) as count FROM seats WHERE event_id = $1',
+      'SELECT COUNT(*) as count FROM ticket_schema.seats WHERE event_id = $1',
       [eventId]
     );
     return parseInt(result.rows[0].count) > 0;
@@ -129,7 +129,7 @@ class SeatGenerator {
    */
   async deleteSeatsForEvent(eventId) {
     const result = await db.query(
-      'DELETE FROM seats WHERE event_id = $1',
+      'DELETE FROM ticket_schema.seats WHERE event_id = $1',
       [eventId]
     );
     return result.rowCount;

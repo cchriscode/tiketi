@@ -1,0 +1,52 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: tiketi-staging
+
+resources:
+  - namespace.yaml     # Staging namespace (tiketi-staging)
+  - ../../base
+  - ingress.yaml
+  - hpa.yaml
+  - secrets.enc.yaml  # SealedSecret for staging
+
+configMapGenerator:
+  - name: tiketi-config
+    literals:
+      - NODE_ENV=staging
+      # RDS PostgreSQL endpoints (placeholder - update with actual RDS endpoint)
+      - DB_HOST=tiketi-staging.abcdefg.ap-northeast-2.rds.amazonaws.com
+      - DB_PORT=5432
+      - DB_NAME=tiketi
+      - DB_USER=tiketi_user
+      # ElastiCache Redis endpoints (placeholder - update with actual ElastiCache endpoint)
+      - REDIS_HOST=tiketi-staging.abcdefg.cache.amazonaws.com
+      - REDIS_PORT=6379
+      # Service URLs (ClusterIP internal communication)
+      - PORT=3001
+      - SOCKET_IO_CORS_ORIGIN=https://staging.tiketi.com
+      - TZ=Asia/Seoul
+      # Frontend will be on S3+CloudFront, not needed in backend config
+      - AWS_REGION=ap-northeast-2
+      - AWS_S3_BUCKET=tiketi-staging-assets
+      - GOOGLE_CLIENT_ID=721028631258-dhjgd4gquphib49fsoitiubusbo3t9e9.apps.googleusercontent.com
+
+patches:
+  - path: resource-patches.yaml
+  - path: replicas-patch.yaml
+
+images:
+  - name: tiketi-backend
+    newName: PLACEHOLDER_AWS_ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi-backend
+    # newTag will be set by CI/CD pipeline
+  - name: tiketi-auth-service
+    newName: PLACEHOLDER_AWS_ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi-auth-service
+  - name: tiketi-ticket-service
+    newName: PLACEHOLDER_AWS_ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi-ticket-service
+  - name: tiketi-payment-service
+    newName: PLACEHOLDER_AWS_ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi-payment-service
+  - name: tiketi-stats-service
+    newName: PLACEHOLDER_AWS_ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi-stats-service
+
+commonLabels:
+  environment: staging

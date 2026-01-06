@@ -80,27 +80,27 @@ router.use(requireAdmin);
 router.get('/dashboard/stats', async (req, res, next) => {
   try {
     // Total events
-    const eventsResult = await db.query('SELECT COUNT(*) as count FROM events');
+    const eventsResult = await db.query('SELECT COUNT(*) as count FROM ticket_schema.events');
     const totalEvents = parseInt(eventsResult.rows[0].count);
 
     // Total reservations
     const reservationsResult = await db.query(
-      'SELECT COUNT(*) as count FROM reservations WHERE status != $1',
+      'SELECT COUNT(*) as count FROM ticket_schema.reservations WHERE status != $1',
       [RESERVATION_STATUS.CANCELLED]
     );
     const totalReservations = parseInt(reservationsResult.rows[0].count);
 
     // Total revenue
     const revenueResult = await db.query(
-      'SELECT COALESCE(SUM(total_amount), 0) as total FROM reservations WHERE payment_status = $1',
+      'SELECT COALESCE(SUM(total_amount), 0) as total FROM ticket_schema.reservations WHERE payment_status = $1',
       [PAYMENT_STATUS.COMPLETED]
     );
     const totalRevenue = parseInt(revenueResult.rows[0].total);
 
     // Today's reservations
     const todayResult = await db.query(
-      `SELECT COUNT(*) as count 
-       FROM reservations 
+      `SELECT COUNT(*) as count
+       FROM ticket_schema.reservations
        WHERE DATE(created_at) = CURRENT_DATE AND status != $1`,
       [RESERVATION_STATUS.CANCELLED]
     );
@@ -108,13 +108,13 @@ router.get('/dashboard/stats', async (req, res, next) => {
 
     // Recent reservations
     const recentResult = await db.query(
-      `SELECT 
+      `SELECT
         r.id, r.reservation_number, r.total_amount, r.status, r.created_at,
         u.name as user_name, u.email as user_email,
         e.title as event_title
-      FROM reservations r
-      JOIN users u ON r.user_id = u.id
-      JOIN events e ON r.event_id = e.id
+      FROM ticket_schema.reservations r
+      JOIN auth_schema.users u ON r.user_id = u.id
+      JOIN ticket_schema.events e ON r.event_id = e.id
       ORDER BY r.created_at DESC
       LIMIT 10`
     );
@@ -148,7 +148,7 @@ router.get('/dashboard/stats', async (req, res, next) => {
 router.get('/seat-layouts', async (req, res, next) => {
   try {
     const result = await db.query(
-      'SELECT id, name, description, total_seats, layout_config FROM seat_layouts ORDER BY name'
+      'SELECT id, name, description, total_seats, layout_config FROM ticket_schema.seat_layouts ORDER BY name'
     );
 
     res.json({ layouts: result.rows });
@@ -256,7 +256,7 @@ router.post('/events', async (req, res, next) => {
     );
 
     const result = await client.query(
-      `INSERT INTO events
+      `INSERT INTO ticket_schema.events
        (title, description, venue, address, event_date, sale_start_date, sale_end_date,
         poster_image_url, artist_name, seat_layout_id, created_by, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
@@ -278,7 +278,7 @@ router.post('/events', async (req, res, next) => {
     if (ticketTypes && Array.isArray(ticketTypes) && ticketTypes.length > 0) {
       for (const ticketType of ticketTypes) {
         await client.query(
-          `INSERT INTO ticket_types (event_id, name, price, total_quantity, available_quantity, description)
+          `INSERT INTO ticket_schema.ticket_types (event_id, name, price, total_quantity, available_quantity, description)
            VALUES ($1, $2, $3, $4, $5, $6)`,
           [
             event.id,
@@ -405,7 +405,7 @@ router.put('/events/:id', async (req, res, next) => {
 
     // 상태는 event-status-updater가 자동으로 관리하므로 수동 업데이트 제외
     const result = await db.query(
-      `UPDATE events 
+      `UPDATE ticket_schema.events
        SET title = $1, description = $2, venue = $3, address = $4,
            event_date = $5, sale_start_date = $6, sale_end_date = $7,
            poster_image_url = $8, artist_name = $9
@@ -446,7 +446,7 @@ router.put('/events/:id', async (req, res, next) => {
       // 상태가 변경되었으면 업데이트
       if (newStatus !== updatedEvent.status) {
         await db.query(
-          'UPDATE events SET status = $1 WHERE id = $2',
+          'UPDATE ticket_schema.events SET status = $1 WHERE id = $2',
           [newStatus, id]
         );
         logger.info(`🔄 상태 자동 업데이트: ${updatedEvent.status} → ${newStatus}`);
@@ -501,7 +501,7 @@ router.post('/events/:id/cancel', async (req, res, next) => {
     const result = await withTransaction(async (client) => {
       // 이벤트 상태를 취소로 변경
       const eventResult = await client.query(
-        `UPDATE events
+        `UPDATE ticket_schema.events
          SET status = $1
          WHERE id = $2 AND status != $1
          RETURNING *`,
@@ -516,7 +516,7 @@ router.post('/events/:id/cancel', async (req, res, next) => {
 
       // 해당 이벤트의 모든 예약(pending, confirmed) 취소 및 환불 처리
       const cancelledReservations = await client.query(
-        `UPDATE reservations
+        `UPDATE ticket_schema.reservations
          SET status = $1,
              payment_status = CASE
                WHEN payment_status = $2 THEN $3
@@ -549,7 +549,7 @@ router.post('/events/:id/cancel', async (req, res, next) => {
 
       // 좌석이 있는 경우 locked 좌석을 available로 변경
       const lockedSeats = await client.query(
-        `UPDATE seats
+        `UPDATE ticket_schema.seats
          SET status = $1
          WHERE event_id = $2 AND status = $3`,
         [SEAT_STATUS.AVAILABLE, id, SEAT_STATUS.LOCKED]
@@ -615,7 +615,7 @@ router.delete('/events/:id', async (req, res, next) => {
 
       // 취소되지 않은 모든 예약을 취소/환불 처리
       const cancelResult = await client.query(
-        `UPDATE reservations
+        `UPDATE ticket_schema.reservations
          SET status = $1,
              payment_status = CASE
                WHEN payment_status = $2 THEN $3
@@ -633,7 +633,7 @@ router.delete('/events/:id', async (req, res, next) => {
 
       // 이벤트 삭제 (ON DELETE SET NULL 로 참조는 null 처리)
       const deleteResult = await client.query(
-        'DELETE FROM events WHERE id = $1 RETURNING id, title',
+        'DELETE FROM ticket_schema.events WHERE id = $1 RETURNING id, title',
         [id]
       );
 
@@ -696,7 +696,7 @@ router.post('/events/:id/generate-seats', async (req, res, next) => {
 
     // Get event with seat layout
     const eventResult = await db.query(
-      'SELECT id, title, seat_layout_id FROM events WHERE id = $1',
+      'SELECT id, title, seat_layout_id FROM ticket_schema.events WHERE id = $1',
       [id]
     );
 
@@ -712,7 +712,7 @@ router.post('/events/:id/generate-seats', async (req, res, next) => {
 
     // Check if seats already exist
     const existsResult = await db.query(
-      'SELECT COUNT(*) as count FROM seats WHERE event_id = $1',
+      'SELECT COUNT(*) as count FROM ticket_schema.seats WHERE event_id = $1',
       [id]
     );
 
@@ -768,11 +768,11 @@ router.delete('/events/:id/seats', async (req, res, next) => {
 
     // Check if there are any reservations with seats
     const reservationsResult = await db.query(
-      `SELECT COUNT(*) as count 
-       FROM reservations r
-       JOIN reservation_items ri ON r.id = ri.reservation_id
-       WHERE r.event_id = $1 
-       AND ri.seat_id IS NOT NULL 
+      `SELECT COUNT(*) as count
+       FROM ticket_schema.reservations r
+       JOIN ticket_schema.reservation_items ri ON r.id = ri.reservation_id
+       WHERE r.event_id = $1
+       AND ri.seat_id IS NOT NULL
        AND r.status != 'cancelled'`,
       [id]
     );
@@ -842,7 +842,7 @@ router.post('/events/:eventId/tickets', async (req, res, next) => {
     const { name, price, totalQuantity, description } = req.body;
 
     const result = await db.query(
-      `INSERT INTO ticket_types 
+      `INSERT INTO ticket_schema.ticket_types
        (event_id, name, price, total_quantity, available_quantity, description)
        VALUES ($1, $2, $3, $4, $4, $5)
        RETURNING *`,
@@ -909,7 +909,7 @@ router.put('/tickets/:id', async (req, res, next) => {
 
     // Get current ticket type
     const currentResult = await db.query(
-      'SELECT total_quantity, available_quantity, event_id FROM ticket_types WHERE id = $1',
+      'SELECT total_quantity, available_quantity, event_id FROM ticket_schema.ticket_types WHERE id = $1',
       [id]
     );
 
@@ -926,7 +926,7 @@ router.put('/tickets/:id', async (req, res, next) => {
     }
 
     const result = await db.query(
-      `UPDATE ticket_types 
+      `UPDATE ticket_schema.ticket_types
        SET name = $1, price = $2, total_quantity = $3, available_quantity = $4, description = $5
        WHERE id = $6
        RETURNING *`,
@@ -983,14 +983,14 @@ router.get('/reservations', async (req, res, next) => {
     const offset = (page - 1) * limit;
 
     let query = `
-      SELECT 
+      SELECT
         r.id, r.reservation_number, r.total_amount, r.status, r.payment_status,
         r.created_at,
         u.name as user_name, u.email as user_email,
         e.title as event_title, e.venue, e.event_date
-      FROM reservations r
-      JOIN users u ON r.user_id = u.id
-      LEFT JOIN events e ON r.event_id = e.id
+      FROM ticket_schema.reservations r
+      JOIN auth_schema.users u ON r.user_id = u.id
+      LEFT JOIN ticket_schema.events e ON r.event_id = e.id
     `;
 
     const params = [];
@@ -1095,7 +1095,7 @@ router.patch('/reservations/:id/status', async (req, res, next) => {
     params.push(id);
 
     const result = await db.query(
-      `UPDATE reservations SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING *`,
+      `UPDATE ticket_schema.reservations SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING *`,
       params
     );
 

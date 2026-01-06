@@ -1,0 +1,39 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: tiketi
+
+resources:
+  - namespace.yaml         # Dev namespace (tiketi)
+  - ../../base
+  - ../../base/postgres    # Include postgres for dev
+  - ../../base/dragonfly   # Include dragonfly for dev
+
+configMapGenerator:
+  - name: tiketi-config
+    envs:
+      - config.env
+
+secretGenerator:
+  - name: tiketi-secret
+    envs:
+      - secrets.env
+
+patches:
+  - path: service-nodeport-patches.yaml
+  - path: wait-deps-patch.yaml  # Dev startup dependency checks
+
+images:
+  - name: tiketi-backend
+    newTag: local
+  - name: tiketi-auth-service
+    newTag: local
+  - name: tiketi-ticket-service
+    newTag: local
+  - name: tiketi-payment-service
+    newTag: local
+  - name: tiketi-stats-service
+    newTag: local
+
+commonLabels:
+  environment: development

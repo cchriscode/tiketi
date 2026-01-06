@@ -72,6 +72,12 @@ $requiredPorts = @(3000, 3001, 3002, 3003, 3004, 3005, 5432)
 $portsInUse = @()
 $localPostgresRunning = $false
 
+function Test-IsAdmin {
+    $currentIdentity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = New-Object Security.Principal.WindowsPrincipal($currentIdentity)
+    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
 foreach ($port in $requiredPorts) {
     $connections = @(Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue)
     if ($connections.Count -gt 0) {
@@ -97,14 +103,19 @@ if ($localPostgresRunning) {
     if ($response -eq "y" -or $response -eq "Y") {
         Write-Host "Stopping local PostgreSQL..." -ForegroundColor Yellow
         try {
-            # Try to stop PostgreSQL service
-            # Use -ErrorAction Stop to catch errors properly
-            Stop-Service -Name "postgresql*" -Force -ErrorAction Stop
+            # Try to stop PostgreSQL service (elevate if needed)
+            if (Test-IsAdmin) {
+                Stop-Service -Name "postgresql*" -Force -ErrorAction Stop
+            } else {
+                Write-Host "  Admin privileges required. Requesting elevation..." -ForegroundColor Yellow
+                $elevatedCommand = "Stop-Service -Name 'postgresql*' -Force"
+                Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile","-ExecutionPolicy","Bypass","-Command",$elevatedCommand -Wait
+            }
 
             # Verify service is actually stopped
             Start-Sleep -Seconds 2
             $postgresService = Get-Service -Name "postgresql*" -ErrorAction SilentlyContinue
-            if ($postgresService -and $postgresService.Status -eq "Stopped") {
+            if ($postgresService -and ($postgresService | Where-Object { $_.Status -ne "Stopped" }).Count -eq 0) {
                 Write-Host "  ✅ PostgreSQL service stopped" -ForegroundColor Green
             } else {
                 throw "Service stop verification failed"

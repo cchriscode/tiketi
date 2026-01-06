@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tiketi
+  labels:
+    name: tiketi
+    environment: production
+    criticality: high

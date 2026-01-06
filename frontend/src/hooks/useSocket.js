@@ -133,12 +133,12 @@ export function useSocket(eventId) {
     socket.on('connect_error', (error) => {
       console.error('❌ Socket connection error:', error.message);
 
-      if (error.message.includes('authentication')) {
-        // 인증 오류 시 로그인 페이지로 리다이렉트
-        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
+      // Note: Don't clear session on socket errors
+      // Session clearing is handled by HTTP API 401 responses in api.js
+      // Socket errors can be transient (server restart, network issues)
+      // and shouldn't force re-authentication
+      if (error.message.includes('authentication') || error.message.includes('jwt')) {
+        console.warn('⚠️  Socket authentication failed, but keeping session (handled by HTTP API)');
       }
     });
 
@@ -261,11 +261,12 @@ export function useQueueUpdates(eventId, onQueueUpdate, onEntryAllowed) {
     socket.on('connect_error', (error) => {
       console.error('❌ Queue socket connection error:', error.message);
 
-      if (error.message.includes('authentication')) {
-        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
+      // Note: Don't clear session on socket errors
+      // Session clearing is handled by HTTP API 401 responses in api.js
+      // Socket errors can be transient (server restart, network issues)
+      // and shouldn't force re-authentication
+      if (error.message.includes('authentication') || error.message.includes('jwt')) {
+        console.warn('⚠️  Queue socket authentication failed, but keeping session (handled by HTTP API)');
       }
     });
 

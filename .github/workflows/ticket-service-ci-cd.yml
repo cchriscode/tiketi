@@ -1,0 +1,245 @@
+name: Ticket Service CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'services/ticket-service/**'
+      - 'packages/common/**'
+      - '.github/workflows/ticket-service-ci-cd.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - prod
+
+env:
+  AWS_REGION: ap-northeast-2
+  SERVICE_NAME: ticket-service
+  ECR_REPOSITORY: tiketi-ticket-service
+
+jobs:
+  build-and-push:
+    name: Build & Push to ECR
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+
+    outputs:
+      image-tag: ${{ steps.meta.outputs.image-tag }}
+      environment: ${{ steps.detect-env.outputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect target environment
+        id: detect-env
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            ENV="${{ github.event.inputs.environment }}"
+          elif [ "${{ github.ref_name }}" = "main" ]; then
+            ENV="prod"
+          else
+            ENV="staging"
+          fi
+          echo "environment=$ENV" >> $GITHUB_OUTPUT
+          echo "🎯 Target environment: $ENV"
+
+      - name: Generate image metadata
+        id: meta
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          IMAGE_TAG="${SHORT_SHA}-$(date +%Y%m%d-%H%M%S)"
+          echo "image-tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "short-sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "📦 Image tag: $IMAGE_TAG"
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ steps.meta.outputs.image-tag }}
+        run: |
+          echo "🔨 Building Docker image..."
+          cd services/ticket-service
+          docker build \
+            --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+            --build-arg VCS_REF=${{ github.sha }} \
+            --build-arg VERSION=${{ steps.meta.outputs.image-tag }} \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:${{ steps.detect-env.outputs.environment }} \
+            .
+
+      - name: Run security scan (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.meta.outputs.image-tag }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
+      - name: Push to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ steps.meta.outputs.image-tag }}
+        run: |
+          echo "📤 Pushing images to ECR..."
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:${{ steps.detect-env.outputs.environment }}
+          echo "✅ Images pushed successfully"
+
+      - name: Image build summary
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ steps.meta.outputs.image-tag }}
+        run: |
+          echo "### 🐳 Docker Image Built" >> $GITHUB_STEP_SUMMARY
+          echo "- **Repository:** $ECR_REPOSITORY" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag:** $IMAGE_TAG" >> $GITHUB_STEP_SUMMARY
+          echo "- **Full Image:** $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment:** ${{ steps.detect-env.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
+
+  update-manifests:
+    name: Update Kustomize Manifests
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Get ECR registry
+        id: ecr-registry
+        run: |
+          ACCOUNT_ID=${{ secrets.AWS_ACCOUNT_ID }}
+          REGISTRY="$ACCOUNT_ID.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com"
+          echo "registry=$REGISTRY" >> $GITHUB_OUTPUT
+
+      - name: Update Kustomize image tag
+        env:
+          ENVIRONMENT: ${{ needs.build-and-push.outputs.environment }}
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image-tag }}
+          ECR_REGISTRY: ${{ steps.ecr-registry.outputs.registry }}
+        run: |
+          echo "📝 Updating Kustomize manifests for $ENVIRONMENT environment..."
+          KUSTOMIZE_FILE="k8s/overlays/$ENVIRONMENT/kustomization.yaml"
+
+          if [ ! -f "$KUSTOMIZE_FILE" ]; then
+            echo "❌ Kustomization file not found: $KUSTOMIZE_FILE"
+            exit 1
+          fi
+
+          sed -i "s|newName: .*tiketi-${{ env.SERVICE_NAME }}.*|newName: $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}|g" "$KUSTOMIZE_FILE"
+          sed -i "/tiketi-${{ env.SERVICE_NAME }}/,/newTag:/s|newTag: .*|newTag: $IMAGE_TAG|" "$KUSTOMIZE_FILE"
+
+          echo "✅ Updated $KUSTOMIZE_FILE"
+          git diff "$KUSTOMIZE_FILE"
+
+      - name: Commit and push changes
+        env:
+          ENVIRONMENT: ${{ needs.build-and-push.outputs.environment }}
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image-tag }}
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git add k8s/overlays/$ENVIRONMENT/kustomization.yaml
+            git commit -m "chore(k8s): update ${{ env.SERVICE_NAME }} image to $IMAGE_TAG [$ENVIRONMENT]
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+            git push
+            echo "✅ Manifest updated and pushed"
+          else
+            echo "⏭️ No changes to commit"
+          fi
+
+      - name: Manifest update summary
+        env:
+          ENVIRONMENT: ${{ needs.build-and-push.outputs.environment }}
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image-tag }}
+        run: |
+          echo "### 📝 Kustomize Manifest Updated" >> $GITHUB_STEP_SUMMARY
+          echo "- **Service:** ${{ env.SERVICE_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment:** $ENVIRONMENT" >> $GITHUB_STEP_SUMMARY
+          echo "- **New Image Tag:** $IMAGE_TAG" >> $GITHUB_STEP_SUMMARY
+
+  notify:
+    name: Notify Discord
+    needs: [build-and-push, update-manifests]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Send Discord notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          STATUS: ${{ needs.update-manifests.result }}
+          ENVIRONMENT: ${{ needs.build-and-push.outputs.environment }}
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image-tag }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "DISCORD_WEBHOOK is not set; skipping notification."
+            exit 0
+          fi
+
+          if [ "$STATUS" = "success" ]; then
+            EMOJI="✅"
+            COLOR="3066993"
+            STATUS_TEXT="성공"
+          else
+            EMOJI="❌"
+            COLOR="15158332"
+            STATUS_TEXT="실패"
+          fi
+
+          TIMESTAMP=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+
+          cat <<EOF | curl -H "Content-Type: application/json" -X POST -d @- "$DISCORD_WEBHOOK"
+          {
+            "username": "CI/CD Bot",
+            "embeds": [
+              {
+                "title": "${EMOJI} Ticket Service 배포 ${STATUS_TEXT}",
+                "description": "EKS GitOps 파이프라인 실행 결과",
+                "color": ${COLOR},
+                "fields": [
+                  { "name": "서비스", "value": "${{ env.SERVICE_NAME }}", "inline": true },
+                  { "name": "환경", "value": "${ENVIRONMENT}", "inline": true },
+                  { "name": "이미지 태그", "value": "${IMAGE_TAG}", "inline": false },
+                  { "name": "로그 확인", "value": "[GitHub Actions](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})", "inline": false }
+                ],
+                "timestamp": "${TIMESTAMP}"
+              }
+            ]
+          }
+          EOF

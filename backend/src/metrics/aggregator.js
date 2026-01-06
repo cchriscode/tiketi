@@ -85,11 +85,11 @@ class MetricsAggregator {
   async aggregateDailyMetrics() {
     try {
       const result = await db.query(`
-        SELECT 
+        SELECT
           COUNT(*) as payment_count,
           COALESCE(SUM(total_amount), 0) as total_revenue
-        FROM reservations
-        WHERE 
+        FROM ticket_schema.reservations
+        WHERE
           payment_status = 'completed'
           AND updated_at >= CURRENT_DATE
           AND updated_at < CURRENT_DATE + INTERVAL '1 day'
@@ -112,17 +112,17 @@ class MetricsAggregator {
   async aggregateEventMetrics() {
     try {
       const result = await db.query(`
-        SELECT 
+        SELECT
           e.id as event_id,
           e.title as event_title,
           COUNT(r.id) as reservation_count,
           COALESCE(SUM(r.total_amount), 0) as total_revenue,
-          CASE 
+          CASE
             WHEN COUNT(r.id) > 0 THEN COALESCE(SUM(r.total_amount), 0) / COUNT(r.id)
             ELSE 0
           END as avg_price
-        FROM events e
-        LEFT JOIN reservations r ON e.id = r.event_id
+        FROM ticket_schema.events e
+        LEFT JOIN ticket_schema.reservations r ON e.id = r.event_id
           AND r.payment_status = 'completed'
           AND r.updated_at >= NOW() - INTERVAL '24 hours'
         WHERE e.status != 'cancelled'
@@ -153,11 +153,11 @@ class MetricsAggregator {
   async aggregatePaymentMethodMetrics() {
     try {
       const result = await db.query(`
-        SELECT 
+        SELECT
           payment_method,
           COUNT(*) as count
-        FROM reservations
-        WHERE 
+        FROM ticket_schema.reservations
+        WHERE
           payment_status = 'completed'
           AND payment_method IS NOT NULL
           AND updated_at >= NOW() - INTERVAL '24 hours'
@@ -188,22 +188,22 @@ class MetricsAggregator {
       const viewResult = await db.query(`
         SELECT COUNT(DISTINCT user_id) as count
         FROM (
-          SELECT user_id FROM reservations WHERE created_at >= NOW() - INTERVAL '24 hours'
+          SELECT user_id FROM ticket_schema.reservations WHERE created_at >= NOW() - INTERVAL '24 hours'
           UNION
-          SELECT user_id FROM reservations WHERE updated_at >= NOW() - INTERVAL '24 hours'
+          SELECT user_id FROM ticket_schema.reservations WHERE updated_at >= NOW() - INTERVAL '24 hours'
         ) as users
       `);
 
       const reservationResult = await db.query(`
         SELECT COUNT(*) as count
-        FROM reservations
+        FROM ticket_schema.reservations
         WHERE created_at >= NOW() - INTERVAL '24 hours'
       `);
 
       const paymentResult = await db.query(`
         SELECT COUNT(*) as count
-        FROM reservations
-        WHERE 
+        FROM ticket_schema.reservations
+        WHERE
           payment_status = 'completed'
           AND updated_at >= NOW() - INTERVAL '24 hours'
       `);

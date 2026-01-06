@@ -50,6 +50,6 @@ spec:
   ports:
     - port: 3000
       targetPort: 3000
-      nodePort: 30001
+      nodePort: 30005
       protocol: TCP
       name: http

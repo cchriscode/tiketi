@@ -57,10 +57,10 @@ class EventStatusUpdater {
 
       // 가장 가까운 상태 변경 시점 찾기
       const result = await db.query(
-        `SELECT 
+        `SELECT
           LEAST(
-            (SELECT MIN(sale_start_date) FROM events WHERE status = 'upcoming' AND sale_start_date > $1),
-            (SELECT MIN(sale_end_date) FROM events WHERE status = 'on_sale' AND sale_end_date > $1)
+            (SELECT MIN(sale_start_date) FROM ticket_schema.events WHERE status = 'upcoming' AND sale_start_date > $1),
+            (SELECT MIN(sale_end_date) FROM ticket_schema.events WHERE status = 'on_sale' AND sale_end_date > $1)
           ) as next_change_time`,
         [now]
       );
@@ -111,7 +111,7 @@ class EventStatusUpdater {
 
       // 1. upcoming → on_sale (판매 시작 시간이 되면)
       const upcomingToOnSale = await db.query(
-        `UPDATE events
+        `UPDATE ticket_schema.events
          SET status = 'on_sale', updated_at = NOW()
          WHERE status = 'upcoming'
          AND sale_start_date <= $1
@@ -131,7 +131,7 @@ class EventStatusUpdater {
       // 2. upcoming/on_sale → ended (판매 종료 시간이 지나면)
       // upcoming 상태에서도 바로 ended로 갈 수 있도록 수정
       const toEnded = await db.query(
-        `UPDATE events
+        `UPDATE ticket_schema.events
          SET status = 'ended', updated_at = NOW()
          WHERE status IN ('upcoming', 'on_sale')
          AND sale_end_date <= $1
@@ -150,9 +150,9 @@ class EventStatusUpdater {
 
       // 3. ended → ended (공연이 끝나면) - 이미 ended이지만 로그만 남김
       const pastEventDate = await db.query(
-        `SELECT id, title 
-         FROM events 
-         WHERE status != 'ended' 
+        `SELECT id, title
+         FROM ticket_schema.events
+         WHERE status != 'ended'
          AND status != 'cancelled'
          AND event_date < $1`,
         [now]
@@ -160,9 +160,9 @@ class EventStatusUpdater {
 
       if (pastEventDate.rows.length > 0) {
         await db.query(
-          `UPDATE events 
+          `UPDATE ticket_schema.events
            SET status = 'ended', updated_at = NOW()
-           WHERE status != 'ended' 
+           WHERE status != 'ended'
            AND status != 'cancelled'
            AND event_date < $1`,
           [now]

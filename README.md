@@ -277,7 +277,7 @@ cd project-ticketing
 ```
 🌐 Frontend:     http://localhost:3000
 📡 Backend API:  http://localhost:3001
-📊 Grafana:      http://localhost:30002  (admin/admin)
+📊 Grafana:      http://localhost:30006  (admin/admin)
 📚 API Docs:     http://localhost:3001/api-docs
 ```
 
@@ -392,7 +392,7 @@ kubectl logs -f -l app=backend -n tiketi
 kubectl logs -f -l app=ticket-service -n tiketi
 
 # Loki 통합 로그 (Grafana)
-http://localhost:30002 → Explore → Loki
+http://localhost:30006 → Explore → Loki
 ```
 
 **데이터베이스 접속**
@@ -471,7 +471,7 @@ echo -n "new-secret-value" | base64
 - WebSocket 연결 수
 - Redis 명령어 실행 시간
 
-**접속**: Grafana → http://localhost:30002
+**접속**: Grafana → http://localhost:30006
 
 ### Grafana 대시보드
 

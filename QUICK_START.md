@@ -1,155 +1,155 @@
-# TIKETI Quick Start Guide 🚀
+# TIKETI Quick Start Guide ??
 
-> 처음부터 끝까지 TIKETI 시스템을 로컬에서 실행하는 완벽 가이드
+> 처음부???�까지 TIKETI ?�스?�을 로컬?�서 ?�행?�는 ?�벽 가?�드
 
-## 📋 목차
+## ?�� 목차
 
-1. [빠른 시작 (자동 설치)](#빠른-시작-자동-설치) ⚡ **권장**
-2. [사전 요구사항](#사전-요구사항)
-3. [수동 설치 (상세)](#수동-설치-상세)
-4. [접속 및 테스트](#접속-및-테스트)
-5. [문제 해결](#문제-해결)
+1. [빠른 ?�작 (?�동 ?�치)](#빠른-?�작-?�동-?�치) ??**권장**
+2. [?�전 ?�구?�항](#?�전-?�구?�항)
+3. [?�동 ?�치 (?�세)](#?�동-?�치-?�세)
+4. [?�속 �??�스??(#?�속-�??�스??
+5. [문제 ?�결](#문제-?�결)
 
 ---
 
-## ⚠️ 시작하기 전에
+## ?�️ ?�작?�기 ?�에
 
-**필수 확인사항:**
-1. ✅ Docker Desktop 실행 중
-2. ✅ WSL2 터미널 열기
-3. ✅ 프로젝트 디렉토리로 이동: `cd /mnt/c/Users/USER/project-ticketing`
+**?�수 ?�인?�항:**
+1. ??Docker Desktop ?�행 �?
+2. ??WSL2 ?��????�기
+3. ???�로?�트 ?�렉?�리�??�동: `cd /mnt/c/Users/USER/project-ticketing`
 
-**전체 정리 후 재시작하려면:**
+**?�체 ?�리 ???�시?�하?�면:**
 ```bash
 # Windows (PowerShell)
 .\cleanup.ps1
 
-# 또는 WSL
+# ?�는 WSL
 ./scripts/cleanup.sh
 ```
 
 ---
 
-## 빠른 시작 (자동 설치)
+## 빠른 ?�작 (?�동 ?�치)
 
-### 원스텝 설치 🎯
+### ?�스???�치 ?��
 
 **Windows (PowerShell):**
 ```powershell
-# 프로젝트 루트에서 실행
+# ?�로?�트 루트?�서 ?�행
 .\setup-tiketi.ps1
 ```
 
 **Linux/WSL:**
 ```bash
-# 프로젝트 루트에서 실행
+# ?�로?�트 루트?�서 ?�행
 ./scripts/setup-tiketi.sh
 ```
 
-이 스크립트는 다음을 자동으로 수행합니다:
-1. ✅ Kind 클러스터 생성
-2. ✅ PostgreSQL 배포 및 스키마 설정
-3. ✅ 모든 Docker 이미지 빌드
-4. ✅ 모든 서비스 배포
-5. ✅ 준비 완료 확인
+???�크립트???�음???�동?�로 ?�행?�니??
+1. ??Kind ?�러?�터 ?�성
+2. ??PostgreSQL 배포 �??�키�??�정
+3. ??모든 Docker ?��?지 빌드
+4. ??모든 ?�비??배포
+5. ??준�??�료 ?�인
 
-**소요 시간**: 약 5-10분
+**?�요 ?�간**: ??5-10�?
 
-완료 후 포트포워딩만 실행하면 됩니다:
+?�료 ???�트?�워?�만 ?�행?�면 ?�니??
 
-## 방법 1: WSL에서 전부 완료 (추천!)
+## 방법 1: WSL?�서 ?��? ?�료 (추천!)
 
-**WSL 터미널에서:**
+**WSL ?��??�에??**
 ```bash
 ./scripts/port-forward-all.sh
 ```
 
-**접속 URL 확인:**
+**?�속 URL ?�인:**
 ```bash
 ./scripts/show-access-url.sh
 ```
 
-**Windows 크롬에서 접속:**
+**Windows ?�롬?�서 ?�속:**
 ```
 http://<WSL-IP>:3000
-(스크립트가 표시한 IP 사용, 예: http://172.17.40.29:3000)
+(?�크립트가 ?�시??IP ?�용, ?? http://172.17.40.29:3000)
 ```
 
-✅ **이 방법이 가장 간단합니다!**
+??**??방법??가??간단?�니??**
 
 ---
 
-## 방법 2: PowerShell 사용 (localhost 접속)
+## 방법 2: PowerShell ?�용 (localhost ?�속)
 
-**PowerShell에서 (Windows 네이티브):**
+**PowerShell?�서 (Windows ?�이?�브):**
 
-### 1단계: Windows kubectl 설정 (최초 1회만)
+### 1?�계: Windows kubectl ?�정 (최초 1?�만)
 ```powershell
 .\setup-windows-kubectl.ps1
 ```
 
-**이 스크립트가 하는 일:**
-- Windows용 kubectl 설치 (없을 경우)
-- WSL의 kubeconfig를 Windows로 복사
-- Kind 클러스터 연결 설정
+**???�크립트가 ?�는 ??**
+- Windows??kubectl ?�치 (?�을 경우)
+- WSL??kubeconfig�?Windows�?복사
+- Kind ?�러?�터 ?�결 ?�정
 
-### 2단계: 포트포워딩 시작
+### 2?�계: ?�트?�워???�작
 ```powershell
 .\start_port_forwards.ps1
 ```
 
-**이 스크립트가 하는 일:**
-- 사용 중인 포트 자동 정리
-- 7개 서비스 포트포워딩 시작 (백그라운드 PowerShell 창)
-- Health Check 자동 실행
-- 접속 URL 표시
+**???�크립트가 ?�는 ??**
+- ?�용 중인 ?�트 ?�동 ?�리
+- 7�??�비???�트?�워???�작 (백그?�운??PowerShell �?
+- Health Check ?�동 ?�행
+- ?�속 URL ?�시
 
-**Windows 크롬에서 접속:**
+**Windows ?�롬?�서 ?�속:**
 ```
 http://localhost:3000
 ```
 
-**장점**: Google OAuth 테스트 시 `http://localhost:3000` 사용 가능 (OAuth 리디렉션 설정과 일치)
+**?�점**: Google OAuth ?�스????`http://localhost:3000` ?�용 가??(OAuth 리디?�션 ?�정�??�치)
 
 ---
 
-**문제 발생 시:** `FULL_WSL_GUIDE.md` 또는 `WSL_PORT_FORWARD_ISSUE.md` 참고
+**문제 발생 ??** `FULL_WSL_GUIDE.md` ?�는 `WSL_PORT_FORWARD_ISSUE.md` 참고
 
 ---
 
-**전부 정리하는 스크립트:**
+**?��? ?�리?�는 ?�크립트:**
 - Windows (PowerShell): `.\cleanup.ps1`
 - Linux/WSL: `./scripts/cleanup.sh`
 
 
-### 단계별 실행 (선택사항)
+### ?�계�??�행 (?�택?�항)
 
-자동화 스크립트를 단계별로 실행하려면:
+?�동???�크립트�??�계별로 ?�행?�려�?
 
 ```bash
-# 1단계: 클러스터 설정
+# 1?�계: ?�러?�터 ?�정
 ./scripts/1-setup-cluster.sh
 
-# 2단계: Database 설정
+# 2?�계: Database ?�정
 ./scripts/2-setup-database.sh
 
-# 3단계: 빌드 & 배포
+# 3?�계: 빌드 & 배포
 ./scripts/3-build-and-deploy.sh
 ```
 
 ---
 
-## 사전 요구사항
+## ?�전 ?�구?�항
 
-### 필수 소프트웨어
+### ?�수 ?�프?�웨??
 - **WSL2** (Windows Subsystem for Linux 2)
-- **Docker Desktop** (WSL2 백엔드 사용)
-- **Node.js** v18 이상
+- **Docker Desktop** (WSL2 백엔???�용)
+- **Node.js** v18 ?�상
 - **Git**
 
-### 설치 확인
+### ?�치 ?�인
 ```bash
-# WSL2에서 실행
+# WSL2?�서 ?�행
 wsl --version
 docker --version
 kubectl version --client
@@ -159,137 +159,133 @@ node --version
 
 ---
 
-## 수동 설치 (상세)
+## ?�동 ?�치 (?�세)
 
-> 💡 **권장**: 위의 [빠른 시작](#빠른-시작-자동-설치) 자동화 스크립트를 사용하세요.
+> ?�� **권장**: ?�의 [빠른 ?�작](#빠른-?�작-?�동-?�치) ?�동???�크립트�??�용?�세??
 >
-> 아래는 각 단계를 수동으로 실행하려는 경우를 위한 상세 가이드입니다.
+> ?�래??�??�계�??�동?�로 ?�행?�려??경우�??�한 ?�세 가?�드?�니??
 
-### 1. Kind 클러스터 생성
+### 1. Kind ?�러?�터 ?�성
 
 ```bash
 cd /mnt/c/Users/USER/project-ticketing
 
-# Kind 클러스터 생성 (3-node cluster)
+# Kind ?�러?�터 ?�성 (3-node cluster)
 kind create cluster --name tiketi-local --config k8s/kind-config.yaml
 
-# 클러스터 확인
+# ?�러?�터 ?�인
 kubectl cluster-info --context kind-tiketi-local
 kubectl get nodes
 ```
 
-### 2. Kubernetes Namespace 생성
+### 2. Kubernetes Namespace ?�성
 
 ```bash
-# Namespace 생성
-kubectl create namespace tiketi
+# Dev environment (namespace + config + secrets + postgres/dragonfly + services)
+kubectl apply -k k8s/overlays/dev
 
-# ConfigMap & Secret 생성
-kubectl apply -f k8s/01-configmap.yaml
-kubectl apply -f k8s/02-secret.yaml
 ```
 
-### 3. Toss Payments API 키 설정 (선택사항)
+### 3. Toss Payments API ???�정 (?�택?�항)
 
-실제 결제 기능을 사용하려면 [Toss Payments 개발자 센터](https://developers.tosspayments.com/)에서 API 키를 발급받아 설정:
+?�제 결제 기능???�용?�려�?[Toss Payments 개발???�터](https://developers.tosspayments.com/)?�서 API ?��? 발급받아 ?�정:
 
 ```bash
-# k8s/02-secret.yaml 파일 수정
-nano k8s/02-secret.yaml
+# k8s/overlays/dev/secrets.env ���� ����
+nano k8s/overlays/dev/secrets.env
 
-# 다음 값을 실제 API 키로 교체:
-# TOSS_CLIENT_KEY: "실제_클라이언트_키"
-# TOSS_SECRET_KEY: "실제_시크릿_키"
+# ?�음 값을 ?�제 API ?�로 교체:
+# TOSS_CLIENT_KEY: "?�제_?�라?�언????
+# TOSS_SECRET_KEY: "?�제_?�크�???
 
-# Secret 재적용
-kubectl apply -f k8s/02-secret.yaml
+# Secret ?�적??
+kubectl apply -k k8s/overlays/dev
 ```
 
 ---
 
-## Database 설정
+## Database ?�정
 
 ### 1. PostgreSQL 배포
 
 ```bash
-# PVC 및 PostgreSQL 배포
-kubectl apply -f k8s/03-pvc.yaml
-kubectl apply -f k8s/04-postgres.yaml
+# PVC �?PostgreSQL 배포 (Kustomize�?통합 배포?�므�??�미 ?�성?�었?�면 SKIP)
+kubectl apply -k k8s/overlays/dev
 
-# Pod 실행 대기 (약 30초)
+# Pod ?�행 ?��?(??30�?
 kubectl wait --for=condition=ready pod -l app=postgres -n tiketi --timeout=120s
 
-# 상태 확인
+# ?�태 ?�인
 kubectl get pods -n tiketi
 ```
 
-### 2. Database 초기화 및 스키마 생성
+### 2. Database 초기??�??�키�??�성
 
-**중요**: 반드시 아래 순서대로 실행하세요!
+**중요**: 반드???�래 ?�서?��??�행?�세??
 
-#### Step 1: 기본 스키마 및 샘플 데이터 생성
+#### Step 1: 기본 ?�키�?�??�플 ?�이???�성
 
 ```bash
-# public 스키마에 기본 테이블과 샘플 데이터 생성 (이벤트, 좌석 레이아웃 등)
+# public ?�키마에 기본 ?�이블과 ?�플 ?�이???�성 (?�벤?? 좌석 ?�이?�웃 ??
 cat database/init.sql | \
   kubectl exec -i -n tiketi $(kubectl get pod -n tiketi -l app=postgres -o jsonpath='{.items[0].metadata.name}') \
   -- psql -U tiketi_user -d tiketi
 ```
 
-#### Step 2: MSA 스키마 마이그레이션
+#### Step 2: MSA ?�키�?마이그레?�션
 
 ```bash
-# Auth Service 스키마 (users 테이블 이동)
+# Auth Service ?�키�?(users ?�이�??�동)
 cat database/migrations/auth-service-schema.sql | \
   kubectl exec -i -n tiketi $(kubectl get pod -n tiketi -l app=postgres -o jsonpath='{.items[0].metadata.name}') \
   -- psql -U tiketi_user -d tiketi
 
-# Ticket Service 스키마 (events, seats, reservations 등 이동)
+# Ticket Service ?�키�?(events, seats, reservations ???�동)
 cat database/migrations/ticket-service-schema.sql | \
   kubectl exec -i -n tiketi $(kubectl get pod -n tiketi -l app=postgres -o jsonpath='{.items[0].metadata.name}') \
   -- psql -U tiketi_user -d tiketi
 
-# Stats Service 스키마 (통계 테이블 생성)
+# Stats Service ?�키�?(?�계 ?�이�??�성)
 cat database/migrations/stats-service-schema.sql | \
   kubectl exec -i -n tiketi $(kubectl get pod -n tiketi -l app=postgres -o jsonpath='{.items[0].metadata.name}') \
   -- psql -U tiketi_user -d tiketi
 
-# Payment Service 스키마 (결제 테이블 생성)
+# Payment Service ?�키�?(결제 ?�이�??�성)
 cat database/migrations/payment-service-schema.sql | \
   kubectl exec -i -n tiketi $(kubectl get pod -n tiketi -l app=postgres -o jsonpath='{.items[0].metadata.name}') \
   -- psql -U tiketi_user -d tiketi
 ```
 
-#### Step 3: Search Path 설정
+#### Step 3: Search Path ?�정
 
 ```bash
-# MSA 스키마를 우선하도록 search_path 설정
+# MSA ?�키마�? ?�선?�도�?search_path ?�정
 cat database/set_search_path.sql | \
   kubectl exec -i -n tiketi $(kubectl get pod -n tiketi -l app=postgres -o jsonpath='{.items[0].metadata.name}') \
   -- psql -U tiketi_user -d tiketi
 ```
 
-**결과 확인:**
+**결과 ?�인:**
 ```bash
-# 이벤트 데이터 확인 (25개 이상의 샘플 이벤트가 있어야 함)
+# ?�벤???�이???�인 (25�??�상???�플 ?�벤?��? ?�어????
 kubectl exec -n tiketi $(kubectl get pod -n tiketi -l app=postgres -o jsonpath='{.items[0].metadata.name}') \
   -- psql -U tiketi_user -d tiketi -c "SELECT COUNT(*) FROM events"
 ```
 
 ---
 
-## 서비스 빌드 & 배포
+## ?�비??빌드 & 배포
 
-### 1. Monorepo 패키지 설치
+### 1. Monorepo ?�키지 ?�치
 
 ```bash
-# 공통 패키지 설치
+# 공통 ?�키지 ?�치
 cd packages/common && npm install && cd ../..
 cd packages/database && npm install && cd ../..
 cd packages/metrics && npm install && cd ../..
 ```
 
-### 2. Docker 이미지 빌드
+### 2. Docker ?��?지 빌드
 
 ```bash
 # Auth Service
@@ -308,42 +304,37 @@ kind load docker-image tiketi-stats-service:local --name tiketi-local
 docker build -t tiketi-payment-service:local -f services/payment-service/Dockerfile .
 kind load docker-image tiketi-payment-service:local --name tiketi-local
 
-# Backend (Legacy - Admin API 등)
+# Backend (Legacy - Admin API ??
 docker build -t tiketi-backend:local -f backend/Dockerfile backend
 kind load docker-image tiketi-backend:local --name tiketi-local
 ```
 
-**💡 Tip**: 모든 이미지를 한 번에 빌드하려면:
+**?�� Tip**: 모든 ?��?지�???번에 빌드?�려�?
 ```bash
 chmod +x scripts/build-all-images.sh
 ./scripts/build-all-images.sh
 ```
 
-### 3. 인프라 서비스 배포
+### 3. ?�프???�비??배포
 
 ```bash
-# Dragonfly (Redis), 모니터링 스택
-kubectl apply -f k8s/05-dragonfly.yaml
+# Monitoring stack (optional)
 kubectl apply -f k8s/08-loki.yaml
 kubectl apply -f k8s/09-promtail.yaml
 kubectl apply -f k8s/10-grafana.yaml
 ```
 
-### 4. 애플리케이션 서비스 배포
+### 4. ?�플리�??�션 ?�비??배포
 
 ```bash
-# Backend & MSA 서비스 배포
-kubectl apply -f k8s/06-backend.yaml
-kubectl apply -f k8s/12-auth-service.yaml
-kubectl apply -f k8s/13-ticket-service.yaml
-kubectl apply -f k8s/14-stats-service.yaml
-kubectl apply -f k8s/11-payment-service.yaml
+# Backend & MSA ?�비??배포
+kubectl apply -k k8s/overlays/dev
 
-# 배포 상태 확인 (모든 Pod가 Running 될 때까지 대기)
+# 배포 ?�태 ?�인 (모든 Pod가 Running ???�까지 ?��?
 kubectl get pods -n tiketi -w
 ```
 
-**예상 Pod 목록:**
+**?�상 Pod 목록:**
 ```
 NAME                               READY   STATUS    RESTARTS   AGE
 postgres-xxxxx                     1/1     Running   0          5m
@@ -362,10 +353,10 @@ payment-service-xxxxx              1/1     Running   0          2m
 
 ## Frontend 배포
 
-### 1. Frontend 이미지 빌드
+### 1. Frontend ?��?지 빌드
 
 ```bash
-# Frontend 빌드 및 Nginx 이미지 생성
+# Frontend 빌드 �?Nginx ?��?지 ?�성
 docker build -t tiketi-frontend:local -f frontend/Dockerfile frontend
 kind load docker-image tiketi-frontend:local --name tiketi-local
 ```
@@ -376,31 +367,31 @@ kind load docker-image tiketi-frontend:local --name tiketi-local
 # Frontend Deployment & Service
 kubectl apply -f k8s/07-frontend.yaml
 
-# 배포 확인
+# 배포 ?�인
 kubectl get pods -n tiketi | grep frontend
 ```
 
 ---
 
-## 접속 및 테스트
+## ?�속 �??�스??
 
-### 1. Port-Forward 설정
+### 1. Port-Forward ?�정
 
-**Option A: 자동 스크립트 사용 (Windows)**
+**Option A: ?�동 ?�크립트 ?�용 (Windows)**
 ```powershell
-# PowerShell에서 실행
+# PowerShell?�서 ?�행
 .\start_port_forwards.ps1
 ```
 
-**Option B: 자동 스크립트 사용 (WSL/Linux)**
+**Option B: ?�동 ?�크립트 ?�용 (WSL/Linux)**
 ```bash
 chmod +x scripts/port-forward-all.sh
 ./scripts/port-forward-all.sh
 ```
 
-**Option C: 수동 설정**
+**Option C: ?�동 ?�정**
 ```bash
-# 각각 별도의 터미널에서 실행
+# 각각 별도???��??�에???�행
 kubectl port-forward -n tiketi svc/postgres-service 5432:5432 &
 kubectl port-forward -n tiketi svc/backend-service 3001:3001 &
 kubectl port-forward -n tiketi svc/auth-service 3005:3005 &
@@ -410,58 +401,58 @@ kubectl port-forward -n tiketi svc/stats-service 3004:3004 &
 kubectl port-forward -n tiketi svc/frontend-service 3000:3000 &
 ```
 
-**참고**: Auth Service는 NodePort 30006을 사용합니다 (30002는 Grafana가 사용 중)
+**참고**: Auth Service??NodePort 30001???�용?�니??(30006??Grafana가 ?�용 �?
 
-### 2. 접속 URL
+### 2. ?�속 URL
 
-| 서비스 | URL | 설명 |
+| ?�비??| URL | ?�명 |
 |--------|-----|------|
-| **Frontend** | http://localhost:3000 | 메인 사용자 웹사이트 |
-| **Backend API** | http://localhost:3001 | Legacy API (Admin 등) |
-| **Auth Service** | http://localhost:3005 | 인증 서비스 (MSA) |
-| **Ticket Service** | http://localhost:3002 | 티켓 예매 서비스 (좌석, Socket.IO) |
-| **Payment Service** | http://localhost:3003 | 결제 서비스 (TossPayments) |
-| **Stats Service** | http://localhost:3004 | 통계 서비스 (Read-only) |
-| **Grafana** | http://localhost:30002 | 모니터링 대시보드 (NodePort) |
+| **Frontend** | http://localhost:3000 | 메인 ?�용???�사?�트 |
+| **Backend API** | http://localhost:3001 | Legacy API (Admin ?? |
+| **Auth Service** | http://localhost:3005 | ?�증 ?�비??(MSA) |
+| **Ticket Service** | http://localhost:3002 | ?�켓 ?�매 ?�비??(좌석, Socket.IO) |
+| **Payment Service** | http://localhost:3003 | 결제 ?�비??(TossPayments) |
+| **Stats Service** | http://localhost:3004 | ?�계 ?�비??(Read-only) |
+| **Grafana** | http://localhost:30006 | 모니?�링 ?�?�보??(NodePort) |
 
-**참고**: Port-forward 없이 NodePort로 직접 접속 가능:
+**참고**: Port-forward ?�이 NodePort�?직접 ?�속 가??
 - Backend: http://localhost:30000
-- Frontend: http://localhost:30001
-- Grafana: http://localhost:30002
+- Frontend: http://localhost:30005
+- Grafana: http://localhost:30006
 - Payment: http://localhost:30003
 - Ticket: http://localhost:30004
-- Stats: http://localhost:30005
-- Auth: http://localhost:30006
+- Stats: http://localhost:30002
+- Auth: http://localhost:30001
 - PostgreSQL: localhost:30432
 
-### 3. 기본 테스트
+### 3. 기본 ?�스??
 
-#### A. 회원가입 & 로그인
-1. http://localhost:3000 접속
-2. 회원가입 (우측 상단)
-3. 로그인
+#### A. ?�원가??& 로그??
+1. http://localhost:3000 ?�속
+2. ?�원가??(?�측 ?�단)
+3. 로그??
 
-#### B. 티켓 예매 플로우
-1. 메인 페이지에서 이벤트 선택
-2. 좌석 선택
-3. 결제 수단 선택
-   - **Toss Payments** (실제 API 키 설정 시 작동)
+#### B. ?�켓 ?�매 ?�로??
+1. 메인 ?�이지?�서 ?�벤???�택
+2. 좌석 ?�택
+3. 결제 ?�단 ?�택
+   - **Toss Payments** (?�제 API ???�정 ???�동)
    - Naver Pay (Mock)
    - Kakao Pay (Mock)
-   - 계좌이체 (Mock)
-4. 예매 완료 확인
+   - 계좌?�체 (Mock)
+4. ?�매 ?�료 ?�인
 
 #### C. 관리자 기능
-1. http://localhost:3000/admin 접속
-2. Admin 로그인:
+1. http://localhost:3000/admin ?�속
+2. Admin 로그??
    - Email: `admin@tiketi.gg`
    - Password: `admin123`
-3. Dashboard 확인
-4. 통계 페이지 확인 (좌측 메뉴 "Statistics")
+3. Dashboard ?�인
+4. ?�계 ?�이지 ?�인 (좌측 메뉴 "Statistics")
 
 #### D. API Health Check
 ```bash
-# 모든 서비스 Health 확인
+# 모든 ?�비??Health ?�인
 curl http://localhost:3001/health  # Backend
 curl http://localhost:3005/health  # Auth Service
 curl http://localhost:3002/health  # Ticket
@@ -471,86 +462,86 @@ curl http://localhost:3004/health  # Stats
 
 ---
 
-## 문제 해결
+## 문제 ?�결
 
-### Pod가 CrashLoopBackOff 상태일 때
+### Pod가 CrashLoopBackOff ?�태????
 
 ```bash
-# 로그 확인
+# 로그 ?�인
 kubectl logs -n tiketi <pod-name>
 
-# 이전 컨테이너 로그 확인
+# ?�전 컨테?�너 로그 ?�인
 kubectl logs -n tiketi <pod-name> --previous
 
-# Pod 상세 정보
+# Pod ?�세 ?�보
 kubectl describe pod -n tiketi <pod-name>
 ```
 
-### Database 연결 실패
+### Database ?�결 ?�패
 
 ```bash
-# PostgreSQL Pod 로그 확인
+# PostgreSQL Pod 로그 ?�인
 kubectl logs -n tiketi -l app=postgres
 
-# PostgreSQL 직접 접속 테스트
+# PostgreSQL 직접 ?�속 ?�스??
 kubectl exec -it -n tiketi $(kubectl get pod -n tiketi -l app=postgres -o jsonpath='{.items[0].metadata.name}') -- psql -U tiketi_user -d tiketi
 
-# 스키마 확인
+# ?�키�??�인
 \dn
-# 테이블 확인
+# ?�이�??�인
 SET search_path TO auth_schema, ticket_schema, stats_schema, payment_schema, public;
 \dt
 ```
 
-### 이미지 Pull 실패
+### ?��?지 Pull ?�패
 
 ```bash
-# 이미지가 Kind 클러스터에 로드되었는지 확인
+# ?��?지가 Kind ?�러?�터??로드?�었?��? ?�인
 docker exec -it tiketi-local-control-plane crictl images | grep tiketi
 
-# 다시 로드
+# ?�시 로드
 kind load docker-image tiketi-auth-service:local --name tiketi-local
-# ... (다른 이미지들도)
+# ... (?�른 ?��?지?�도)
 ```
 
-### Port-Forward 끊김
+### Port-Forward ?��?
 
 ```bash
-# 프로세스 확인
+# ?�로?�스 ?�인
 ps aux | grep "port-forward"
 
-# 모두 종료 후 재시작
+# 모두 종료 ???�시??
 pkill -f "port-forward"
 ./scripts/port-forward-all.sh
 ```
 
-### Frontend가 백엔드 API 호출 실패
+### Frontend가 백엔??API ?�출 ?�패
 
 ```bash
-# Frontend 로그 확인
+# Frontend 로그 ?�인
 kubectl logs -n tiketi -l app=frontend
 
-# Frontend Pod에서 백엔드 접속 테스트
+# Frontend Pod?�서 백엔???�속 ?�스??
 kubectl exec -it -n tiketi $(kubectl get pod -n tiketi -l app=frontend -o jsonpath='{.items[0].metadata.name}') -- wget -O- http://auth-service:3005/health
 ```
 
-### 전체 재시작
+### ?�체 ?�시??
 
 ```bash
-# 모든 Deployment 재시작
+# 모든 Deployment ?�시??
 kubectl rollout restart deployment -n tiketi
 
-# 특정 서비스만 재시작
+# ?�정 ?�비?�만 ?�시??
 kubectl rollout restart deployment/auth-service -n tiketi
 ```
 
 ---
 
-## 전체 초기화 & 재시작
+## ?�체 초기??& ?�시??
 
-시스템을 완전히 초기화하고 다시 시작하려면:
+?�스?�을 ?�전??초기?�하�??�시 ?�작?�려�?
 
-### 방법 1: Cleanup 스크립트 사용 (추천)
+### 방법 1: Cleanup ?�크립트 ?�용 (추천)
 
 **Windows:**
 ```powershell
@@ -562,30 +553,30 @@ kubectl rollout restart deployment/auth-service -n tiketi
 ./scripts/cleanup.sh
 ```
 
-이 스크립트는 다음을 정리합니다:
-- ✅ 실행 중인 port-forward 프로세스
-- ✅ Kind cluster 삭제
-- ✅ Docker images 삭제 (선택사항)
-- ✅ node_modules 폴더 삭제 (선택사항)
+???�크립트???�음???�리?�니??
+- ???�행 중인 port-forward ?�로?�스
+- ??Kind cluster ??��
+- ??Docker images ??�� (?�택?�항)
+- ??node_modules ?�더 ??�� (?�택?�항)
 
-### 방법 2: 수동 정리
+### 방법 2: ?�동 ?�리
 
 ```bash
-# 1. 포트 포워딩 중지
+# 1. ?�트 ?�워??중�?
 pkill -f "kubectl port-forward"
 
-# 2. Kind 클러스터 삭제
+# 2. Kind ?�러?�터 ??��
 kind delete cluster --name tiketi-local
 
-# 3. 처음부터 다시 시작
-# 이 가이드의 "초기 설정" 단계부터 다시 진행
+# 3. 처음부???�시 ?�작
+# ??가?�드??"초기 ?�정" ?�계부???�시 진행
 ```
 
 ---
 
 ## 개발 모드
 
-개발 중에는 로컬에서 직접 실행하는 것이 더 편리할 수 있습니다:
+개발 중에??로컬?�서 직접 ?�행?�는 것이 ???�리?????�습?�다:
 
 ```bash
 # Backend (Legacy)
@@ -619,51 +610,51 @@ npm install
 npm start  # Port 3000
 ```
 
-단, 이 경우 PostgreSQL은 여전히 K8s에서 실행되어야 하며, `localhost:5432`로 port-forward 필요.
+?? ??경우 PostgreSQL?� ?�전??K8s?�서 ?�행?�어???�며, `localhost:5432`�?port-forward ?�요.
 
 ---
 
-## 유용한 명령어 모음
+## ?�용??명령??모음
 
 ```bash
-# 모든 Pod 상태 확인
+# 모든 Pod ?�태 ?�인
 kubectl get pods -n tiketi
 
-# 모든 Service 확인
+# 모든 Service ?�인
 kubectl get svc -n tiketi
 
-# 특정 서비스 로그 실시간 확인
+# ?�정 ?�비??로그 ?�시�??�인
 kubectl logs -n tiketi -f deployment/auth-service
 
-# ConfigMap 확인
+# ConfigMap ?�인
 kubectl get configmap tiketi-config -n tiketi -o yaml
 
-# Secret 확인 (Base64 디코딩)
+# Secret ?�인 (Base64 ?�코??
 kubectl get secret tiketi-secret -n tiketi -o jsonpath='{.data.DB_PASSWORD}' | base64 -d
 
-# 리소스 사용량 확인
+# 리소???�용???�인
 kubectl top pods -n tiketi
 kubectl top nodes
 
-# 클러스터 전체 정보
+# ?�러?�터 ?�체 ?�보
 kubectl get all -n tiketi
 ```
 
 ---
 
-## 추가 문서
+## 추�? 문서
 
-- **MSA 아키텍처**: [MSA_ARCHITECTURE.md](./MSA_ARCHITECTURE.md)
-- **마이그레이션 계획**: [MSA_MIGRATION_PLAN.md](./MSA_MIGRATION_PLAN.md)
-- **WSL2 & Kind 상세 설정**: [WSL2_KIND_SETUP_GUIDE.md](./WSL2_KIND_SETUP_GUIDE.md)
+- **MSA ?�키?�처**: [MSA_ARCHITECTURE.md](./MSA_ARCHITECTURE.md)
+- **마이그레?�션 계획**: [MSA_MIGRATION_PLAN.md](./MSA_MIGRATION_PLAN.md)
+- **WSL2 & Kind ?�세 ?�정**: [WSL2_KIND_SETUP_GUIDE.md](./WSL2_KIND_SETUP_GUIDE.md)
 - **API 문서**: [fix_backend_api.md](./fix_backend_api.md)
 
 ---
 
-## 라이선스
+## ?�이?�스
 
 MIT License
 
 ---
 
-**Happy Ticketing! 🎫**
+**Happy Ticketing! ?��**

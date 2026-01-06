@@ -19,7 +19,7 @@ const authenticateToken = async (req, res, next) => {
     // Verify user still exists in database
     try {
       const result = await db.query(
-        'SELECT id, email, name, role FROM users WHERE id = $1',
+        'SELECT id, email, name, role FROM auth_schema.users WHERE id = $1',
         [user.userId]
       );
 
