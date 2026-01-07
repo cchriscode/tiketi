@@ -37,16 +37,16 @@ patches:
 
 images:
   - name: tiketi-backend
-    newName: PLACEHOLDER_AWS_ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi-backend
+    newName: 640740721346.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi-backend
     # newTag will be set by CI/CD pipeline
   - name: tiketi-auth-service
-    newName: PLACEHOLDER_AWS_ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi-auth-service
+    newName: 640740721346.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/auth
   - name: tiketi-ticket-service
-    newName: PLACEHOLDER_AWS_ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi-ticket-service
+    newName: 640740721346.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/ticket
   - name: tiketi-payment-service
-    newName: PLACEHOLDER_AWS_ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi-payment-service
+    newName: 640740721346.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/payment
   - name: tiketi-stats-service
-    newName: PLACEHOLDER_AWS_ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi-stats-service
+    newName: 640740721346.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/stats
 
 commonLabels:
   environment: staging

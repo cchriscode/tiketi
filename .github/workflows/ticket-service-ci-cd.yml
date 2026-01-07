@@ -21,7 +21,7 @@ on:
 env:
   AWS_REGION: ap-northeast-2
   SERVICE_NAME: ticket-service
-  ECR_REPOSITORY: tiketi-ticket-service
+  ECR_REPOSITORY: tiketi/ticket
 
 jobs:
   build-and-push:

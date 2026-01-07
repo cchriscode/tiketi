@@ -21,7 +21,7 @@ on:
 env:
   AWS_REGION: ap-northeast-2
   SERVICE_NAME: payment-service
-  ECR_REPOSITORY: tiketi-payment-service
+  ECR_REPOSITORY: tiketi/payment
 
 jobs:
   build-and-push:

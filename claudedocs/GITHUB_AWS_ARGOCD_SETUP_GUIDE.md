@@ -229,7 +229,7 @@ git push origin final
 
 **🌐 브라우저에서:**
 
-1. `https://github.com/YOUR-USERNAME/project-ticketing` 접속
+1. `https://github.com/cchriscode/tiketi` 접속
 2. **배포 브랜치 선택** (좌측 상단 브랜치 드롭다운)
    - 옵션 1 선택: `main` 브랜치
    - 옵션 2 선택: `final` 브랜치
@@ -478,9 +478,8 @@ aws iam list-open-id-connect-providers --query 'OpenIDConnectProviderList[].Arn'
 1. **신뢰할 수 있는 엔터티 유형**: `웹 자격 증명` 선택
 2. **자격 증명 공급자**: `token.actions.githubusercontent.com` 선택
 3. **대상**: `sts.amazonaws.com` 선택
-4. **GitHub 조직**: `<YOUR-GITHUB-USERNAME>` 입력
-   - 예시: 사용자 이름이 `johndoe`이면 `johndoe` 입력
-5. **GitHub 리포지토리**: `project-ticketing` 입력
+4. **GitHub 조직**: `cchriscode` 입력
+5. **GitHub 리포지토리**: `tiketi` 입력
 6. **GitHub 브랜치**: `*` (모든 브랜치 허용) 또는 `main` (main만 허용)
 7. **"다음"** 버튼 클릭
 
@@ -559,7 +558,7 @@ EKS 노드가 ECR에서 이미지를 pull하려면 권한 필요:
 **🌐 브라우저에서:**
 
 1. 브라우저에서 GitHub 로그인
-2. `https://github.com/<YOUR-USERNAME>/project-ticketing` 접속
+2. `https://github.com/cchriscode/tiketi` 접속
 3. 상단 메뉴에서 **"Settings"** 클릭 (톱니바퀴 아이콘)
 
 ### 📍 **Secrets 메뉴 접근**
@@ -623,12 +622,12 @@ repoURL: 'https://github.com/<ORG>/project-ticketing.git'
 
 **수정 후:**
 ```yaml
-repoURL: 'https://github.com/YOUR-USERNAME/project-ticketing.git'
+repoURL: 'https://github.com/cchriscode/tiketi.git'
 ```
 
-예시: 사용자 이름이 `johndoe`이면
+예시: 실제 리포지토리
 ```yaml
-repoURL: 'https://github.com/johndoe/project-ticketing.git'
+repoURL: 'https://github.com/cchriscode/tiketi.git'
 ```
 
 #### **2. applications/*.yaml 수정 (5개 파일)**
@@ -643,7 +642,7 @@ repoURL: 'https://github.com/johndoe/project-ticketing.git'
 cd C:\Users\USER\project-ticketing
 
 # 자신의 GitHub 사용자명으로 변경
-$USERNAME = "johndoe"
+$USERNAME = "cchriscode"
 
 # 모든 ArgoCD 파일에서 repoURL 수정
 (Get-Content argocd/app-of-apps.yaml) -replace '<ORG>', $USERNAME | Set-Content argocd/app-of-apps.yaml
@@ -1032,8 +1031,7 @@ aBcDeFgHiJkLmNoPqRsTuVwXyZ
 
 1. **Connection method**: `VIA HTTPS` 선택
 2. **Type**: `git` 선택
-3. **Repository URL**: `https://github.com/YOUR-USERNAME/project-ticketing.git`
-   - 예시: `https://github.com/johndoe/project-ticketing.git`
+3. **Repository URL**: `https://github.com/cchriscode/tiketi.git`
 4. **Username**: GitHub 사용자명 입력 (공개 리포지토리면 비워도 됨)
 5. **Password**: GitHub Personal Access Token 입력 (공개 리포지토리면 비워도 됨)
    - Token 생성: GitHub → Settings → Developer settings → Personal access tokens → Generate new token
@@ -1042,7 +1040,7 @@ aBcDeFgHiJkLmNoPqRsTuVwXyZ
 
 ### ✅ **확인**
 
-"Repositories" 목록에 `https://github.com/YOUR-USERNAME/project-ticketing.git`이 표시되고,
+"Repositories" 목록에 `https://github.com/cchriscode/tiketi.git`이 표시되고,
 **"Successful"** 상태여야 합니다.
 
 ---

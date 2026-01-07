@@ -21,7 +21,7 @@ on:
 env:
   AWS_REGION: ap-northeast-2
   SERVICE_NAME: stats-service
-  ECR_REPOSITORY: tiketi-stats-service
+  ECR_REPOSITORY: tiketi/stats
 
 jobs:
   build-and-push:

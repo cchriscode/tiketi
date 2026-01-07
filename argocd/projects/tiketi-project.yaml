@@ -6,9 +6,13 @@ metadata:
 spec:
   description: Tiketi production deployment
   sourceRepos:
-    - 'https://github.com/<ORG>/project-ticketing.git'
+    - 'https://github.com/cchriscode/tiketi.git'
   destinations:
     - namespace: tiketi
+      server: 'https://kubernetes.default.svc'
+    - namespace: tiketi-staging
+      server: 'https://kubernetes.default.svc'
+    - namespace: argocd
       server: 'https://kubernetes.default.svc'
   clusterResourceWhitelist:
     - group: ''

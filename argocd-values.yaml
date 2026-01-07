@@ -1,0 +1,125 @@
+# ArgoCD Helm Values for tiketi.store
+# Customized for tiketiadv-dev EKS cluster
+
+## Global settings
+global:
+  domain: argocd.tiketi.store
+
+## Server
+server:
+  # Ingress configuration for ArgoCD UI
+  ingress:
+    enabled: true
+    ingressClassName: alb
+    annotations:
+      # AWS ALB Controller
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/backend-protocol: HTTPS
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+      alb.ingress.kubernetes.io/healthcheck-path: /healthz
+      alb.ingress.kubernetes.io/healthcheck-protocol: HTTPS
+      # TODO: Update with actual ACM certificate ARN after creating in AWS
+      # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-northeast-2:640740721346:certificate/CERT_ID
+    hosts:
+      - argocd.tiketi.store
+    tls: []
+
+  # Resource limits
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+  # ArgoCD configuration
+  config:
+    # Repository credentials (if private repo)
+    repositories: |
+      - url: https://github.com/cchriscode/tiketi.git
+        name: tiketi
+        type: git
+
+## Redis (for caching)
+redis:
+  enabled: true
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+## Application Controller
+controller:
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+## Repository Server
+repoServer:
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+## ApplicationSet Controller
+applicationSet:
+  enabled: true
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+## Notifications Controller
+notifications:
+  enabled: true
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+## Dex (OAuth/SSO - optional)
+dex:
+  enabled: false  # Disable for simplicity, enable if you need SSO
+
+## High Availability (Production)
+# Uncomment for production HA setup
+# server:
+#   replicas: 2
+#   autoscaling:
+#     enabled: true
+#     minReplicas: 2
+#     maxReplicas: 5
+#
+# controller:
+#   replicas: 1
+#
+# repoServer:
+#   replicas: 2
+#   autoscaling:
+#     enabled: true
+#     minReplicas: 2
+#     maxReplicas: 5
+
+## Metrics
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: false  # Enable if you have Prometheus Operator

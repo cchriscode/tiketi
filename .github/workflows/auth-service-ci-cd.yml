@@ -21,7 +21,7 @@ on:
 env:
   AWS_REGION: ap-northeast-2
   SERVICE_NAME: auth-service
-  ECR_REPOSITORY: tiketi-auth-service
+  ECR_REPOSITORY: tiketi/auth
 
 jobs:
   build-and-push:
