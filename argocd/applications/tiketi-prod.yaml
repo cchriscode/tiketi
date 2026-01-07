@@ -8,7 +8,7 @@ metadata:
 spec:
   project: tiketi
   source:
-    repoURL: 'https://github.com/<ORG>/project-ticketing.git'
+    repoURL: 'https://github.com/cchriscode/tiketi.git'
     targetRevision: final
     path: k8s/overlays/prod
   destination:

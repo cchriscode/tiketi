@@ -13,7 +13,7 @@ spec:
   project: tiketi
 
   source:
-    repoURL: https://github.com/ORGANIZATION/project-ticketing.git  # UPDATE: Replace with actual repo URL
+    repoURL: https://github.com/cchriscode/tiketi.git
     targetRevision: develop  # Staging tracks develop branch
     path: k8s/overlays/staging
 
