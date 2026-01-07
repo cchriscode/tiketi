@@ -47,6 +47,7 @@ if (process.env.NODE_ENV === 'production') {
   }
 
   console.log('✅ Production environment variables validated');
+  console.log('🔀 Backend Service v1.0.1 - CI/CD test');
 }
 
 const app = express();
