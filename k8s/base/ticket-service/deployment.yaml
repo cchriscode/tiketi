@@ -33,8 +33,6 @@ spec:
               value: "3002"
             - name: SERVICE_NAME
               value: "ticket-service"
-            - name: REDIS_URL
-              value: "redis://dragonfly-service:6379"
           livenessProbe:
             httpGet:
               path: /health
