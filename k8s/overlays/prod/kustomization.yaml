@@ -21,10 +21,9 @@ configMapGenerator:
       - DB_NAME=tiketi
       - DB_USER=tiketi_user
       - DB_SSL=true
-      # ElastiCache Redis endpoints (DISABLED due to 2s+ latency causing 4s event loading)
-      # ElastiCache Cross-AZ latency (2a/2b) + TLS overhead causes timeouts
-      # Queue/Socket.IO features will degrade gracefully without Redis
-      - REDIS_HOST=localhost
+      # ElastiCache Redis Multi-AZ (ap-northeast-2a, 2b) - same AZs as EKS nodes
+      # No TLS, reads from same-AZ replica for < 1ms latency
+      - REDIS_HOST=tiketi-redis-multiaz.eaaj6u.ng.0001.apn2.cache.amazonaws.com
       - REDIS_PORT=6379
       # Service URLs (ClusterIP internal communication)
       - PORT=3001
