@@ -24,6 +24,13 @@ spec:
   - host: tiketi.store
     http:
       paths:
+      - path: /socket.io
+        pathType: Prefix
+        backend:
+          service:
+            name: ticket-service
+            port:
+              number: 3002
       - path: /
         pathType: Prefix
         backend:

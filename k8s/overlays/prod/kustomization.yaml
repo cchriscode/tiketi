@@ -27,7 +27,7 @@ configMapGenerator:
       - REDIS_PORT=6379
       # Service URLs (ClusterIP internal communication)
       - PORT=3001
-      - SOCKET_IO_CORS_ORIGIN=https://tiketi.com,https://www.tiketi.com
+      - SOCKET_IO_CORS_ORIGIN=https://tiketi.store,https://www.tiketi.store,https://tiketi.com,https://www.tiketi.com
       - TZ=Asia/Seoul
       # Frontend will be on S3+CloudFront
       - AWS_REGION=ap-northeast-2
