@@ -34,7 +34,6 @@ configMapGenerator:
 
 patches:
   - path: resource-patches.yaml
-  - path: replicas-patch.yaml
 
 images:
   - name: tiketi-backend

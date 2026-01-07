@@ -6,7 +6,6 @@ metadata:
     app: stats-service
     tier: microservice
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: stats-service

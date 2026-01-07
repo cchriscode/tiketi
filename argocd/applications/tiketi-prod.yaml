@@ -23,10 +23,8 @@ spec:
       - CreateNamespace=true
       - PrunePropagationPolicy=foreground
       - PruneLast=true
-  # ignoreDifferences temporarily disabled to allow replica count sync
-  # Re-enable after HPA is configured
-  # ignoreDifferences:
-  #   - group: apps
-  #     kind: Deployment
-  #     jsonPointers:
-  #       - /spec/replicas
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas

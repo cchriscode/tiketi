@@ -6,7 +6,6 @@ metadata:
     app: backend
     tier: gateway
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: backend

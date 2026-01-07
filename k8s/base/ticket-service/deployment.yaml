@@ -6,7 +6,6 @@ metadata:
     app: ticket-service
     tier: microservice
 spec:
-  replicas: 1  # Override in overlays
   selector:
     matchLabels:
       app: ticket-service
