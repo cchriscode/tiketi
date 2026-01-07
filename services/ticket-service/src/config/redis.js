@@ -14,8 +14,9 @@ const redisClient = new Redis({
   host: redisHost,
   port: redisPort,
   password: redisPassword,
-  lazyConnect: true, // Don't connect immediately
+  lazyConnect: false, // Connect immediately on startup
   maxRetriesPerRequest: 1, // Fail fast
+  connectTimeout: 5000, // 5 second connection timeout
   retryStrategy(times) {
     // Don't retry - fail fast and continue without cache
     return null;
@@ -41,4 +42,17 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
-module.exports = { client: redisClient };
+// Helper function to wrap Redis operations with timeout
+async function withTimeout(promise, timeoutMs = 2000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Redis operation timed out')), timeoutMs)
+    )
+  ]).catch((err) => {
+    console.log(`Redis operation failed (${err.message}), continuing without cache`);
+    return null;
+  });
+}
+
+module.exports = { client: redisClient, withTimeout };

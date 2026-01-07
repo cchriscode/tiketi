@@ -22,12 +22,14 @@ function createPostgresPool(config) {
     } : false,
   });
 
-  // Set search_path on every new connection to support MSA schemas
+  // Set search_path and statement_timeout on every new connection
   pool.on('connect', async (client) => {
     try {
       await client.query(`SET search_path TO ticket_schema, auth_schema, payment_schema, stats_schema, public`);
+      // Set query timeout to 30 seconds to prevent hanging queries
+      await client.query(`SET statement_timeout = '30s'`);
     } catch (err) {
-      console.error('Failed to set search_path:', err.message);
+      console.error('Failed to set connection parameters:', err.message);
     }
   });
 

@@ -4,7 +4,7 @@
  */
 
 const express = require('express');
-const { client: redisClient } = require('../config/redis');
+const { client: redisClient, withTimeout } = require('../config/redis');
 const db = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const { validate: isUUID } = require('uuid');

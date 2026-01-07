@@ -5,7 +5,7 @@
 
 const express = require('express');
 const db = require('../config/database');
-const { client: redisClient } = require('../config/redis');
+const { client: redisClient, withTimeout } = require('../config/redis');
 const { ValidationError } = require('@tiketi/common');
 const { validate: isUUID } = require('uuid');
 
@@ -50,16 +50,16 @@ router.get('/', async (req, res, next) => {
     } = req.query;
     const offset = (page - 1) * limit;
 
-    // Try cache first
-    const cacheKey = CACHE_KEYS.EVENTS_LIST(status, page, limit, searchQuery);
-    try {
-      const cached = await redisClient.get(cacheKey);
-      if (cached) {
-        return res.json(JSON.parse(cached));
-      }
-    } catch (cacheError) {
-      console.log('Cache error (continuing without cache):', cacheError.message);
-    }
+    // Skip cache temporarily due to ElastiCache latency issues
+    // const cacheKey = CACHE_KEYS.EVENTS_LIST(status, page, limit, searchQuery);
+    // const cached = await withTimeout(redisClient.get(cacheKey));
+    // if (cached) {
+    //   try {
+    //     return res.json(JSON.parse(cached));
+    //   } catch (parseError) {
+    //     console.log('Cache parse error (continuing without cache):', parseError.message);
+    //   }
+    // }
 
     let query = `
       SELECT
@@ -185,12 +185,8 @@ router.get('/', async (req, res, next) => {
       }
     };
 
-    // Cache with TTL
-    try {
-      await redisClient.setex(cacheKey, EVENTS_LIST_CACHE_TTL, JSON.stringify(response));
-    } catch (cacheError) {
-      console.log('Cache set error (continuing):', cacheError.message);
-    }
+    // Skip cache temporarily due to ElastiCache latency issues
+    // await withTimeout(redisClient.setex(cacheKey, EVENTS_LIST_CACHE_TTL, JSON.stringify(response)));
 
     res.json(response);
   } catch (error) {
@@ -207,16 +203,16 @@ router.get('/:id', async (req, res, next) => {
     const { id } = req.params;
     if (!ensureUUID(id, res)) return;
 
-    // Try cache first
-    const cacheKey = CACHE_KEYS.EVENT(id);
-    try {
-      const cached = await redisClient.get(cacheKey);
-      if (cached) {
-        return res.json(JSON.parse(cached));
-      }
-    } catch (cacheError) {
-      console.log('Cache error (continuing without cache):', cacheError.message);
-    }
+    // Skip cache temporarily due to ElastiCache latency issues
+    // const cacheKey = CACHE_KEYS.EVENT(id);
+    // const cached = await withTimeout(redisClient.get(cacheKey));
+    // if (cached) {
+    //   try {
+    //     return res.json(JSON.parse(cached));
+    //   } catch (parseError) {
+    //     console.log('Cache parse error (continuing without cache):', parseError.message);
+    //   }
+    // }
 
     // Get event details
     const eventResult = await db.query(
@@ -243,12 +239,8 @@ router.get('/:id', async (req, res, next) => {
       ticketTypes: ticketTypesResult.rows,
     };
 
-    // Cache with TTL
-    try {
-      await redisClient.setex(cacheKey, EVENT_DETAIL_CACHE_TTL, JSON.stringify(response));
-    } catch (cacheError) {
-      console.log('Cache set error (continuing):', cacheError.message);
-    }
+    // Skip cache temporarily due to ElastiCache latency issues
+    // await withTimeout(redisClient.setex(cacheKey, EVENT_DETAIL_CACHE_TTL, JSON.stringify(response)));
 
     res.json(response);
   } catch (error) {
