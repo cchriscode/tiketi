@@ -4,4 +4,10 @@ metadata:
   name: tiketi
   labels:
     name: tiketi
-    environment: local
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    name: monitoring
