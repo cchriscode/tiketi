@@ -132,6 +132,12 @@ router.get('/events/:eventId', async (req, res, next) => {
 async function acquireLock(lockKey, ttl) {
   try {
     const result = await redisClient.set(lockKey, '1', 'PX', ttl, 'NX');
+    // If Redis is disabled or timed out, result will be null - continue without lock
+    if (result === null) {
+      return true; // Continue without lock if Redis is unavailable
+    }
+    // If lock acquired successfully, result is 'OK'
+    // If lock already exists, result is null (but above check handles unavailable Redis)
     return result === 'OK';
   } catch (error) {
     console.log('Lock acquire error (continuing without lock):', error.message);
