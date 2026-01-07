@@ -247,7 +247,7 @@ graph TB
     end
     
     subgraph "Container Registry"
-        ECR[Amazon ECR<br/>5 Docker Images<br/>Frontend + Backend + 4 MSA]
+        ECR[Amazon ECR<br/>6 Docker Images<br/>Frontend + Backend + 4 MSA]
     end
     
     subgraph "GitOps"
@@ -544,8 +544,7 @@ GET  /api/stats/dashboard    # 대시보드 데이터
 - **웹 애플리케이션**: https://tiketi.store
 - **관리자 대시보드**: https://tiketi.store/admin
 - **Grafana**: https://grafana.tiketi.store
-  - 기본 계정: admin / admin
-- **Prometheus**: https://prometheus.tiketi.store
+  - 기본 계정: admin / tiketi123
 
 ### 개발 환경 URL
 - **프론트엔드**: http://localhost:3000
