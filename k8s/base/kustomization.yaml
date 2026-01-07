@@ -17,7 +17,7 @@ commonLabels:
 
 images:
   - name: tiketi-backend
-    newName: 640740721346.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/backend
+    newName: 640740721346.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi-backend
     newTag: latest
   - name: tiketi-frontend
     newName: 640740721346.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/frontend
