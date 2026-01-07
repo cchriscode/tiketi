@@ -1,35 +1,35 @@
-# Production replica counts (higher than staging)
+# Production replica counts (optimized for t4g.medium - scale with HPA as needed)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend
 spec:
-  replicas: 3
+  replicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: auth-service
 spec:
-  replicas: 3
+  replicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ticket-service
 spec:
-  replicas: 5
+  replicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: payment-service
 spec:
-  replicas: 3
+  replicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: stats-service
 spec:
-  replicas: 2
+  replicas: 1

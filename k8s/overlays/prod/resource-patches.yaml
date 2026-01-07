@@ -1,4 +1,5 @@
-# Production resource limits (higher than staging)
+# Production resource limits (optimized for t4g.medium nodes)
+# t4g.medium: 2 vCPU, 4GB RAM per node
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -10,11 +11,11 @@ spec:
       - name: backend
         resources:
           requests:
-            cpu: 500m
-            memory: 512Mi
+            cpu: 100m
+            memory: 256Mi
           limits:
-            cpu: 2000m
-            memory: 2Gi
+            cpu: 300m
+            memory: 512Mi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -27,11 +28,11 @@ spec:
       - name: ticket-service
         resources:
           requests:
-            cpu: 500m
-            memory: 1Gi
+            cpu: 100m
+            memory: 256Mi
           limits:
-            cpu: 3000m
-            memory: 4Gi
+            cpu: 300m
+            memory: 512Mi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -44,11 +45,11 @@ spec:
       - name: auth-service
         resources:
           requests:
-            cpu: 300m
-            memory: 512Mi
+            cpu: 50m
+            memory: 128Mi
           limits:
-            cpu: 1500m
-            memory: 2Gi
+            cpu: 200m
+            memory: 256Mi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -61,11 +62,11 @@ spec:
       - name: payment-service
         resources:
           requests:
-            cpu: 300m
-            memory: 512Mi
+            cpu: 50m
+            memory: 128Mi
           limits:
-            cpu: 1500m
-            memory: 2Gi
+            cpu: 200m
+            memory: 256Mi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -78,8 +79,8 @@ spec:
       - name: stats-service
         resources:
           requests:
-            cpu: 200m
-            memory: 512Mi
+            cpu: 50m
+            memory: 128Mi
           limits:
-            cpu: 1000m
-            memory: 1Gi
+            cpu: 200m
+            memory: 256Mi
