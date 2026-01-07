@@ -41,7 +41,7 @@ patches:
 images:
   - name: tiketi-backend
     newName: 640740721346.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi-backend
-    newTag: latest
+    newTag: 3f44d16-20260107-143848
   - name: tiketi-auth-service
     newName: 640740721346.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/auth
     newTag: latest
