@@ -28,6 +28,7 @@ router.all('*', async (req, res) => {
       },
       data: req.body,
       params: req.query,
+      timeout: 10000, // 10 second timeout for proxied requests
       validateStatus: () => true,
     });
 

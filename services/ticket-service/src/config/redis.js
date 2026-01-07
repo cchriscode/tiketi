@@ -17,6 +17,7 @@ const redisClient = new Redis({
   lazyConnect: false, // Connect immediately on startup
   maxRetriesPerRequest: 1, // Fail fast
   connectTimeout: 5000, // 5 second connection timeout
+  commandTimeout: 500, // Fail after 500ms for any Redis command (fast-fail)
   retryStrategy(times) {
     // Don't retry - fail fast and continue without cache
     return null;
