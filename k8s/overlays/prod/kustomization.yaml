@@ -15,13 +15,13 @@ configMapGenerator:
   - name: tiketi-config
     literals:
       - NODE_ENV=production
-      # RDS PostgreSQL endpoints (placeholder - update with actual RDS endpoint)
-      - DB_HOST=tiketi-prod.abcdefg.ap-northeast-2.rds.amazonaws.com
+      # RDS PostgreSQL endpoints (actual production endpoint)
+      - DB_HOST=tiketiadv-dev-rds.cjiiqeo2ou62.ap-northeast-2.rds.amazonaws.com
       - DB_PORT=5432
       - DB_NAME=tiketi
       - DB_USER=tiketi_user
-      # ElastiCache Redis endpoints (placeholder - update with actual ElastiCache endpoint)
-      - REDIS_HOST=tiketi-prod.abcdefg.cache.amazonaws.com
+      # ElastiCache Redis endpoints (actual production endpoint)
+      - REDIS_HOST=tiketiadv-dev-redis-001.tiketiadv-dev-redis.eaaj6u.apn2.cache.amazonaws.com
       - REDIS_PORT=6379
       # Service URLs (ClusterIP internal communication)
       - PORT=3001
