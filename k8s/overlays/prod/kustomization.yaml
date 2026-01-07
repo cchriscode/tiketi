@@ -44,16 +44,16 @@ images:
     newTag: 3f44d16-20260107-143848
   - name: tiketi-auth-service
     newName: 640740721346.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/auth
-    newTag: latest
+    newTag: 3f44d16-20260107-143845
   - name: tiketi-ticket-service
     newName: 640740721346.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/ticket
-    newTag: latest
+    newTag: 3f44d16-20260107-143844
   - name: tiketi-payment-service
     newName: 640740721346.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/payment
-    newTag: latest
+    newTag: 3f44d16-20260107-143844
   - name: tiketi-stats-service
     newName: 640740721346.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/stats
-    newTag: latest
+    newTag: 3f44d16-20260107-143849
 
 commonLabels:
   environment: production
