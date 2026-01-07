@@ -68,26 +68,45 @@ const redisHost = process.env.REDIS_HOST || 'localhost';
 const redisEnabled = redisHost !== 'localhost' && redisHost !== 'disabled-redis';
 
 if (redisEnabled) {
-  const pubClient = redisClient.duplicate();
-  const subClient = redisClient.duplicate();
+  try {
+    const Redis = require('ioredis');
+    const redisHost = process.env.REDIS_HOST || 'localhost';
+    const redisPort = process.env.REDIS_PORT || 6379;
+    const redisPassword = process.env.REDIS_PASSWORD;
 
-  Promise.all([
-    pubClient.connect(),
-    subClient.connect()
-  ]).then(() => {
-    try {
-      io.adapter(createAdapter(pubClient, subClient));
-      console.log('✅ Socket.IO Redis adapter connected (multi-pod ready)');
-    } catch (err) {
-      console.log('⚠️  Socket.IO adapter creation failed, continuing in standalone mode:', err.message);
+    const pubClient = new Redis({
+      host: redisHost,
+      port: redisPort,
+      password: redisPassword,
+      lazyConnect: true,
+      maxRetriesPerRequest: 1,
+      connectTimeout: 5000,
+      enableOfflineQueue: false,
+    });
+
+    const subClient = pubClient.duplicate();
+
+    Promise.all([
+      pubClient.connect(),
+      subClient.connect()
+    ]).then(() => {
+      try {
+        io.adapter(createAdapter(pubClient, subClient));
+        console.log('✅ Socket.IO Redis adapter connected (multi-pod ready)');
+      } catch (err) {
+        console.log('⚠️  Socket.IO adapter creation failed, continuing in standalone mode:', err.message);
+        pubClient.disconnect().catch(() => {});
+        subClient.disconnect().catch(() => {});
+      }
+    }).catch(err => {
+      console.log('⚠️  Socket.IO running without Redis adapter (connection failed):', err.message);
       pubClient.disconnect().catch(() => {});
       subClient.disconnect().catch(() => {});
-    }
-  }).catch(err => {
-    console.log('⚠️  Socket.IO running without Redis adapter (connection failed):', err.message);
-    pubClient.disconnect().catch(() => {});
-    subClient.disconnect().catch(() => {});
-  });
+    });
+  } catch (err) {
+    console.log('⚠️  Socket.IO Redis adapter initialization failed:', err.message);
+    console.log('ℹ️  Socket.IO running in standalone mode');
+  }
 } else {
   console.log('ℹ️  Socket.IO running in standalone mode (Redis disabled)');
 }
