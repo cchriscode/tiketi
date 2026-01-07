@@ -172,11 +172,11 @@ jobs:
         run: |
           if [ -n "$(git status --porcelain)" ]; then
             git add k8s/overlays/$ENVIRONMENT/kustomization.yaml
-            git commit -m "chore(k8s): update ${{ env.SERVICE_NAME }} image to $IMAGE_TAG [$ENVIRONMENT]
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+            git commit -m "chore(k8s): update ${{ env.SERVICE_NAME }} image to $IMAGE_TAG [$ENVIRONMENT]" \
+              -m "" \
+              -m "🤖 Generated with [Claude Code](https://claude.com/claude-code)" \
+              -m "" \
+              -m "Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
             git push
             echo "✅ Manifest updated and pushed"
           else
