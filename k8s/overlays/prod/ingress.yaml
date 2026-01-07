@@ -13,7 +13,6 @@ metadata:
     alb.ingress.kubernetes.io/ssl-redirect: '443'
     # ACM certificate for api.tiketi.store
     alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-northeast-2:640740721346:certificate/0f2542f7-e7dd-423a-ab84-2292d6357d64
-    alb.ingress.kubernetes.io/group.name: tiketi-prod
     # TODO: WAF integration (optional but recommended for production)
     # alb.ingress.kubernetes.io/wafv2-acl-arn: arn:aws:wafv2:ap-northeast-2:640740721346:regional/webacl/tiketi-prod-waf/WAF_ID
     # Security headers
