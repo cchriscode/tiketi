@@ -17,6 +17,9 @@ function createPostgresPool(config) {
     max: config.max || 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000,
+    ssl: process.env.DB_SSL === 'true' ? {
+      rejectUnauthorized: false  // AWS RDS uses self-signed certificates
+    } : false,
   });
 
   // Set search_path on every new connection to support MSA schemas
