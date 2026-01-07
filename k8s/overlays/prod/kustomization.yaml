@@ -47,7 +47,7 @@ images:
     newTag: 3f44d16-20260107-143845
   - name: tiketi-ticket-service
     newName: 640740721346.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/ticket
-    newTag: 3f44d16-20260107-143844
+    newTag: baacf2b-20260107-145034
   - name: tiketi-payment-service
     newName: 640740721346.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/payment
     newTag: 3f44d16-20260107-143844
