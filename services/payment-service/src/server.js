@@ -25,6 +25,7 @@ if (process.env.NODE_ENV === 'production') {
   }
 
   console.log('✅ Production environment variables validated');
+  console.log('💳 Payment Service v1.0.1 - CI/CD test');
 }
 
 const express = require('express');
