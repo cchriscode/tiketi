@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - backend/
+  - frontend/
   - auth-service/
   - ticket-service/
   - payment-service/
