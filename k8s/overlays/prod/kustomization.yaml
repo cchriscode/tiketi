@@ -42,19 +42,19 @@ patches:
 images:
   - name: tiketi-backend
     newName: 640740721346.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi-backend
-    newTag: d0f2362-20260107-175411
+    newTag: 7767861-20260107-175953
   - name: tiketi-auth-service
     newName: 640740721346.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/auth
-    newTag: d0f2362-20260107-175413
+    newTag: 7767861-20260107-175956
   - name: tiketi-ticket-service
     newName: 640740721346.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/ticket
-    newTag: d0f2362-20260107-175411
+    newTag: 7767861-20260107-175959
   - name: tiketi-payment-service
     newName: 640740721346.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/payment
-    newTag: 5d9a8c6-20260107-174745
+    newTag: 7767861-20260107-175955
   - name: tiketi-stats-service
     newName: 640740721346.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/stats
-    newTag: d0f2362-20260107-175411
+    newTag: 7767861-20260107-175957
 
 commonLabels:
   environment: production
