@@ -6,6 +6,7 @@ metadata:
     app: auth-service
     tier: microservice
 spec:
+  revisionHistoryLimit: 2
   selector:
     matchLabels:
       app: auth-service

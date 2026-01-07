@@ -6,6 +6,7 @@ metadata:
     app: stats-service
     tier: microservice
 spec:
+  revisionHistoryLimit: 2
   selector:
     matchLabels:
       app: stats-service
