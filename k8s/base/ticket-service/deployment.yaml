@@ -18,7 +18,7 @@ spec:
       containers:
         - name: ticket-service
           image: tiketi-ticket-service:latest  # Tag will be updated by Kustomize
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 3002
               name: http
