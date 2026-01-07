@@ -33,6 +33,8 @@ configMapGenerator:
       - AWS_REGION=ap-northeast-2
       - AWS_S3_BUCKET=tiketi-prod-assets
       - GOOGLE_CLIENT_ID=721028631258-dhjgd4gquphib49fsoitiubusbo3t9e9.apps.googleusercontent.com
+      # TossPayments integration
+      - TOSS_CLIENT_KEY=test_ck_EP59LybZ8BlAdL6Z1o4ZV6GYo7pR
 
 patches:
   - path: resource-patches.yaml
