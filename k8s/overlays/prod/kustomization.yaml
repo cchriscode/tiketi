@@ -20,6 +20,7 @@ configMapGenerator:
       - DB_PORT=5432
       - DB_NAME=tiketi
       - DB_USER=tiketi_user
+      - DB_SSL=true
       # ElastiCache Redis endpoints (actual production endpoint)
       - REDIS_HOST=tiketiadv-dev-redis-001.tiketiadv-dev-redis.eaaj6u.apn2.cache.amazonaws.com
       - REDIS_PORT=6379

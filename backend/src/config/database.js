@@ -12,6 +12,9 @@ const pool = new Pool({
   max: CONFIG.DB_POOL_MAX,
   idleTimeoutMillis: CONFIG.DB_IDLE_TIMEOUT_MS,
   connectionTimeoutMillis: CONFIG.DB_CONNECTION_TIMEOUT_MS,
+  ssl: process.env.DB_SSL === 'true' ? {
+    rejectUnauthorized: false  // AWS RDS uses self-signed certificates
+  } : false,
 });
 
 pool.on('connect', async (client) => {
