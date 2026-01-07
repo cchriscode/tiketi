@@ -95,13 +95,13 @@ if (redisEnabled) {
         console.log('✅ Socket.IO Redis adapter connected (multi-pod ready)');
       } catch (err) {
         console.log('⚠️  Socket.IO adapter creation failed, continuing in standalone mode:', err.message);
-        pubClient.disconnect().catch(() => {});
-        subClient.disconnect().catch(() => {});
+        if (pubClient && pubClient.disconnect) pubClient.disconnect().catch(() => {});
+        if (subClient && subClient.disconnect) subClient.disconnect().catch(() => {});
       }
     }).catch(err => {
       console.log('⚠️  Socket.IO running without Redis adapter (connection failed):', err.message);
-      pubClient.disconnect().catch(() => {});
-      subClient.disconnect().catch(() => {});
+      if (pubClient && pubClient.disconnect) pubClient.disconnect().catch(() => {});
+      if (subClient && subClient.disconnect) subClient.disconnect().catch(() => {});
     });
   } catch (err) {
     console.log('⚠️  Socket.IO Redis adapter initialization failed:', err.message);
