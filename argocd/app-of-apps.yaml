@@ -9,7 +9,7 @@ spec:
   project: tiketi
   source:
     repoURL: 'https://github.com/<ORG>/project-ticketing.git'
-    targetRevision: main
+    targetRevision: final
     path: argocd/applications
   destination:
     server: 'https://kubernetes.default.svc'

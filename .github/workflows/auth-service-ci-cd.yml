@@ -2,7 +2,7 @@ name: Auth Service CI/CD
 
 on:
   push:
-    branches: [main, develop]
+    branches: [final, develop]
     paths:
       - 'services/auth-service/**'
       - 'packages/common/**'
@@ -46,7 +46,7 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             ENV="${{ github.event.inputs.environment }}"
-          elif [ "${{ github.ref_name }}" = "main" ]; then
+          elif [ "${{ github.ref_name }}" = "final" ]; then
             ENV="prod"
           else
             ENV="staging"

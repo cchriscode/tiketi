@@ -9,7 +9,7 @@ spec:
   project: tiketi
   source:
     repoURL: 'https://github.com/<ORG>/project-ticketing.git'
-    targetRevision: main
+    targetRevision: final
     path: k8s/overlays/prod
   destination:
     server: 'https://kubernetes.default.svc'
