@@ -10,8 +10,8 @@ metadata:
     alb.ingress.kubernetes.io/healthcheck-path: /health
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
     alb.ingress.kubernetes.io/ssl-redirect: '443'
-    # TODO: Update with actual ACM certificate ARN after creating certificate in AWS
-    # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-northeast-2:640740721346:certificate/CERT_ID
+    # ACM certificate for api.tiketi.store
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-northeast-2:640740721346:certificate/0f2542f7-e7dd-423a-ab84-2292d6357d64
     alb.ingress.kubernetes.io/group.name: tiketi-prod
     # TODO: WAF integration (optional but recommended for production)
     # alb.ingress.kubernetes.io/wafv2-acl-arn: arn:aws:wafv2:ap-northeast-2:640740721346:regional/webacl/tiketi-prod-waf/WAF_ID
@@ -21,7 +21,7 @@ metadata:
     alb.ingress.kubernetes.io/load-balancer-attributes: access_logs.s3.enabled=true,access_logs.s3.bucket=tiketi-prod-alb-logs,access_logs.s3.prefix=backend
 spec:
   rules:
-  - host: api.tiketi.com
+  - host: api.tiketi.store
     http:
       paths:
       - path: /
