@@ -62,20 +62,27 @@ const io = new Server(server, {
   path: process.env.SOCKET_IO_PATH || '/socket.io',
 });
 
-// Apply Redis adapter for multi-pod support (pub/sub)
+// Apply Redis adapter for multi-pod support (pub/sub) only if Redis is enabled
 // This allows WebSocket events to be broadcasted across multiple pods in EKS
-const pubClient = redisClient.duplicate();
-const subClient = redisClient.duplicate();
+const redisHost = process.env.REDIS_HOST || 'localhost';
+const redisEnabled = redisHost !== 'localhost' && redisHost !== 'disabled-redis';
 
-Promise.all([
-  pubClient.connect().catch(err => console.log('Redis pub client connection skipped:', err.message)),
-  subClient.connect().catch(err => console.log('Redis sub client connection skipped:', err.message))
-]).then(() => {
-  io.adapter(createAdapter(pubClient, subClient));
-  console.log('✅ Socket.IO Redis adapter connected (multi-pod ready)');
-}).catch(err => {
-  console.log('⚠️  Socket.IO running without Redis adapter:', err.message);
-});
+if (redisEnabled) {
+  const pubClient = redisClient.duplicate();
+  const subClient = redisClient.duplicate();
+
+  Promise.all([
+    pubClient.connect().catch(err => console.log('Redis pub client connection skipped:', err.message)),
+    subClient.connect().catch(err => console.log('Redis sub client connection skipped:', err.message))
+  ]).then(() => {
+    io.adapter(createAdapter(pubClient, subClient));
+    console.log('✅ Socket.IO Redis adapter connected (multi-pod ready)');
+  }).catch(err => {
+    console.log('⚠️  Socket.IO running without Redis adapter:', err.message);
+  });
+} else {
+  console.log('ℹ️  Socket.IO running in standalone mode (Redis disabled)');
+}
 
 // Make io available to routes
 app.locals.io = io;
