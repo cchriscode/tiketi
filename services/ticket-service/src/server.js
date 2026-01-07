@@ -72,13 +72,21 @@ if (redisEnabled) {
   const subClient = redisClient.duplicate();
 
   Promise.all([
-    pubClient.connect().catch(err => console.log('Redis pub client connection skipped:', err.message)),
-    subClient.connect().catch(err => console.log('Redis sub client connection skipped:', err.message))
+    pubClient.connect(),
+    subClient.connect()
   ]).then(() => {
-    io.adapter(createAdapter(pubClient, subClient));
-    console.log('✅ Socket.IO Redis adapter connected (multi-pod ready)');
+    try {
+      io.adapter(createAdapter(pubClient, subClient));
+      console.log('✅ Socket.IO Redis adapter connected (multi-pod ready)');
+    } catch (err) {
+      console.log('⚠️  Socket.IO adapter creation failed, continuing in standalone mode:', err.message);
+      pubClient.disconnect().catch(() => {});
+      subClient.disconnect().catch(() => {});
+    }
   }).catch(err => {
-    console.log('⚠️  Socket.IO running without Redis adapter:', err.message);
+    console.log('⚠️  Socket.IO running without Redis adapter (connection failed):', err.message);
+    pubClient.disconnect().catch(() => {});
+    subClient.disconnect().catch(() => {});
   });
 } else {
   console.log('ℹ️  Socket.IO running in standalone mode (Redis disabled)');
