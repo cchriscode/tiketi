@@ -48,7 +48,7 @@ images:
     newTag: 7767861-20260107-175956
   - name: tiketi-ticket-service
     newName: 640740721346.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/ticket
-    newTag: d0f2362-20260107-175411
+    newTag: 7767861-20260107-175959
   - name: tiketi-payment-service
     newName: 640740721346.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/payment
     newTag: 7767861-20260107-175955
