@@ -185,6 +185,9 @@ jobs:
               -m "🤖 Generated with [Claude Code](https://claude.com/claude-code)" \
               -m "" \
               -m "Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+
+            # Pull latest changes to avoid conflicts with parallel workflows
+            git pull --rebase origin final
             git push
             echo "✅ Manifest updated and pushed"
           else
