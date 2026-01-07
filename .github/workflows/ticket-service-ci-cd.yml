@@ -82,6 +82,7 @@ jobs:
         run: |
           echo "🔨 Building Docker image..."
           docker build \
+            --platform linux/arm64 \
             --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
             --build-arg VCS_REF=${{ github.sha }} \
             --build-arg VERSION=${{ steps.meta.outputs.image-tag }} \
