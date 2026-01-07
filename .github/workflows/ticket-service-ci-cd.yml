@@ -79,7 +79,6 @@ jobs:
           IMAGE_TAG: ${{ steps.meta.outputs.image-tag }}
         run: |
           echo "🔨 Building Docker image..."
-          cd services/ticket-service
           docker build \
             --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
             --build-arg VCS_REF=${{ github.sha }} \
@@ -87,6 +86,7 @@ jobs:
             -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:${{ steps.detect-env.outputs.environment }} \
+            -f services/ticket-service/Dockerfile \
             .
 
       - name: Run security scan (Trivy)
