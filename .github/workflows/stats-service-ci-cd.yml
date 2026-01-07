@@ -181,10 +181,21 @@ jobs:
               -m "" \
               -m "Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
-            # Pull latest changes to avoid conflicts with parallel workflows
-            git pull --rebase origin final
-            git push
-            echo "✅ Manifest updated and pushed"
+            # Retry push up to 5 times with rebase (handles parallel workflow conflicts)
+            for i in {1..5}; do
+              git pull --rebase origin final
+              if git push; then
+                echo "✅ Manifest updated and pushed"
+                break
+              else
+                if [ $i -eq 5 ]; then
+                  echo "❌ Failed to push after 5 attempts"
+                  exit 1
+                fi
+                echo "⚠️  Push failed, retrying ($i/5)..."
+                sleep $((RANDOM % 3 + 2))
+              fi
+            done
           else
             echo "⏭️ No changes to commit"
           fi
