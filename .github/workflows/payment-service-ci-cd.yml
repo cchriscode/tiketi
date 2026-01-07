@@ -6,6 +6,8 @@ on:
     paths:
       - 'services/payment-service/**'
       - 'packages/common/**'
+      - 'packages/database/**'
+      - 'packages/metrics/**'
       - '.github/workflows/payment-service-ci-cd.yml'
   workflow_dispatch:
     inputs:

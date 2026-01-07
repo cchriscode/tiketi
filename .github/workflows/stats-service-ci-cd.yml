@@ -6,6 +6,8 @@ on:
     paths:
       - 'services/stats-service/**'
       - 'packages/common/**'
+      - 'packages/database/**'
+      - 'packages/metrics/**'
       - '.github/workflows/stats-service-ci-cd.yml'
   workflow_dispatch:
     inputs:

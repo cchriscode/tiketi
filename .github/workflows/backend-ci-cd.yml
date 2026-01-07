@@ -6,6 +6,8 @@ on:
     paths:
       - 'backend/**'
       - 'packages/common/**'
+      - 'packages/database/**'
+      - 'packages/metrics/**'
       - '.github/workflows/backend-ci-cd.yml'
   workflow_dispatch:
     inputs:

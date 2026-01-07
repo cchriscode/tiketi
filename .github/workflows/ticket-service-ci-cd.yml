@@ -6,6 +6,8 @@ on:
     paths:
       - 'services/ticket-service/**'
       - 'packages/common/**'
+      - 'packages/database/**'
+      - 'packages/metrics/**'
       - '.github/workflows/ticket-service-ci-cd.yml'
   workflow_dispatch:
     inputs:

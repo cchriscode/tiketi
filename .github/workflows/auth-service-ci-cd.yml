@@ -6,6 +6,8 @@ on:
     paths:
       - 'services/auth-service/**'
       - 'packages/common/**'
+      - 'packages/database/**'
+      - 'packages/metrics/**'
       - '.github/workflows/auth-service-ci-cd.yml'
   workflow_dispatch:
     inputs:
