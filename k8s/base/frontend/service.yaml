@@ -5,6 +5,8 @@ metadata:
   labels:
     app: frontend
     environment: production
+  annotations:
+    alb.ingress.kubernetes.io/healthcheck-path: /
 spec:
   type: ClusterIP
   selector:
