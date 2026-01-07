@@ -54,7 +54,7 @@ images:
     newTag: 3f44d16-20260107-143844
   - name: tiketi-stats-service
     newName: 640740721346.dkr.ecr.ap-northeast-2.amazonaws.com/tiketi/stats
-    newTag: 3f44d16-20260107-143849
+    newTag: 15c646f-20260107-174051
 
 commonLabels:
   environment: production
