@@ -9,7 +9,7 @@ resources:
   - ingress.yaml
   - hpa.yaml
   - pdb.yaml
-  - secrets.enc.yaml  # SealedSecret for production
+  # - secrets.enc.yaml  # SealedSecret for production (TODO: Install Sealed Secrets Controller first)
 
 configMapGenerator:
   - name: tiketi-config

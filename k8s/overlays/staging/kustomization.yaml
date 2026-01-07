@@ -8,7 +8,7 @@ resources:
   - ../../base
   - ingress.yaml
   - hpa.yaml
-  - secrets.enc.yaml  # SealedSecret for staging
+  # - secrets.enc.yaml  # SealedSecret for staging (TODO: Install Sealed Secrets Controller first)
 
 configMapGenerator:
   - name: tiketi-config
