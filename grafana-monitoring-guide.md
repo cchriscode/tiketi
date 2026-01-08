@@ -17,10 +17,8 @@
 ## 1. 시스템 아키텍처
 
 ### 전체 구조
-```
 <img width="1210" height="561" alt="스크린샷 2026-01-08 오후 3 16 53" src="https://github.com/user-attachments/assets/547d414b-76c5-49b2-835b-d65c0e680643" />
 
-```
 
 ### 현재 시스템 상태
 ```yaml
