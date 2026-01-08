@@ -1,4 +1,3 @@
-cat > /home/claude/grafana-monitoring-guide-updated.md << 'EOF'
 # 📊 Grafana 모니터링 가이드
 
 **EKS 클러스터 실시간 모니터링 시스템 - Tiketi 프로젝트**
